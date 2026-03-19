@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import (
-    String, Boolean, Enum, DateTime, Integer, Text, func,
+    String, Boolean, Enum, DateTime, Integer, Text, ForeignKey, func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -64,7 +64,7 @@ class ApplicantProfile(Base):
     __tablename__ = "applicant_profiles"
 
     user_id: Mapped[int] = mapped_column(
-        Integer, primary_key=True
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)

@@ -3,10 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 
+# Импорт роутеров
+from app.routers.auth import router as auth_router
+from app.routers.users import router as users_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Действия при запуске и остановке приложения."""
     print("🚀 Трамплин API запускается...")
     yield
     print("🛑 Трамплин API остановлен")
@@ -19,11 +22,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — разрешаем фронтенду обращаться к API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite dev server
+        "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:80",
     ],
@@ -32,16 +34,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Подключаем роутеры
+app.include_router(auth_router)
+app.include_router(users_router)
 
-# Временный тестовый эндпоинт — убедимся что всё работает
-@app.get("/")
+
+@app.get("/", tags=["Система"])
 async def root():
     return {
         "message": "Трамплин API работает",
         "version": settings.APP_VERSION,
+        "docs": "/docs",
     }
 
 
-@app.get("/health")
+@app.get("/health", tags=["Система"])
 async def health():
     return {"status": "ok"}
