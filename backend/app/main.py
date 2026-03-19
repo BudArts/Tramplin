@@ -3,9 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 
-# Импорт роутеров
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
+from app.routers.companies import router as companies_router
+from app.routers.opportunities import router as opportunities_router
+from app.routers.tags import router as tags_router
 
 
 @asynccontextmanager
@@ -34,9 +36,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключаем роутеры
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(companies_router)
+app.include_router(opportunities_router)
+app.include_router(tags_router)
 
 
 @app.get("/", tags=["Система"])
