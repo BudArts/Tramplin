@@ -6,12 +6,13 @@ from app.config import settings
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.companies import router as companies_router
-from app.routers.opportunities import router as opportunities_router
 from app.routers.tags import router as tags_router
+from app.routers.opportunities import router as opportunities_router
 from app.routers.applications import router as applications_router
 from app.routers.favorites import router as favorites_router
 from app.routers.notifications import router as notifications_router
 from app.routers.contacts import router as contacts_router
+from app.routers.curator import router as curator_router
 
 
 @asynccontextmanager
@@ -40,15 +41,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Подключаем роутеры
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(companies_router)
-app.include_router(opportunities_router)
 app.include_router(tags_router)
+app.include_router(opportunities_router)
 app.include_router(applications_router)
 app.include_router(favorites_router)
 app.include_router(notifications_router)
 app.include_router(contacts_router)
+app.include_router(curator_router)
 
 
 @app.get("/", tags=["Система"])
