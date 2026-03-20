@@ -2,12 +2,12 @@ version: '3.9'
 
 services:
   db:
-    image: postgis/postgis:16-3.4
+    image: postgres:16-alpine
     container_name: tramplin-db
     environment:
       POSTGRES_DB: tramplin
       POSTGRES_USER: tramplin_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-strongpassword123}
     ports:
       - "5432:5432"
     volumes:
@@ -17,12 +17,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: tramplin-redis
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
 
   backend:
     build:
@@ -30,45 +25,17 @@ services:
       dockerfile: Dockerfile
     container_name: tramplin-backend
     env_file:
-      - .env
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://tramplin_user:${DB_PASSWORD:-strongpassword123}@db:5432/tramplin
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/app:/app/app
       - uploaded_files:/app/uploads
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_started
-    command: >
-      sh -c "alembic upgrade head &&
-             python -m app.utils.seed_data &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: tramplin-frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend/src:/app/src
-    depends_on:
-      - backend
-    command: npm run dev -- --host 0.0.0.0
-
-  nginx:
-    image: nginx:alpine
-    container_name: tramplin-nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - backend
-      - frontend
+    restart: unless-stopped
 
 volumes:
   postgres_data:

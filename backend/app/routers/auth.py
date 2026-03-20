@@ -11,7 +11,6 @@ from app.schemas.auth import (
     RefreshRequest,
     TokenResponse,
 )
-from app.schemas.common import MessageResponse
 from app.utils.security import (
     hash_password,
     verify_password,
@@ -40,7 +39,6 @@ async def register(
     - **applicant**: создаётся пользователь + пустой профиль соискателя
     - **employer**: создаётся пользователь + компания (статус: pending)
     """
-    # 1. Проверяем уникальность email
     existing = await db.execute(
         select(User).where(User.email == data.email.lower())
     )
@@ -50,21 +48,18 @@ async def register(
             detail="Пользователь с таким email уже существует",
         )
 
-    # 2. Валидация для работодателя
     if data.role == UserRole.EMPLOYER:
         if not data.company_name:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Для работодателя необходимо указать название компании",
             )
-        # Валидация ИНН если указан
         if data.inn and not validate_inn(data.inn):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Невалидный ИНН. Проверьте правильность ввода",
+                detail="Невалидный ИНН",
             )
 
-    # 3. Создание пользователя
     user = User(
         email=data.email.lower().strip(),
         password_hash=hash_password(data.password),
@@ -72,9 +67,8 @@ async def register(
         role=data.role,
     )
     db.add(user)
-    await db.flush()  # получаем user.id
+    await db.flush()
 
-    # 4. Создание связанных сущностей
     if data.role == UserRole.APPLICANT:
         profile = ApplicantProfile(
             user_id=user.id,
@@ -95,7 +89,6 @@ async def register(
     await db.commit()
     await db.refresh(user)
 
-    # 5. Генерация токенов
     token_data = {"sub": str(user.id), "role": user.role.value}
 
     return TokenResponse(
@@ -115,31 +108,24 @@ async def login(
     data: LoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Авторизация по email и паролю.
-    Возвращает пару access + refresh токенов.
-    """
-    # 1. Ищем пользователя
+    """Авторизация по email и паролю."""
     result = await db.execute(
         select(User).where(User.email == data.email.lower().strip())
     )
     user = result.scalar_one_or_none()
 
-    # 2. Проверяем пароль
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный email или пароль",
         )
 
-    # 3. Проверяем активность аккаунта
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Аккаунт деактивирован. Обратитесь к администратору",
+            detail="Аккаунт деактивирован",
         )
 
-    # 4. Генерация токенов
     token_data = {"sub": str(user.id), "role": user.role.value}
 
     return TokenResponse(
@@ -159,19 +145,14 @@ async def refresh_token(
     data: RefreshRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Обновление access токена по refresh токену.
-    Возвращает новую пару токенов.
-    """
-    # 1. Декодируем refresh token
+    """Обновление access токена по refresh токену."""
     payload = decode_token(data.refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Невалидный или просроченный refresh token",
+            detail="Невалидный refresh token",
         )
 
-    # 2. Проверяем что пользователь существует и активен
     user_id = payload.get("sub")
     result = await db.execute(
         select(User).where(User.id == int(user_id))
@@ -190,7 +171,6 @@ async def refresh_token(
             detail="Аккаунт деактивирован",
         )
 
-    # 3. Генерация новых токенов
     token_data = {"sub": str(user.id), "role": user.role.value}
 
     return TokenResponse(
@@ -199,17 +179,3 @@ async def refresh_token(
         user_id=user.id,
         role=user.role,
     )
-
-
-@router.get(
-    "/me",
-    summary="Текущий пользователь",
-)
-async def get_me(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(),
-):
-    """Информация о текущем авторизованном пользователе."""
-    # Это будет реализовано через dependency get_current_user
-    # Пока заглушка — заменим в следующем шаге
-    pass
