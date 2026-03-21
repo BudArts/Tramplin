@@ -89,6 +89,7 @@ class ApplicantProfile(Base):
     skills: Mapped[list["Tag"]] = relationship(
         "Tag", secondary="applicant_tags", back_populates="applicants"
     )
+    documents_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     def __repr__(self):
         return f"<ApplicantProfile {self.user_id} {self.first_name} {self.last_name}>"

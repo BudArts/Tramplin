@@ -3,7 +3,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import IntegrityError, OperationalError
-
+from app.routers.uploads import router as uploads_router
+from app.routers.chat import router as chat_router
+from app.routers.support import router as support_router
 from app.config import settings
 from app.utils.logger import logger
 
@@ -114,3 +116,12 @@ app.include_router(favorites_router)
 app.include_router(notifications_router)
 app.include_router(contacts_router)
 app.include_router(curator_router)
+app.include_router(uploads_router)
+app.include_router(chat_router)
+app.include_router(support_router)
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Раздача загруженных файлов
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

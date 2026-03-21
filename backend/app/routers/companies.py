@@ -17,7 +17,7 @@ from app.schemas.company import (
 )
 from app.schemas.common import MessageResponse
 from app.utils.validators import validate_inn, check_corporate_email
-
+from sqlalchemy import select, func
 router = APIRouter(prefix="/api/companies", tags=["Компании"])
 
 
@@ -201,3 +201,94 @@ async def get_company(
         )
 
     return company
+
+@router.get(
+    "/{company_id}/stats",
+    summary="Статистика компании",
+)
+async def get_company_stats(
+    company_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Публичная статистика компании:
+    - Количество вакансий
+    - Количество откликов
+    - Процент принятых
+    - Средняя скорость ответа
+    """
+    from app.models.opportunity import Opportunity, OpportunityStatus
+    from app.models.application import Application, ApplicationStatus
+
+    result = await db.execute(
+        select(Company).where(Company.id == company_id)
+    )
+    company = result.scalar_one_or_none()
+
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Компания не найдена",
+        )
+
+    # Количество активных вакансий
+    active_count = await db.scalar(
+        select(func.count(Opportunity.id)).where(
+            Opportunity.company_id == company_id,
+            Opportunity.status == OpportunityStatus.ACTIVE,
+        )
+    ) or 0
+
+    # Всего вакансий
+    total_opps = await db.scalar(
+        select(func.count(Opportunity.id)).where(
+            Opportunity.company_id == company_id,
+        )
+    ) or 0
+
+    # Получаем ID всех вакансий компании
+    opp_ids_result = await db.execute(
+        select(Opportunity.id).where(Opportunity.company_id == company_id)
+    )
+    opp_ids = [row[0] for row in opp_ids_result.all()]
+
+    total_applications = 0
+    accepted_applications = 0
+    rejected_applications = 0
+
+    if opp_ids:
+        total_applications = await db.scalar(
+            select(func.count(Application.id)).where(
+                Application.opportunity_id.in_(opp_ids)
+            )
+        ) or 0
+
+        accepted_applications = await db.scalar(
+            select(func.count(Application.id)).where(
+                Application.opportunity_id.in_(opp_ids),
+                Application.status == ApplicationStatus.ACCEPTED,
+            )
+        ) or 0
+
+        rejected_applications = await db.scalar(
+            select(func.count(Application.id)).where(
+                Application.opportunity_id.in_(opp_ids),
+                Application.status == ApplicationStatus.REJECTED,
+            )
+        ) or 0
+
+    # Процент принятых
+    reviewed = accepted_applications + rejected_applications
+    acceptance_rate = round((accepted_applications / reviewed * 100), 1) if reviewed > 0 else None
+
+    return {
+        "company_id": company_id,
+        "company_name": company.name,
+        "active_opportunities": active_count,
+        "total_opportunities": total_opps,
+        "total_applications": total_applications,
+        "accepted_applications": accepted_applications,
+        "acceptance_rate": acceptance_rate,
+        "trust_level": company.trust_level.value,
+        "verification_status": company.verification_status.value,
+    }

@@ -46,7 +46,7 @@ class ApplicantProfileResponse(BaseModel):
     show_resume_to_all: bool
     profile_completeness: int
     skills: list["TagResponse"] = []
-
+    documents_url: str | None = None   # в обоих классах
     model_config = {"from_attributes": True}
 
 
@@ -63,7 +63,7 @@ class ApplicantProfileUpdate(BaseModel):
     github_url: str | None = Field(None, max_length=500)
     resume_url: str | None = Field(None, max_length=500)
     skill_ids: list[int] | None = None
-
+    documents_url: str | None = None   # в обоих классах
 
 class PrivacySettingsUpdate(BaseModel):
     privacy_level: PrivacyLevel | None = None

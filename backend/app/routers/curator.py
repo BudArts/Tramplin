@@ -4,7 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional
-
+from app.schemas.opportunity import OpportunityResponse, OpportunityUpdate
+from app.schemas.company import CompanyUpdate
+from app.schemas.user import ApplicantProfileUpdate
+from app.models.tag import Tag
 from app.database import get_db
 from app.dependencies import require_role
 from app.models.user import User, UserRole, ApplicantProfile
@@ -620,3 +623,119 @@ async def create_curator(
     await db.refresh(curator)
 
     return curator
+
+# === Редактирование карточек возможностей куратором ===
+
+@router.put(
+    "/opportunities/{opportunity_id}",
+    response_model=OpportunityResponse,
+    summary="Редактировать возможность (куратор)",
+)
+async def curator_edit_opportunity(
+    opportunity_id: int,
+    data: OpportunityUpdate,
+    user: User = Depends(require_role(*CURATOR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Куратор может редактировать любую карточку возможности."""
+    result = await db.execute(
+        select(Opportunity)
+        .options(selectinload(Opportunity.tags), selectinload(Opportunity.company))
+        .where(Opportunity.id == opportunity_id)
+    )
+    opportunity = result.scalar_one_or_none()
+
+    if not opportunity:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Возможность не найдена",
+        )
+
+    update_fields = data.model_dump(exclude_unset=True, exclude={"tag_ids"})
+    for field, value in update_fields.items():
+        if value is not None:
+            setattr(opportunity, field, value)
+
+    if data.tag_ids is not None:
+        tag_result = await db.execute(
+            select(Tag).where(Tag.id.in_(data.tag_ids), Tag.is_approved == True)
+        )
+        opportunity.tags = list(tag_result.scalars().all())
+
+    await db.commit()
+
+    result = await db.execute(
+        select(Opportunity)
+        .options(selectinload(Opportunity.tags), selectinload(Opportunity.company))
+        .where(Opportunity.id == opportunity_id)
+    )
+    return result.scalar_one()
+
+
+# === Редактирование профиля компании куратором ===
+
+@router.put(
+    "/companies/{company_id}",
+    response_model=CompanyDetailResponse,
+    summary="Редактировать компанию (куратор)",
+)
+async def curator_edit_company(
+    company_id: int,
+    data: CompanyUpdate,
+    user: User = Depends(require_role(*CURATOR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Куратор может редактировать профиль любой компании."""
+    result = await db.execute(
+        select(Company).where(Company.id == company_id)
+    )
+    company = result.scalar_one_or_none()
+
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Компания не найдена",
+        )
+
+    update_fields = data.model_dump(exclude_unset=True)
+    for field, value in update_fields.items():
+        setattr(company, field, value)
+
+    await db.commit()
+    await db.refresh(company)
+    return company
+
+
+# === Редактирование профиля соискателя куратором ===
+
+@router.put(
+    "/applicants/{user_id}",
+    response_model=MessageResponse,
+    summary="Редактировать профиль соискателя (куратор)",
+)
+async def curator_edit_applicant(
+    user_id: int,
+    data: ApplicantProfileUpdate,
+    user: User = Depends(require_role(*CURATOR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Куратор может редактировать профиль любого соискателя."""
+    from app.models.user import ApplicantProfile
+
+    result = await db.execute(
+        select(ApplicantProfile).where(ApplicantProfile.user_id == user_id)
+    )
+    profile = result.scalar_one_or_none()
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Профиль соискателя не найден",
+        )
+
+    update_fields = data.model_dump(exclude_unset=True, exclude={"skill_ids"})
+    for field, value in update_fields.items():
+        setattr(profile, field, value)
+
+    await db.commit()
+    return MessageResponse(message="Профиль обновлён")
