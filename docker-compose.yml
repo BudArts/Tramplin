@@ -1,42 +1,65 @@
 version: '3.9'
 
 services:
+  # ============================================
+  # PostgreSQL
+  # ============================================
   db:
     image: postgres:16-alpine
     container_name: tramplin-db
     environment:
-      POSTGRES_DB: tramplin
-      POSTGRES_USER: tramplin_user
+      POSTGRES_DB: ${DB_NAME:-tramplin}
+      POSTGRES_USER: ${DB_USER:-tramplin_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-strongpassword123}
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tramplin_user -d tramplin"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tramplin_user} -d ${DB_NAME:-tramplin}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
+    networks:
+      - tramplin-network
 
+  # ============================================
+  # Backend API
+  # ============================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: tramplin-backend
-    env_file:
-      - ./backend/.env
     environment:
-      DATABASE_URL: postgresql+asyncpg://tramplin_user:${DB_PASSWORD:-strongpassword123}@db:5432/tramplin
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-tramplin_user}:${DB_PASSWORD:-strongpassword123}@db:5432/${DB_NAME:-tramplin}
+      SECRET_KEY: ${SECRET_KEY:-super-secret-jwt-key-2026}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tramplin.ru}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DEBUG: ${DEBUG:-true}
+      CORS_ORIGINS: "http://localhost:5173,http://localhost:3000,http://localhost:80,http://localhost"
     ports:
       - "8000:8000"
     volumes:
+      - ./backend/app:/app/app          # hot-reload для разработки
       - uploaded_files:/app/uploads
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - tramplin-network
 
 volumes:
   postgres_data:
+    driver: local
   uploaded_files:
+    driver: local
+
+networks:
+  tramplin-network:
+    driver: bridge
