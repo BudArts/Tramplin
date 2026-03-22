@@ -1,0 +1,59 @@
+.app {
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Фоновые свечения — ярче */
+.app__bg-glow {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(130px);
+  opacity: 0.12;
+}
+
+.app__bg-glow--1 {
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, var(--accent-pink), transparent 70%);
+  top: -250px;
+  right: -200px;
+  animation: glow1 14s ease-in-out infinite alternate;
+}
+
+.app__bg-glow--2 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--accent-purple), transparent 70%);
+  top: 45%;
+  left: -250px;
+  animation: glow2 18s ease-in-out infinite alternate;
+}
+
+.app__bg-glow--3 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--accent-fuchsia), transparent 70%);
+  bottom: 5%;
+  right: -150px;
+  animation: glow3 12s ease-in-out infinite alternate;
+}
+
+@keyframes glow1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.12; }
+  50% { transform: translate(-80px, 50px) scale(1.2); opacity: 0.18; }
+  100% { transform: translate(40px, -30px) scale(0.9); opacity: 0.1; }
+}
+
+@keyframes glow2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, -40px) scale(1.15); }
+  100% { transform: translate(-30px, 60px) scale(1.05); }
+}
+
+@keyframes glow3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, -50px) scale(1.25); }
+  100% { transform: translate(30px, 30px) scale(0.85); }
+}

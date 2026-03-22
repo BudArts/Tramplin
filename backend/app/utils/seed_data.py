@@ -84,6 +84,7 @@ TAGS_DATA = [
     ("Intern", TagCategory.LEVEL),
     ("Junior", TagCategory.LEVEL),
     ("Middle", TagCategory.LEVEL),
+    ("Senior", TagCategory.LEVEL),
     # Тип занятости
     ("Полная занятость", TagCategory.EMPLOYMENT_TYPE),
     ("Частичная занятость", TagCategory.EMPLOYMENT_TYPE),
@@ -115,6 +116,7 @@ SYNONYMS_DATA = [
     ("Continuous Integration", "CI/CD"),
 ]
 
+# 10 компаний (оставляем как есть)
 COMPANIES_DATA = [
     {
         "name": "Яндекс",
@@ -238,178 +240,90 @@ COMPANIES_DATA = [
     },
 ]
 
-OPPORTUNITIES_DATA = [
-    # Стажировки
-    {
-        "title": "Стажёр Python-разработчик",
-        "description": "Мы ищем мотивированного стажёра в команду бэкенд-разработки. Вы будете работать с микросервисной архитектурой, писать код на Python, участвовать в код-ревью и планировании спринтов.\n\nТребования:\n- Знание Python 3.10+\n- Понимание основ SQL\n- Базовые знания Git\n- Желание учиться\n\nМы предлагаем:\n- Менторство от senior-разработчиков\n- Гибкий график\n- Возможность перехода в штат",
-        "type": OpportunityType.INTERNSHIP,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": 40000,
-        "salary_max": 60000,
-        "tags": ["Python", "Django", "SQL", "Git", "Intern", "Backend"],
-    },
-    {
-        "title": "Стажёр Frontend-разработчик (React)",
-        "description": "Приглашаем стажёра в команду фронтенд-разработки. Вы будете создавать пользовательские интерфейсы для наших продуктов, работать с современным стеком технологий.\n\nТребования:\n- HTML, CSS, JavaScript\n- Базовые знания React\n- Понимание адаптивной вёрстки\n\nБудет плюсом:\n- TypeScript\n- Опыт работы с REST API",
-        "type": OpportunityType.INTERNSHIP,
-        "work_format": WorkFormat.HYBRID,
-        "salary_min": 35000,
-        "salary_max": 55000,
-        "tags": ["JavaScript", "React", "TypeScript", "Intern", "Frontend"],
-    },
-    {
-        "title": "Стажёр QA Engineer",
-        "description": "Ищем стажёра в команду тестирования. Вы освоите ручное и автоматизированное тестирование, научитесь писать тест-кейсы и работать с CI/CD.\n\nТребования:\n- Понимание процесса тестирования\n- Базовые знания SQL\n- Аналитический склад ума",
-        "type": OpportunityType.INTERNSHIP,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": 30000,
-        "salary_max": 50000,
-        "tags": ["QA", "SQL", "Python", "Git", "Intern"],
-    },
-    {
-        "title": "Стажёр Data Science",
-        "description": "Стажировка в отделе аналитики данных. Работа с реальными датасетами, построение ML-моделей, визуализация данных.\n\nТребования:\n- Python (NumPy, Pandas)\n- Основы статистики и линейной алгебры\n- Базовые знания ML",
-        "type": OpportunityType.INTERNSHIP,
-        "work_format": WorkFormat.REMOTE,
-        "salary_min": 45000,
-        "salary_max": 65000,
-        "tags": ["Python", "Data Science", "Machine Learning", "Pandas", "Intern"],
-    },
-    {
-        "title": "Стажёр мобильный разработчик (Android)",
-        "description": "Приглашаем стажёра в команду мобильной разработки. Kotlin, Jetpack Compose, работа с API.\n\nТребования:\n- Kotlin или Java\n- Понимание основ Android SDK\n- Знание паттернов проектирования (MVP/MVVM)",
-        "type": OpportunityType.INTERNSHIP,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": 40000,
-        "salary_max": 60000,
-        "tags": ["Kotlin", "Mobile", "Git", "Intern"],
-    },
-    # Вакансии
-    {
-        "title": "Junior Backend Developer (Python/FastAPI)",
-        "description": "Ищем Junior Backend разработчика в команду развития платформы. Вы будете проектировать и реализовывать REST API, работать с PostgreSQL, участвовать в архитектурных решениях.\n\nТребования:\n- Python 3.10+ (уверенное владение)\n- FastAPI или Django REST Framework\n- PostgreSQL, SQLAlchemy\n- Docker, Git\n\nМы предлагаем:\n- ЗП от 80 000 до 130 000 ₽\n- ДМС после испытательного срока\n- Обучение за счёт компании\n- Удалённая работа",
-        "type": OpportunityType.VACANCY,
-        "work_format": WorkFormat.REMOTE,
-        "salary_min": 80000,
-        "salary_max": 130000,
-        "tags": ["Python", "FastAPI", "PostgreSQL", "Docker", "Junior", "Backend"],
-    },
-    {
-        "title": "Junior Frontend Developer (React/TypeScript)",
-        "description": "Приглашаем Junior Frontend разработчика. Современный стек, интересные задачи, дружная команда.\n\nТребования:\n- React 18+\n- TypeScript\n- CSS-in-JS или Tailwind\n- Работа с REST API\n\nБудет плюсом:\n- Next.js\n- Опыт с state management (Zustand, Redux)",
-        "type": OpportunityType.VACANCY,
-        "work_format": WorkFormat.HYBRID,
-        "salary_min": 70000,
-        "salary_max": 120000,
-        "tags": ["JavaScript", "React", "TypeScript", "Junior", "Frontend"],
-    },
-    {
-        "title": "Junior Java Developer",
-        "description": "Ищем начинающего Java-разработчика в enterprise-команду. Spring Boot, микросервисы, Kafka.\n\nТребования:\n- Java 17+\n- Spring Framework\n- SQL, JPA/Hibernate\n- Понимание микросервисной архитектуры",
-        "type": OpportunityType.VACANCY,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": 90000,
-        "salary_max": 140000,
-        "tags": ["Java", "Spring", "SQL", "Docker", "Junior", "Backend"],
-    },
-    {
-        "title": "Junior DevOps Engineer",
-        "description": "Приглашаем Junior DevOps в команду инфраструктуры. CI/CD, контейнеризация, мониторинг.\n\nТребования:\n- Linux (уверенный пользователь)\n- Docker, docker-compose\n- Базовые знания CI/CD (GitLab CI / GitHub Actions)\n- Bash-скриптинг",
-        "type": OpportunityType.VACANCY,
-        "work_format": WorkFormat.REMOTE,
-        "salary_min": 85000,
-        "salary_max": 130000,
-        "tags": ["Linux", "Docker", "Kubernetes", "CI/CD", "Git", "Junior", "DevOps"],
-    },
-    {
-        "title": "Junior Fullstack Developer (Node.js + React)",
-        "description": "Ищем Fullstack-разработчика для работы над внутренними инструментами компании.\n\nТребования:\n- Node.js / Express.js\n- React + TypeScript\n- PostgreSQL или MongoDB\n- REST API",
-        "type": OpportunityType.VACANCY,
-        "work_format": WorkFormat.HYBRID,
-        "salary_min": 75000,
-        "salary_max": 125000,
-        "tags": ["JavaScript", "Node.js", "React", "TypeScript", "PostgreSQL", "Junior", "Fullstack"],
-    },
-    {
-        "title": "Junior C# Developer (.NET)",
-        "description": "Разработка корпоративных приложений на платформе .NET. ASP.NET Core, Entity Framework, Azure.\n\nТребования:\n- C# (.NET 6+)\n- ASP.NET Core\n- SQL Server / PostgreSQL\n- Понимание ООП и SOLID",
-        "type": OpportunityType.VACANCY,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": 80000,
-        "salary_max": 130000,
-        "tags": ["C#", ".NET", "SQL", "Junior", "Backend"],
-    },
-    # Менторские программы
-    {
-        "title": "Менторская программа по Data Science",
-        "description": "12-недельная менторская программа для начинающих специалистов в области Data Science. Персональный ментор, еженедельные созвоны, реальные проекты.\n\nПрограмма включает:\n- Основы ML и статистики\n- Работа с реальными данными\n- Подготовка портфолио\n- Помощь в трудоустройстве\n\nФормат: онлайн, 2 созвона в неделю по 1 часу",
-        "type": OpportunityType.MENTORSHIP,
-        "work_format": WorkFormat.REMOTE,
-        "salary_min": None,
-        "salary_max": None,
-        "tags": ["Python", "Machine Learning", "Data Science", "Pandas"],
-    },
-    {
-        "title": "Менторство: путь в Backend-разработку",
-        "description": "Индивидуальная менторская программа для тех, кто хочет стать Backend-разработчиком. 8 недель, от основ до первого проекта.\n\nТемы:\n- Python и алгоритмы\n- Базы данных и SQL\n- REST API (FastAPI/Django)\n- Docker и деплой\n- Подготовка к собеседованиям",
-        "type": OpportunityType.MENTORSHIP,
-        "work_format": WorkFormat.REMOTE,
-        "salary_min": None,
-        "salary_max": None,
-        "tags": ["Python", "FastAPI", "Django", "PostgreSQL", "Docker", "Backend"],
-    },
-    {
-        "title": "Менторство по фронтенд-разработке",
-        "description": "Персональное менторство для начинающих фронтенд-разработчиков. Современный стек, реальные проекты, код-ревью.\n\n10 недель интенсива:\n- HTML/CSS продвинутый\n- JavaScript ES6+\n- React + TypeScript\n- Сборка проекта для портфолио",
-        "type": OpportunityType.MENTORSHIP,
-        "work_format": WorkFormat.REMOTE,
-        "salary_min": None,
-        "salary_max": None,
-        "tags": ["JavaScript", "React", "TypeScript", "Frontend"],
-    },
-    # Мероприятия
-    {
-        "title": "Хакатон «Code Sprint 2026»",
-        "description": "48-часовой хакатон для студентов и начинающих разработчиков! Формируйте команды, решайте реальные кейсы от компаний-партнёров.\n\nПризовой фонд: 500 000 ₽\n\nНаправления:\n- Web-разработка\n- Data Science & AI\n- Mobile\n- DevOps\n\nДата: 15-17 апреля 2026\nМесто: Технопарк «Сколково»\n\nРегистрация до 10 апреля.",
-        "type": OpportunityType.EVENT,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": None,
-        "salary_max": None,
-        "tags": ["Python", "JavaScript", "Docker", "Machine Learning"],
-        "event_date": date(2026, 4, 15),
-    },
-    {
-        "title": "День открытых дверей: карьера в IT",
-        "description": "Приглашаем студентов на День открытых дверей! Вы узнаете о стажировках и вакансиях, пообщаетесь с разработчиками и HR.\n\nПрограмма:\n- 10:00 — Презентация компании\n- 11:00 — Технические доклады\n- 13:00 — Нетворкинг и кофе\n- 14:00 — Экскурсия по офису\n\nВход свободный, регистрация обязательна.",
-        "type": OpportunityType.EVENT,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": None,
-        "salary_max": None,
-        "tags": [],
-        "event_date": date(2026, 4, 20),
-    },
-    {
-        "title": "Онлайн-лекция: Микросервисы на Go",
-        "description": "Открытая лекция от Senior-разработчика о проектировании микросервисов на Go.\n\nТемы:\n- Почему Go для микросервисов\n- gRPC vs REST\n- Паттерны отказоустойчивости\n- Live-coding демо\n\nДата: 25 апреля 2026, 19:00 МСК\nПлатформа: Zoom\n\nЗаписи будут доступны участникам.",
-        "type": OpportunityType.EVENT,
-        "work_format": WorkFormat.REMOTE,
-        "salary_min": None,
-        "salary_max": None,
-        "tags": ["Go", "Docker", "Kubernetes", "Backend"],
-        "event_date": date(2026, 4, 25),
-    },
-    {
-        "title": "Воркшоп: CI/CD с нуля",
-        "description": "Практический воркшоп по настройке CI/CD пайплайнов. GitHub Actions, Docker, автоматический деплой.\n\nВы научитесь:\n- Настраивать GitHub Actions\n- Собирать Docker-образы\n- Деплоить на VPS\n- Настраивать мониторинг\n\nНужен ноутбук с Docker.\nДата: 5 мая 2026, 11:00-17:00",
-        "type": OpportunityType.EVENT,
-        "work_format": WorkFormat.OFFICE,
-        "salary_min": None,
-        "salary_max": None,
-        "tags": ["Docker", "CI/CD", "Git", "Linux", "DevOps"],
-        "event_date": date(2026, 5, 5),
-    },
-]
+# Функция для генерации возможностей для каждой компании
+def generate_opportunities_for_company(company_name: str, index: int) -> list:
+    """Генерирует ~15 возможностей для конкретной компании"""
+    
+    # Базовые шаблоны возможностей
+    internships = [
+        {"title": f"Стажёр {role}", "type": OpportunityType.INTERNSHIP, "tags": tags}
+        for role, tags in [
+            ("Python-разработчик", ["Python", "Django", "SQL", "Intern", "Backend"]),
+            ("Frontend-разработчик", ["JavaScript", "React", "Intern", "Frontend"]),
+            ("Java-разработчик", ["Java", "Spring", "Intern", "Backend"]),
+            ("QA-инженер", ["QA", "Python", "SQL", "Intern"]),
+            ("Data Scientist", ["Python", "Machine Learning", "Intern", "Data Science"]),
+            ("Go-разработчик", ["Go", "Docker", "Intern", "Backend"]),
+            ("iOS-разработчик", ["Swift", "iOS", "Intern", "Mobile"]),
+            ("Android-разработчик", ["Kotlin", "Android", "Intern", "Mobile"]),
+            ("DevOps-инженер", ["Linux", "Docker", "CI/CD", "Intern", "DevOps"]),
+            ("Аналитик данных", ["Python", "SQL", "Data Science", "Intern"]),
+            ("UX/UI-дизайнер", ["UX/UI Design", "Intern"]),
+            ("Специалист по кибербезопасности", ["Cybersecurity", "Python", "Intern"]),
+            ("Backend-разработчик", ["Python", "FastAPI", "PostgreSQL", "Intern", "Backend"]),
+            ("Fullstack-разработчик", ["JavaScript", "React", "Node.js", "Intern", "Fullstack"]),
+            ("ML-инженер", ["Python", "Machine Learning", "PyTorch", "Intern"]),
+        ]
+    ]
+    
+    vacancies = [
+        {"title": f"Junior {role}", "type": OpportunityType.VACANCY, "tags": tags}
+        for role, tags in [
+            ("Python-разработчик", ["Python", "Django", "PostgreSQL", "Docker", "Junior", "Backend"]),
+            ("Frontend-разработчик", ["JavaScript", "React", "TypeScript", "Junior", "Frontend"]),
+            ("Java-разработчик", ["Java", "Spring", "SQL", "Junior", "Backend"]),
+            ("Go-разработчик", ["Go", "Docker", "Kubernetes", "Junior", "Backend"]),
+            ("React-разработчик", ["React", "TypeScript", "Junior", "Frontend"]),
+            ("Node.js-разработчик", ["Node.js", "JavaScript", "MongoDB", "Junior", "Backend"]),
+            ("Data Engineer", ["Python", "SQL", "Airflow", "Junior", "Data Engineering"]),
+            ("ML-инженер", ["Python", "Machine Learning", "TensorFlow", "Junior"]),
+            ("DevOps-инженер", ["Linux", "Docker", "Kubernetes", "CI/CD", "Junior", "DevOps"]),
+            ("Security Analyst", ["Python", "Cybersecurity", "Linux", "Junior"]),
+            ("Product Manager", ["Product Management", "Junior"]),
+            ("System Administrator", ["Linux", "System Administration", "Junior"]),
+        ]
+    ]
+    
+    mentorships = [
+        {"title": f"Менторская программа: {topic}", "type": OpportunityType.MENTORSHIP, "tags": tags}
+        for topic, tags in [
+            ("Backend-разработка на Python", ["Python", "FastAPI", "PostgreSQL", "Backend"]),
+            ("Frontend-разработка", ["JavaScript", "React", "TypeScript", "Frontend"]),
+            ("Data Science", ["Python", "Machine Learning", "Data Science"]),
+            ("DevOps-практики", ["Docker", "Kubernetes", "CI/CD", "DevOps"]),
+            ("Мобильная разработка", ["Kotlin", "Swift", "Mobile"]),
+            ("Кибербезопасность", ["Cybersecurity", "Linux", "Python"]),
+            ("Java-разработка", ["Java", "Spring", "Backend"]),
+            ("Go-разработка", ["Go", "Microservices", "Backend"]),
+        ]
+    ]
+    
+    events = [
+        {"title": f"Хакатон {topic}", "type": OpportunityType.EVENT, "tags": tags, "event_date": date(2026, 4, 15 + index)}
+        for topic, tags in [
+            ("Code Sprint", ["Python", "JavaScript", "Docker"]),
+            ("AI Challenge", ["Machine Learning", "Python", "Data Science"]),
+            ("Security CTF", ["Cybersecurity", "Python", "Linux"]),
+            ("Mobile App Contest", ["Mobile", "Kotlin", "Swift"]),
+            ("DevOps Battle", ["Docker", "Kubernetes", "CI/CD"]),
+        ]
+    ]
+    
+    # Комбинируем: 8 стажировок, 5 вакансий, 2 менторства, 2 мероприятия = 17
+    opportunities = []
+    opportunities.extend(internships[:8])
+    opportunities.extend(vacancies[:5])
+    opportunities.extend(mentorships[:2])
+    opportunities.extend(events[:2])
+    
+    # Добавляем описания
+    for opp in opportunities:
+        opp["description"] = f"Отличная возможность начать карьеру в компании {company_name}! Мы ищем талантливых и мотивированных специалистов. Вас ждёт дружный коллектив, современные технологии и интересные задачи."
+        opp["work_format"] = WorkFormat.HYBRID if "Стажёр" in opp["title"] else WorkFormat.REMOTE
+        opp["salary_min"] = 40000 if opp["type"] == OpportunityType.INTERNSHIP else 70000
+        opp["salary_max"] = 60000 if opp["type"] == OpportunityType.INTERNSHIP else 120000
+    
+    return opportunities
 
 APPLICANTS_DATA = [
     {
@@ -516,6 +430,75 @@ APPLICANTS_DATA = [
         "skills": ["Linux", "Docker", "Kubernetes", "CI/CD", "Git", "Python", "DevOps"],
         "privacy": PrivacyLevel.PUBLIC,
     },
+    {
+        "email": "olga.smirnova@student.ru",
+        "display_name": "Ольга Смирнова",
+        "first_name": "Ольга",
+        "last_name": "Смирнова",
+        "university": "СПбПУ",
+        "faculty": "Институт компьютерных наук и технологий",
+        "course": 4,
+        "graduation_year": 2026,
+        "bio": "Интересуюсь Data Engineering и Big Data. Работала с Spark и Kafka.",
+        "github_url": "https://github.com/olgasmirnova",
+        "skills": ["Python", "SQL", "Data Engineering", "Spark", "Kafka"],
+        "privacy": PrivacyLevel.PUBLIC,
+    },
+    {
+        "email": "pavel.volkov@mail.ru",
+        "display_name": "Павел Волков",
+        "first_name": "Павел",
+        "last_name": "Волков",
+        "university": "МИФИ",
+        "faculty": "Факультет кибернетики и информационной безопасности",
+        "course": 3,
+        "graduation_year": 2027,
+        "bio": "Увлекаюсь кибербезопасностью и reverse engineering. Участник CTF соревнований.",
+        "github_url": "https://github.com/pvolkov",
+        "skills": ["Python", "Cybersecurity", "Linux", "C++"],
+        "privacy": PrivacyLevel.CONTACTS,
+    },
+    {
+        "email": "ekaterina.nikolaeva@yandex.ru",
+        "display_name": "Екатерина Николаева",
+        "first_name": "Екатерина",
+        "last_name": "Николаева",
+        "university": "РЭУ им. Плеханова",
+        "faculty": "Бизнес-информатика",
+        "course": 4,
+        "graduation_year": 2026,
+        "bio": "Хочу стать Product Manager в IT. Прошла курсы по управлению продуктами.",
+        "skills": ["Product Management", "Agile", "Scrum"],
+        "privacy": PrivacyLevel.PUBLIC,
+    },
+    {
+        "email": "andrey.medvedev@gmail.com",
+        "display_name": "Андрей Медведев",
+        "first_name": "Андрей",
+        "last_name": "Медведев",
+        "university": "МФТИ",
+        "faculty": "Факультет радиотехники и кибернетики",
+        "course": 5,
+        "graduation_year": 2025,
+        "bio": "Выпускник, специализируюсь на Computer Vision и Deep Learning.",
+        "github_url": "https://github.com/amedvedev",
+        "skills": ["Python", "Computer Vision", "Deep Learning", "PyTorch", "TensorFlow"],
+        "privacy": PrivacyLevel.FULL_PUBLIC,
+    },
+    {
+        "email": "tatyana.kozina@student.ru",
+        "display_name": "Татьяна Козина",
+        "first_name": "Татьяна",
+        "last_name": "Козина",
+        "university": "СГУ",
+        "faculty": "Факультет компьютерных наук",
+        "course": 3,
+        "graduation_year": 2027,
+        "bio": "Интересуюсь UX/UI дизайном и фронтенд-разработкой.",
+        "portfolio_url": "https://tkozina.design",
+        "skills": ["UX/UI Design", "JavaScript", "React", "Figma"],
+        "privacy": PrivacyLevel.PUBLIC,
+    },
 ]
 
 
@@ -609,49 +592,42 @@ async def seed():
         await db.flush()
         print(f"🏢 Создано {len(COMPANIES_DATA)} компаний с работодателями")
 
-        # === 4. Возможности ===
+        # === 4. Возможности (по ~15 на каждую компанию) ===
         opp_count = 0
         now = datetime.now(timezone.utc)
-
+        
         for comp_idx, (company, comp_data) in enumerate(companies):
-            # Каждая компания получает 3-4 возможности
-            start = (comp_idx * 2) % len(OPPORTUNITIES_DATA)
-            company_opps = OPPORTUNITIES_DATA[start:start + 3]
-
-            # Добавляем ещё одну случайную если мало
-            if len(company_opps) < 3:
-                company_opps += OPPORTUNITIES_DATA[:3 - len(company_opps)]
-
-            for opp_data in company_opps:
+            # Генерируем 15+ возможностей для компании
+            company_opps = generate_opportunities_for_company(comp_data["name"], comp_idx)
+            
+            for opp_idx, opp_data in enumerate(company_opps):
                 opportunity = Opportunity(
                     company_id=company.id,
                     title=opp_data["title"],
-                    description=opp_data["description"],
+                    description=opp_data.get("description", f"Возможность в компании {comp_data['name']}"),
                     type=opp_data["type"],
-                    work_format=opp_data["work_format"],
-                    salary_min=opp_data["salary_min"],
-                    salary_max=opp_data["salary_max"],
+                    work_format=opp_data.get("work_format", WorkFormat.HYBRID),
+                    salary_min=opp_data.get("salary_min"),
+                    salary_max=opp_data.get("salary_max"),
                     city=comp_data["city"],
                     address=f"г. {comp_data['city']}, офис компании {comp_data['name']}",
-                    latitude=comp_data["lat"] + (opp_count % 5) * 0.005,
-                    longitude=comp_data["lng"] + (opp_count % 5) * 0.005,
+                    latitude=comp_data["lat"] + (opp_count % 10) * 0.003,
+                    longitude=comp_data["lng"] + (opp_count % 10) * 0.003,
                     status=OpportunityStatus.ACTIVE,
                     moderation_status=ModerationStatus.APPROVED,
                     moderated_by=admin.id,
                     published_at=now - timedelta(days=opp_count % 14),
-                    expires_at=date.today() + timedelta(days=30 + opp_count * 3),
+                    expires_at=date.today() + timedelta(days=45 + opp_count % 30),
                     event_date=opp_data.get("event_date"),
                     contact_email=f"hr@{comp_data['name'].lower().replace(' ', '')}.ru",
                     external_url=comp_data["website"],
                 )
                 db.add(opportunity)
                 await db.flush()
-
+                
                 # Привязываем теги
-                # Привязываем теги через ассоциативную таблицу
                 for tag_name in opp_data.get("tags", []):
                     if tag_name in tag_map:
-
                         await db.execute(
                             opportunity_tags.insert().values(
                                 opportunity_id=opportunity.id,
@@ -659,11 +635,11 @@ async def seed():
                             )
                         )
                         tag_map[tag_name].usage_count += 1
-
+                
                 opp_count += 1
-
+        
         await db.flush()
-        print(f"📋 Создано {opp_count} возможностей")
+        print(f"📋 Создано {opp_count} возможностей (в среднем {opp_count // len(COMPANIES_DATA)} на компанию)")
 
         # === 5. Соискатели ===
         applicants = []
@@ -696,7 +672,6 @@ async def seed():
             await db.flush()
 
             # Привязываем навыки
-            # Привязываем навыки через ассоциативную таблицу
             for skill_name in app_data.get("skills", []):
                 if skill_name in tag_map:
                     await db.execute(

@@ -37,6 +37,7 @@ def upgrade() -> None:
     sa.Column('show_applications_to_contacts', sa.Boolean(), nullable=False),
     sa.Column('show_resume_to_all', sa.Boolean(), nullable=False),
     sa.Column('profile_completeness', sa.Integer(), nullable=False),
+    sa.Column('documents_url', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('user_id')
     )
     op.create_table('users',

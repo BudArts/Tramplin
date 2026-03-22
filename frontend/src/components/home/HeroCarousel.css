@@ -1,0 +1,162 @@
+/* ========== HERO CAROUSEL ========== */
+
+.carousel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 44px;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.carousel__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  width: 92%;
+  height: 88%;
+  border-radius: 40px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 20, 147, 0.15) 0%,
+    rgba(139, 47, 201, 0.08) 50%,
+    transparent 75%
+  );
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 0;
+  animation: carouselGlow 6s ease-in-out infinite alternate;
+}
+
+@keyframes carouselGlow {
+  0% { opacity: 0.6; transform: translate(-50%, -55%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -55%) scale(1.06); }
+}
+
+
+.carousel__slide {
+  position: absolute;
+  inset: 0;
+}
+
+.carousel__viewport {
+  position: relative;
+  width: 100%;
+  max-width: 850px; /* Увеличили лимит с 600px до 850px */
+  margin: 0 auto;
+  z-index: 1;
+  background: transparent;
+  overflow: hidden;
+  aspect-ratio: 16 / 9; /* Сделали пропорцию стандартной */
+  border-radius: 24px;
+}
+
+.carousel__image {
+  position: absolute;
+  inset: 0;
+  /* Используем 115% вместо contain, чтобы приблизить картинку 
+     и "обрезать" лишние черные поля исходного файла */
+  background-size: 115%; 
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  transition: transform 0.5s ease;
+}
+
+/* Корректируем анимацию при наведении, так как исходный размер теперь больше */
+.carousel__slide:hover .carousel__image {
+  transform: scale(1.04);
+}
+
+.carousel__slide:hover .carousel__image {
+  transform: scale(1.02);
+}
+
+.carousel__section-btn {
+  position: absolute;
+  bottom: 24px;
+  left: 28px;
+  padding: 12px 32px;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.carousel__section-btn:hover {
+  background: #FF1493;
+  border-color: #FF1493;
+}
+
+.carousel__arrow {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.carousel__arrow:hover {
+  background: rgba(255, 20, 147, 0.2);
+  border-color: #FF1493;
+  color: #FF1493;
+}
+
+.carousel__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.carousel__progress-bar {
+  height: 100%;
+  background: #FF1493;
+  transform-origin: left;
+}
+
+.carousel__dots {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.carousel__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.carousel__dot--active {
+  background: #FF1493;
+  width: 24px;
+  border-radius: 4px;
+}

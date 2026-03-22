@@ -1,0 +1,320 @@
+/* ========== MAP SECTION ========== */
+
+.map-section {
+  position: relative;
+  padding: 40px 0 60px;
+  background: var(--bg-secondary);
+  z-index: 1;
+}
+
+.map-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent-pink),
+    transparent
+  );
+  opacity: 0.3;
+}
+
+/* ===== Заголовок ===== */
+
+.map-section__header {
+  text-align: center;
+  padding: 0 24px;
+  margin-bottom: 24px;
+}
+
+.map-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-white);
+  letter-spacing: 0.02em;
+}
+
+.map-section__title--accent {
+  background: var(--gradient-pink);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== Легенда ===== */
+
+.map-section__legend {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 0 24px;
+  flex-wrap: wrap;
+}
+
+.map-section__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+.map-section__legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* ===== Карта ===== */
+
+.map-section__map-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 500px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.map-section__map {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 1;
+}
+
+/* Стили для Leaflet */
+.leaflet-container {
+  background: var(--bg-primary) !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Кастомный маркер */
+.custom-marker {
+  background: none !important;
+  border: none !important;
+}
+
+.marker-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-pin__inner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--marker-color, #E91E8C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.marker-pin__inner svg {
+  transform: rotate(45deg);
+}
+
+.marker-pin__pulse {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--marker-color, #E91E8C);
+  opacity: 0;
+  animation: markerPulse 2s ease-out infinite;
+}
+
+@keyframes markerPulse {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* Кастомный popup */
+.custom-popup .leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  color: var(--text-white) !important;
+}
+
+.custom-popup .leaflet-popup-tip {
+  background: var(--bg-card) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.custom-popup .leaflet-popup-close-button {
+  color: var(--text-gray) !important;
+}
+
+.popup-content {
+  padding: 4px;
+}
+
+.popup-type {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.popup-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 4px 0;
+  color: var(--text-white);
+}
+
+.popup-company {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-bottom: 2px;
+}
+
+.popup-city {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-gray);
+}
+
+/* ===== Загрузка ===== */
+
+.map-section__loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-gray);
+  font-size: 0.9rem;
+}
+
+.map-section__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent-pink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Поиск ===== */
+
+.map-section__search {
+  max-width: 480px;
+  margin: 30px auto 0;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.map-section__search-label {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-gray);
+}
+
+.map-section__search-input-wrap {
+  display: flex;
+  width: 100%;
+  border-radius: var(--border-radius-pill);
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.map-section__search-input-wrap:focus-within {
+  border-color: var(--accent-pink);
+  box-shadow: 0 0 20px rgba(233, 30, 140, 0.15);
+}
+
+.map-section__search-input {
+  flex: 1;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-white);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+.map-section__search-input::placeholder {
+  color: var(--text-gray);
+  opacity: 0.7;
+}
+
+.map-section__search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  background: var(--gradient-button);
+  color: var(--text-white);
+  font-size: 1.1rem;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.map-section__search-btn:hover {
+  opacity: 0.85;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .map-section__map-wrap {
+    height: 400px;
+  }
+
+  .map-section__legend {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-section__map-wrap {
+    height: 320px;
+    padding: 0 12px;
+  }
+}
