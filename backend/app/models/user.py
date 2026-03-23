@@ -100,6 +100,10 @@ class User(Base):
         foreign_keys="SupportTicket.user_id",
         cascade="all, delete-orphan"
     )
+    
+    reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    notification_settings = relationship("NotificationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     # sent_recommendations и received_recommendations
     # создаются автоматически через backref в Recommendation
 

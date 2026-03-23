@@ -82,6 +82,13 @@ class Company(Base):
     # Relationships
     employees = relationship("User", back_populates="company")
     opportunities = relationship("Opportunity", back_populates="company")
+    # Добавьте эти поля в класс Company (после существующих полей)
+    rating = Column(Float, default=0.0)  # Средний рейтинг
+    reviews_count = Column(Integer, default=0)  # Количество отзывов
+
+
+# Добавьте relationship
+    reviews = relationship("Review", back_populates="company", cascade="all, delete-orphan")
 
     @property
     def is_active(self) -> bool:

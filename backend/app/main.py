@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
+from app.routers import reviews
 import os
 import sys
 
@@ -113,6 +114,7 @@ from app.routers.companies import router as companies_router
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(companies_router)
+app.include_router(reviews.router)
 
 # Опциональные роутеры
 routers_to_load = [
