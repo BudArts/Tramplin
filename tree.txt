@@ -1,0 +1,137 @@
+﻿Tramplin
+├── .dockerignore
+├── .env.exemple
+├── .gitignore
+├── api.json
+├── backend
+│   ├── alembic
+│   │   ├── env.py
+│   │   ├── README
+│   │   ├── script.py.mako
+│   │   └── versions
+│   │       └── 2b02bbec1a24_initial_tables.py
+│   ├── alembic.ini
+│   ├── app
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── dependencies.py
+│   │   ├── main.py
+│   │   ├── middleware
+│   │   │   ├── error_handler.py
+│   │   │   ├── rate_limiter.py
+│   │   │   ├── request_logger.py
+│   │   │   ├── security.py
+│   │   │   └── __init__.py
+│   │   ├── models
+│   │   │   ├── application.py
+│   │   │   ├── chat.py
+│   │   │   ├── company.py
+│   │   │   ├── contact.py
+│   │   │   ├── favorite.py
+│   │   │   ├── notification.py
+│   │   │   ├── opportunity.py
+│   │   │   ├── recommendation.py
+│   │   │   ├── support.py
+│   │   │   ├── tag.py
+│   │   │   ├── user.py
+│   │   │   └── __init__.py
+│   │   ├── routers
+│   │   │   ├── applications.py
+│   │   │   ├── auth.py
+│   │   │   ├── chat.py
+│   │   │   ├── companies.py
+│   │   │   ├── contacts.py
+│   │   │   ├── curator.py
+│   │   │   ├── favorites.py
+│   │   │   ├── haelth.py
+│   │   │   ├── notifications.py
+│   │   │   ├── opportunities.py
+│   │   │   ├── recommendations.py
+│   │   │   ├── support.py
+│   │   │   ├── tags.py
+│   │   │   ├── uploads.py
+│   │   │   ├── users.py
+│   │   │   └── __init__.py
+│   │   ├── schemas
+│   │   │   ├── application.py
+│   │   │   ├── auth.py
+│   │   │   ├── chat.py
+│   │   │   ├── common.py
+│   │   │   ├── company.py
+│   │   │   ├── contact.py
+│   │   │   ├── curator.py
+│   │   │   ├── notification.py
+│   │   │   ├── opportunity.py
+│   │   │   ├── tag.py
+│   │   │   ├── user.py
+│   │   │   └── __init__.py
+│   │   ├── services
+│   │   │   ├── application_dervice.py
+│   │   │   ├── auth_service.py
+│   │   │   ├── company_service.py
+│   │   │   ├── contact_service.py
+│   │   │   ├── geo_service.py
+│   │   │   ├── moderation_service.py
+│   │   │   ├── notification_service.py
+│   │   │   ├── opportunity_service.py
+│   │   │   ├── tag_service.py
+│   │   │   ├── user_service.py
+│   │   │   ├── verification_service.py
+│   │   │   └── __init__.py
+│   │   ├── utils
+│   │   │   ├── logger.py
+│   │   │   ├── permissions.py
+│   │   │   ├── sanitize.py
+│   │   │   ├── security.py
+│   │   │   ├── seed_data.py
+│   │   │   ├── validators.py
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── start.sh
+│   └── uploads
+├── docker-compose.yml
+├── Dockerfile
+├── frontend
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── carousel-1.png
+│   │   ├── carousel-2.png
+│   │   ├── carousel-3.png
+│   │   └── logo.png
+│   ├── README.md
+│   ├── src
+│   │   ├── api
+│   │   │   ├── auth.ts
+│   │   │   ├── client.ts
+│   │   │   └── types.ts
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── components
+│   │   │   ├── AuthModal.tsx
+│   │   │   ├── CategoryNav.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── HeroSection.tsx
+│   │   │   ├── InteractiveMap.tsx
+│   │   │   ├── OpportunityCard.tsx
+│   │   │   ├── OpportunityList.tsx
+│   │   │   └── ScrollProgressBar.tsx
+│   │   ├── hooks
+│   │   │   ├── useAuth.ts
+│   │   │   └── useLocalFavorites.ts
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   │   └── LandingPage.tsx
+│   │   └── styles
+│   │       └── landing.css
+│   └── vite.config.js
+├── get_treee.py
+├── README.md
+└── tree.txt

@@ -1,181 +1,287 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+# backend/app/routers/auth.py
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.database import get_db
-from app.models.user import User, UserRole, ApplicantProfile
-from app.models.company import Company, VerificationStatus
+from app.services.auth_service import auth_service
+from app.schemas.user import (
+    UserRegister,
+    UserResponse,
+    EmailVerificationRequest,
+    ResendVerificationRequest,
+    PasswordResetRequest,
+    PasswordResetConfirm
+)
 from app.schemas.auth import (
-    RegisterRequest,
     LoginRequest,
-    RefreshRequest,
-    TokenResponse,
+    LoginResponse,
+    RefreshTokenRequest,
+    Token,
+    MessageResponse
 )
-from app.utils.security import (
-    hash_password,
-    verify_password,
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-)
-from app.utils.validators import validate_inn
+from app.dependencies import get_current_user
+from app.models.user import User
 
-router = APIRouter(prefix="/api/auth", tags=["Авторизация"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post(
     "/register",
-    response_model=TokenResponse,
+    response_model=MessageResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Регистрация нового пользователя",
+    summary="Регистрация пользователя",
+    description="Регистрация нового пользователя с отправкой письма для подтверждения email"
 )
 async def register(
-    data: RegisterRequest,
-    db: AsyncSession = Depends(get_db),
+    user_data: UserRegister,
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    Регистрация соискателя или работодателя.
-
-    - **applicant**: создаётся пользователь + пустой профиль соискателя
-    - **employer**: создаётся пользователь + компания (статус: pending)
+    Регистрация нового пользователя (студента).
+    
+    После регистрации на указанный email будет отправлено письмо
+    со ссылкой для подтверждения.
+    
+    Требуемые поля:
+    - **email**: действующий email адрес
+    - **password**: минимум 8 символов, должен содержать буквы и цифры
+    - **password_confirm**: подтверждение пароля
+    - **first_name**: имя (2-100 символов)
+    - **last_name**: фамилия (2-100 символов)
+    - **patronymic**: отчество (опционально)
+    - **phone**: телефон (опционально)
     """
-    existing = await db.execute(
-        select(User).where(User.email == data.email.lower())
-    )
-    if existing.scalar_one_or_none():
+    try:
+        user, email_sent = await auth_service.register_user(db, user_data)
+        
+        if email_sent:
+            return MessageResponse(
+                message="Регистрация успешна! Проверьте почту для подтверждения email.",
+                success=True
+            )
+        else:
+            return MessageResponse(
+                message="Регистрация успешна, но не удалось отправить письмо. "
+                        "Запросите повторную отправку.",
+                success=True
+            )
+    
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Пользователь с таким email уже существует",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
 
-    if data.role == UserRole.EMPLOYER:
-        if not data.company_name:
+
+@router.post(
+    "/verify-email",
+    response_model=MessageResponse,
+    summary="Подтверждение email"
+)
+async def verify_email(
+    data: EmailVerificationRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Подтверждение email по токену из письма.
+    
+    После подтверждения аккаунт становится активным.
+    """
+    try:
+        user = await auth_service.verify_email(db, data.token)
+        
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Для работодателя необходимо указать название компании",
+                detail="Невалидный или просроченный токен"
             )
-        if data.inn and not validate_inn(data.inn):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Невалидный ИНН",
-            )
-
-    user = User(
-        email=data.email.lower().strip(),
-        password_hash=hash_password(data.password),
-        display_name=data.display_name.strip(),
-        role=data.role,
-    )
-    db.add(user)
-    await db.flush()
-
-    if data.role == UserRole.APPLICANT:
-        profile = ApplicantProfile(
-            user_id=user.id,
-            first_name=data.display_name.strip(),
-            last_name="",
+        
+        return MessageResponse(
+            message="Email успешно подтверждён! Теперь вы можете войти.",
+            success=True
         )
-        db.add(profile)
-
-    elif data.role == UserRole.EMPLOYER:
-        company = Company(
-            owner_id=user.id,
-            name=data.company_name.strip(),
-            inn=data.inn,
-            verification_status=VerificationStatus.PENDING,
+    
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
-        db.add(company)
 
-    await db.commit()
-    await db.refresh(user)
 
-    token_data = {"sub": str(user.id), "role": user.role.value}
-
-    return TokenResponse(
-        access_token=create_access_token(token_data),
-        refresh_token=create_refresh_token(token_data),
-        user_id=user.id,
-        role=user.role,
-    )
+@router.post(
+    "/resend-verification",
+    response_model=MessageResponse,
+    summary="Повторная отправка письма подтверждения"
+)
+async def resend_verification(
+    data: ResendVerificationRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Повторная отправка письма для подтверждения email.
+    
+    Используйте, если письмо не пришло или ссылка истекла.
+    """
+    try:
+        await auth_service.resend_verification(db, data.email)
+        
+        # Всегда возвращаем успех, чтобы не раскрывать существование email
+        return MessageResponse(
+            message="Если указанный email зарегистрирован, письмо будет отправлено.",
+            success=True
+        )
+    
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @router.post(
     "/login",
-    response_model=TokenResponse,
-    summary="Вход в систему",
+    response_model=LoginResponse,
+    summary="Вход в систему"
 )
 async def login(
-    data: LoginRequest,
-    db: AsyncSession = Depends(get_db),
+    credentials: LoginRequest,
+    db: AsyncSession = Depends(get_db)
 ):
-    """Авторизация по email и паролю."""
-    result = await db.execute(
-        select(User).where(User.email == data.email.lower().strip())
-    )
-    user = result.scalar_one_or_none()
-
-    if not user or not verify_password(data.password, user.password_hash):
+    """
+    Аутентификация пользователя.
+    
+    Возвращает access_token и refresh_token.
+    
+    Требования:
+    - Email должен быть подтверждён
+    - Аккаунт не должен быть заблокирован
+    """
+    try:
+        user, tokens = await auth_service.login(db, credentials.email, credentials.password)
+        
+        return LoginResponse(
+            access_token=tokens.access_token,
+            refresh_token=tokens.refresh_token,
+            token_type=tokens.token_type,
+            expires_in=tokens.expires_in,
+            user=UserResponse.model_validate(user)
+        )
+    
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный email или пароль",
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"}
         )
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Аккаунт деактивирован",
-        )
-
-    token_data = {"sub": str(user.id), "role": user.role.value}
-
-    return TokenResponse(
-        access_token=create_access_token(token_data),
-        refresh_token=create_refresh_token(token_data),
-        user_id=user.id,
-        role=user.role,
-    )
 
 
 @router.post(
     "/refresh",
-    response_model=TokenResponse,
-    summary="Обновление access токена",
+    response_model=Token,
+    summary="Обновление токенов"
 )
-async def refresh_token(
-    data: RefreshRequest,
-    db: AsyncSession = Depends(get_db),
+async def refresh_tokens(
+    data: RefreshTokenRequest,
+    db: AsyncSession = Depends(get_db)
 ):
-    """Обновление access токена по refresh токену."""
-    payload = decode_token(data.refresh_token)
-    if not payload or payload.get("type") != "refresh":
+    """
+    Обновление access_token с помощью refresh_token.
+    
+    Используйте, когда access_token истёк.
+    """
+    try:
+        tokens = await auth_service.refresh_tokens(db, data.refresh_token)
+        return tokens
+    
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Невалидный refresh token",
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"}
         )
 
-    user_id = payload.get("sub")
-    result = await db.execute(
-        select(User).where(User.id == int(user_id))
+
+@router.post(
+    "/password-reset/request",
+    response_model=MessageResponse,
+    summary="Запрос сброса пароля"
+)
+async def request_password_reset(
+    data: PasswordResetRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Запрос на сброс пароля.
+    
+    На указанный email будет отправлено письмо со ссылкой для сброса.
+    """
+    await auth_service.request_password_reset(db, data.email)
+    
+    # Всегда возвращаем успех
+    return MessageResponse(
+        message="Если указанный email зарегистрирован, письмо будет отправлено.",
+        success=True
     )
-    user = result.scalar_one_or_none()
 
-    if not user:
+
+@router.post(
+    "/password-reset/confirm",
+    response_model=MessageResponse,
+    summary="Подтверждение сброса пароля"
+)
+async def confirm_password_reset(
+    data: PasswordResetConfirm,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Установка нового пароля по токену из письма.
+    """
+    try:
+        await auth_service.reset_password(db, data.token, data.new_password)
+        
+        return MessageResponse(
+            message="Пароль успешно изменён! Теперь вы можете войти.",
+            success=True
+        )
+    
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Пользователь не найден",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Аккаунт деактивирован",
-        )
 
-    token_data = {"sub": str(user.id), "role": user.role.value}
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Текущий пользователь"
+)
+async def get_current_user_info(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Получение информации о текущем авторизованном пользователе.
+    """
+    return UserResponse.model_validate(current_user)
 
-    return TokenResponse(
-        access_token=create_access_token(token_data),
-        refresh_token=create_refresh_token(token_data),
-        user_id=user.id,
-        role=user.role,
+
+@router.post(
+    "/logout",
+    response_model=MessageResponse,
+    summary="Выход из системы"
+)
+async def logout(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Выход из системы.
+    
+    Примечание: При использовании JWT токенов, выход на клиенте 
+    осуществляется удалением токенов. Для полноценного выхода 
+    можно добавить токен в чёрный список (требует Redis).
+    """
+    # TODO: Добавить токен в чёрный список при наличии Redis
+    return MessageResponse(
+        message="Выход выполнен успешно",
+        success=True
     )

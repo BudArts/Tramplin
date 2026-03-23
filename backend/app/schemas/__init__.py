@@ -1,31 +1,72 @@
-from app.schemas.common import PaginatedResponse, MessageResponse, ErrorResponse
-from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse
+# backend/app/schemas/__init__.py
+
+# Auth
+from app.schemas.auth import (
+    Token,
+    TokenPayload,
+    LoginRequest,
+    LoginResponse,
+    RefreshTokenRequest,
+    MessageResponse,
+)
+
+# User
 from app.schemas.user import (
-    UserShort, UserResponse, ApplicantProfileResponse,
-    ApplicantProfileUpdate, ApplicantPublicProfile,
-    PrivacySettingsUpdate, UserUpdate,
+    UserRegister,
+    UserCreate,
+    UserUpdate,
+    UserResponse,
+    UserListResponse,
+    EmailVerificationRequest,
+    ResendVerificationRequest,
+    PasswordResetRequest,
+    PasswordResetConfirm,
 )
+
+# Company
 from app.schemas.company import (
-    CompanyResponse, CompanyShort, CompanyUpdate,
-    CompanyDetailResponse, VerificationRequest,
+    CompanyRegisterStep1,
+    CompanyRegisterStep2,
+    CompanyFNSData,
+    CompanyResponse,
+    CompanyListResponse,
+    CompanyUpdate,
+    CompanyEmailVerificationRequest,
 )
-from app.schemas.tag import TagResponse, TagCreate, TagUpdate
-from app.schemas.opportunity import (
-    OpportunityCreate, OpportunityUpdate, OpportunityResponse,
-    OpportunityListResponse, OpportunityCardResponse,
-    MapPointResponse, StatusUpdate,
+
+# Common
+from app.schemas.common import (
+    PaginatedResponse,
+    ErrorResponse,
 )
-from app.schemas.application import (
-    ApplicationCreate, ApplicationResponse,
-    ApplicationWithOpportunity, ApplicationWithApplicant,
-    ApplicationStatusUpdate, ApplicationListResponse,
-)
-from app.schemas.contact import (
-    ContactResponse, ContactListResponse,
-    RecommendationCreate, RecommendationResponse,
-)
-from app.schemas.notification import NotificationResponse, NotificationListResponse
-from app.schemas.curator import (
-    VerificationDecision, ModerationDecision,
-    UserStatusUpdate, CuratorCreate, PlatformStats,
-)
+
+__all__ = [
+    # Auth
+    "Token",
+    "TokenPayload",
+    "LoginRequest",
+    "LoginResponse",
+    "RefreshTokenRequest",
+    "MessageResponse",
+    # User
+    "UserRegister",
+    "UserCreate",
+    "UserUpdate",
+    "UserResponse",
+    "UserListResponse",
+    "EmailVerificationRequest",
+    "ResendVerificationRequest",
+    "PasswordResetRequest",
+    "PasswordResetConfirm",
+    # Company
+    "CompanyRegisterStep1",
+    "CompanyRegisterStep2",
+    "CompanyFNSData",
+    "CompanyResponse",
+    "CompanyListResponse",
+    "CompanyUpdate",
+    "CompanyEmailVerificationRequest",
+    # Common
+    "PaginatedResponse",
+    "ErrorResponse",
+]

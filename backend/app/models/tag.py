@@ -1,11 +1,15 @@
+# backend/app/models/tag.py
 import enum
+from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import (
-    String, Enum, Boolean, Integer, ForeignKey, Table, Column,
-)
+from sqlalchemy import String, Enum, Boolean, Integer, ForeignKey, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.opportunity import Opportunity
+    from app.models.user import User
 
 
 class TagCategory(str, enum.Enum):
@@ -24,10 +28,11 @@ opportunity_tags = Table(
     Column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
 )
 
-applicant_tags = Table(
-    "applicant_tags",
+# ИСПРАВЛЕНО: ссылка на users вместо applicant_profiles
+user_tags = Table(
+    "user_tags",
     Base.metadata,
-    Column("user_id", ForeignKey("applicant_profiles.user_id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
 )
 
@@ -40,17 +45,17 @@ class Tag(Base):
     category: Mapped[TagCategory] = mapped_column(Enum(TagCategory), index=True, nullable=False)
     is_approved: Mapped[bool] = mapped_column(Boolean, default=False)
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
-    created_by: Mapped[int | None] = mapped_column(
+    created_by: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
-    # Relationships
-    opportunities: Mapped[list["Opportunity"]] = relationship(
-        "Opportunity", secondary=opportunity_tags, back_populates="tags"
-    )
-    applicants: Mapped[list["ApplicantProfile"]] = relationship(
-        "ApplicantProfile", secondary=applicant_tags, back_populates="skills"
-    )
+    # Relationships будут добавлены позже когда создадим Opportunity
+    # opportunities: Mapped[List["Opportunity"]] = relationship(
+    #     "Opportunity", secondary=opportunity_tags, back_populates="tags"
+    # )
+    # users: Mapped[List["User"]] = relationship(
+    #     "User", secondary=user_tags, back_populates="skills"
+    # )
 
     def __repr__(self):
         return f"<Tag {self.id} {self.name} [{self.category.value}]>"

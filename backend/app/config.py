@@ -1,53 +1,86 @@
+# backend/app/config.py
 from pydantic_settings import BaseSettings
-from typing import Literal
+from typing import List
+from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # Environment
-    ENVIRONMENT: Literal["development", "staging", "production"] = "development"
-    DEBUG: bool = True
-
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://tramplin_user:strongpassword123@localhost:5432/tramplin"
-
-    # JWT
-    SECRET_KEY: str = "CHANGE-THIS-IN-PRODUCTION-TO-RANDOM-64-CHARS"
+    # ============ Database ============
+    DATABASE_URL: str = "postgresql+asyncpg://tramplin:tramplin@db:5432/tramplin"
+    
+    # ============ Security ============
+    SECRET_KEY: str = "your-super-secret-key"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
-
-    # Admin
+    
+    # ============ Email ============
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = "noreply@tramplin.ru"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
+    
+    # ============ Frontend ============
+    FRONTEND_URL: str = "http://localhost:5173"
+    
+    # ============ FNS API ============
+    FNS_API_URL: str = "https://api-fns.ru/api"
+    FNS_API_KEY: str = ""
+    
+    # ============ Redis ============
+    REDIS_URL: str = "redis://redis:6379/0"
+    
+    # ============ App ============
+    APP_NAME: str = "Tramplin"
+    APP_TITLE: str = "Tramplin API"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = False
+    ENVIRONMENT: str = "development"
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
+    
+    # ============ Admin ============
     ADMIN_EMAIL: str = "admin@tramplin.ru"
     ADMIN_PASSWORD: str = "admin123"
-
-    # App
-    APP_TITLE: str = "Трамплин API"
-    APP_VERSION: str = "1.0.0"
-
-    # CORS
+    
+    # ============ CORS ============
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
-
-    # Rate limiting
+    
+    # ============ Rate Limiting ============
     RATE_LIMIT_PER_MINUTE: int = 60
-
-    # File uploads
+    
+    # ============ Uploads ============
     MAX_UPLOAD_SIZE_MB: int = 10
+    ALLOWED_EXTENSIONS: str = "jpg,jpeg,png,gif,pdf,doc,docx"
     UPLOAD_DIR: str = "uploads"
-
-    @property
-    def cors_origins_list(self) -> list[str]:
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
-
-    @property
-    def is_production(self) -> bool:
-        return self.ENVIRONMENT == "production"
 
     class Config:
         env_file = ".env"
-        env_file_encoding = "utf-8"
+        case_sensitive = True
+        extra = "ignore"
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+    
+    @property
+    def allowed_extensions_list(self) -> List[str]:
+        return [ext.strip().lower() for ext in self.ALLOWED_EXTENSIONS.split(",")]
+    
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT == "production"
+    
+    @property
+    def max_upload_size_bytes(self) -> int:
+        return self.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

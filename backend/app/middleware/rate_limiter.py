@@ -1,46 +1,34 @@
-import time
-from collections import defaultdict
-from fastapi import Request
-from fastapi.responses import JSONResponse
+# backend/app/middleware/rate_limiter.py
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.config import settings
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from collections import defaultdict
+import time
 
 
 class RateLimiterMiddleware(BaseHTTPMiddleware):
-    """
-    Простой in-memory rate limiter.
-    В продакшне заменить на Redis-based.
-    """
-
     def __init__(self, app, max_requests: int = 60, window_seconds: int = 60):
         super().__init__(app)
         self.max_requests = max_requests
         self.window_seconds = window_seconds
-        self.requests: dict[str, list[float]] = defaultdict(list)
-
+        self.requests = defaultdict(list)
+    
     async def dispatch(self, request: Request, call_next):
-        # Не лимитируем docs и health
-        if request.url.path in ("/docs", "/openapi.json", "/health", "/"):
-            return await call_next(request)
-
+        # Простой rate limiter по IP
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
-
-        # Очищаем старые записи
+        
+        # Очищаем старые запросы
         self.requests[client_ip] = [
             t for t in self.requests[client_ip]
             if now - t < self.window_seconds
         ]
-
+        
         if len(self.requests[client_ip]) >= self.max_requests:
             return JSONResponse(
                 status_code=429,
-                content={
-                    "detail": "Слишком много запросов. Подождите минуту.",
-                    "retry_after": self.window_seconds,
-                },
-                headers={"Retry-After": str(self.window_seconds)},
+                content={"detail": "Слишком много запросов. Попробуйте позже."}
             )
-
+        
         self.requests[client_ip].append(now)
         return await call_next(request)

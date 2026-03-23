@@ -1,127 +1,157 @@
+# backend/app/main.py
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
-from sqlalchemy.exc import IntegrityError, OperationalError
-from app.routers.uploads import router as uploads_router
-from app.routers.chat import router as chat_router
-from app.routers.support import router as support_router
+import os
+import sys
+
 from app.config import settings
-from app.utils.logger import logger
 
 # Middleware
-from app.middleware.request_logger import RequestLoggerMiddleware
-from app.middleware.rate_limiter import RateLimiterMiddleware
-from app.middleware.security import SecurityHeadersMiddleware
-from app.middleware.error_handler import (
-    http_exception_handler,
-    validation_exception_handler,
-    integrity_error_handler,
-    database_error_handler,
-    general_exception_handler,
-)
+try:
+    from app.middleware.error_handler import (
+        http_exception_handler,
+        validation_exception_handler,
+        general_exception_handler,
+    )
+    HAS_ERROR_HANDLERS = True
+except ImportError:
+    HAS_ERROR_HANDLERS = False
 
-# Routers
-from app.routers.auth import router as auth_router
-from app.routers.users import router as users_router
-from app.routers.companies import router as companies_router
-from app.routers.tags import router as tags_router
-from app.routers.opportunities import router as opportunities_router
-from app.routers.applications import router as applications_router
-from app.routers.favorites import router as favorites_router
-from app.routers.notifications import router as notifications_router
-from app.routers.contacts import router as contacts_router
-from app.routers.curator import router as curator_router
-from app.routers.haelth import router as health_router
+try:
+    from app.middleware.request_logger import RequestLoggerMiddleware
+    HAS_REQUEST_LOGGER = True
+except ImportError:
+    HAS_REQUEST_LOGGER = False
+
+try:
+    from app.middleware.security import SecurityHeadersMiddleware
+    HAS_SECURITY = True
+except ImportError:
+    HAS_SECURITY = False
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"🚀 Трамплин API запускается [{settings.ENVIRONMENT}]")
-    logger.info(f"📖 Документация: http://localhost:8000/docs")
-    logger.info(f"🔧 Debug: {settings.DEBUG}")
-
-    if settings.SECRET_KEY == "CHANGE-THIS-IN-PRODUCTION-TO-RANDOM-64-CHARS":
-        logger.warning("⚠️  SECRET_KEY не изменён! Установите безопасный ключ!")
-
+    print("")
+    print("=" * 60)
+    print(f"  🚀 {settings.APP_NAME} API — Запуск")
+    print(f"  📖 Документация: http://localhost:8000/docs")
+    print(f"  🔧 Окружение: {settings.ENVIRONMENT}")
+    print("=" * 60)
+    print("")
     yield
-
-    logger.info("🛑 Трамплин API остановлен")
+    print("🛑 API остановлен")
 
 
 # === Создание приложения ===
-
 app = FastAPI(
-    title=settings.APP_TITLE,
+    title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="""
 ## Трамплин API
 
-Карьерная платформа для студентов, выпускников и работодателей.
+Платформа для стажировок и карьеры студентов.
 
-### Роли:
-- **Соискатель** — поиск вакансий, отклики, нетворкинг
-- **Работодатель** — публикация вакансий, управление откликами
-- **Куратор** — модерация контента, верификация компаний
-- **Администратор** — полный доступ + создание кураторов
+### Возможности:
+- Регистрация студентов и компаний
+- Подтверждение email
+- Проверка компаний через ФНС API
+- Публикация вакансий и стажировок
+- Отклики на вакансии
+- Чат между соискателями и компаниями
     """,
     lifespan=lifespan,
-    docs_url="/docs" if not settings.is_production else None,
-    redoc_url="/redoc" if not settings.is_production else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# === Middleware (порядок важен — снизу вверх) ===
+# === Middleware ===
 
-# 1. Security headers
-app.add_middleware(SecurityHeadersMiddleware)
-
-# 2. Request logging
-app.add_middleware(RequestLoggerMiddleware)
-
-# 3. Rate limiting
-app.add_middleware(
-    RateLimiterMiddleware,
-    max_requests=settings.RATE_LIMIT_PER_MINUTE,
-    window_seconds=60,
-)
-
-# 4. CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Request-ID", "X-Process-Time"],
 )
 
+if HAS_SECURITY:
+    app.add_middleware(SecurityHeadersMiddleware)
+
+if HAS_REQUEST_LOGGER:
+    app.add_middleware(RequestLoggerMiddleware)
+
 # === Exception handlers ===
+if HAS_ERROR_HANDLERS:
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(Exception, general_exception_handler)
 
-app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(IntegrityError, integrity_error_handler)
-app.add_exception_handler(OperationalError, database_error_handler)
-app.add_exception_handler(Exception, general_exception_handler)
 
-# === Routers ===
+# === Функция безопасной загрузки роутера ===
+def load_router(module_path: str, router_attr: str = "router"):
+    """Загружает роутер, возвращает None если ошибка"""
+    try:
+        module = __import__(module_path, fromlist=[router_attr])
+        router = getattr(module, router_attr)
+        return router
+    except Exception as e:
+        print(f"⚠️  Роутер {module_path}: {e}")
+        return None
 
-app.include_router(health_router)
+
+# === Роутеры ===
+
+# Основные (обязательные)
+from app.routers.auth import router as auth_router
+from app.routers.users import router as users_router
+from app.routers.companies import router as companies_router
+
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(companies_router)
-app.include_router(tags_router)
-app.include_router(opportunities_router)
-app.include_router(applications_router)
-app.include_router(favorites_router)
-app.include_router(notifications_router)
-app.include_router(contacts_router)
-app.include_router(curator_router)
-app.include_router(uploads_router)
-app.include_router(chat_router)
-app.include_router(support_router)
-from fastapi.staticfiles import StaticFiles
-import os
 
-# Раздача загруженных файлов
+# Опциональные роутеры
+routers_to_load = [
+    "app.routers.tags",
+    "app.routers.opportunities",
+    "app.routers.applications",
+    "app.routers.favorites",
+    "app.routers.notifications",
+    "app.routers.contacts",
+    "app.routers.chat",
+    "app.routers.uploads",
+    "app.routers.support",
+    "app.routers.curator",
+]
+
+for module_path in routers_to_load:
+    router = load_router(module_path)
+    if router:
+        app.include_router(router)
+        print(f"✅ Загружен: {module_path}")
+
+
+# === Static files ===
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+
+# === Health & Root ===
+
+@app.get("/", tags=["Root"])
+async def root():
+    return {
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "status": "running",
+        "docs": "/docs",
+    }
+
+
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {"status": "healthy"}

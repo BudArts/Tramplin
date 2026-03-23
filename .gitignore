@@ -1,23 +1,38 @@
-# Байт-код, оптимизированные / DLL-файлы
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Но сохраняем примеры
+!.env.exemple
+!.env.example
+
+# Python
 __pycache__/
 *.py[cod]
-
-# Файлы конфигурации для venv
+*$py.class
+*.so
 venv/
-.env
+.venv/
 
-# Файлы дистрибутивов и артефакты упаковки
-dist/
-*.egg-info/
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# Файлы покрытия, кэши и прочие ненужные файлы
-.coverage
-*.py,cover
-.cache/
+# Logs
+*.log
+logs/
 
-# Файлы *.py,cover не несут никакого смысла
-*.py,cover
+# OS
+.DS_Store
+Thumbs.db
 
-# Контрольные точки в Jupyter notebook лучше оставить в стороне
-.ipynb_checkpoints
+# Docker
+docker-compose.override.yml
 
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep

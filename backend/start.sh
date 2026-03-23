@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 echo ""
 echo "=========================================="
@@ -7,50 +6,50 @@ echo "  🚀 Трамплин API — Запуск"
 echo "=========================================="
 echo ""
 
-# Ждём готовность PostgreSQL
 echo "⏳ Ожидание базы данных..."
-MAX_RETRIES=30
-RETRY_COUNT=0
 
-while ! python -c "
-import asyncio
-import asyncpg
+# Используем Python для проверки БД
+python << 'PYEOF'
+import socket
+import time
+import sys
 
-async def check():
+host = "db"
+port = 5432
+max_attempts = 30
+
+for attempt in range(max_attempts):
     try:
-        conn = await asyncpg.connect('${DATABASE_URL}'.replace('+asyncpg', '').replace('postgresql+asyncpg', 'postgresql'))
-        await conn.close()
-        return True
-    except:
-        return False
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        if result == 0:
+            sys.exit(0)  # Успех - выходим с кодом 0
+    except Exception:
+        pass
+    print(f"   Попытка {attempt + 1}/{max_attempts}...")
+    time.sleep(1)
 
-result = asyncio.run(check())
-exit(0 if result else 1)
-" 2>/dev/null; do
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-        echo "❌ База данных недоступна после $MAX_RETRIES попыток"
-        exit 1
-    fi
-    echo "   Попытка $RETRY_COUNT/$MAX_RETRIES..."
-    sleep 2
-done
+sys.exit(1)  # Неудача
+PYEOF
 
-echo "✅ База данных доступна!"
+if [ $? -eq 0 ]; then
+    echo "✅ База данных доступна!"
+else
+    echo "❌ База данных недоступна, выход"
+    exit 1
+fi
+
 echo ""
-
-# Миграции
 echo "📦 Применение миграций..."
-alembic upgrade head
-echo "✅ Миграции применены"
-echo ""
+alembic upgrade head && echo "✅ Миграции применены" || echo "⚠️  Миграции: ошибка или уже применены"
 
-# Начальные данные
-echo "🌱 Заполнение начальными данными..."
-python -m app.utils.seed_data || echo "   (данные уже существуют)"
 echo ""
+echo "🌱 Заполнение тестовыми данными..."
+python -m app.utils.seed_data 2>/dev/null || echo "   (данные уже существуют)"
 
-# Запуск сервера
+echo ""
 echo "=========================================="
 echo "  ✅ API доступен: http://localhost:8000"
 echo "  📖 Документация: http://localhost:8000/docs"

@@ -1,95 +1,119 @@
-import enum
-from datetime import datetime
-
-from sqlalchemy import (
-    String, Boolean, Enum, DateTime, Integer, Text, ForeignKey, func,
-)
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+# backend/app/models/user.py
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, Text, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from app.database import Base
+import enum
 
 
 class UserRole(str, enum.Enum):
-    APPLICANT = "applicant"
-    EMPLOYER = "employer"
+    STUDENT = "student"
+    APPLICANT = "student"      # Алиас для совместимости
+    COMPANY = "company"
+    EMPLOYER = "company"       # Алиас для совместимости
     CURATOR = "curator"
     ADMIN = "admin"
 
 
+class UserStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    DELETED = "deleted"
+
+
 class PrivacyLevel(str, enum.Enum):
-    PRIVATE = "private"
-    CONTACTS = "contacts"
+    """Уровень приватности профиля (для совместимости)"""
     PUBLIC = "public"
+    CONTACTS = "contacts"
     FULL_PUBLIC = "full_public"
+    PRIVATE = "private"
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, index=True, nullable=False
-    )
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    display_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole), nullable=False, default=UserRole.APPLICANT
-    )
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Основные данные
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    
+    # ФИО
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    patronymic = Column(String(100), nullable=True)
+    
+    # Для совместимости со старым кодом
+    display_name = Column(String(255), nullable=True)
+    
+    # Контакты
+    phone = Column(String(20), nullable=True)
+    
+    # Роль и статус
+    role = Column(Enum(UserRole), default=UserRole.STUDENT, nullable=False)
+    status = Column(Enum(UserStatus), default=UserStatus.PENDING, nullable=False)
+    
+    # Подтверждение email
+    is_email_verified = Column(Boolean, default=False)
+    email_verification_token = Column(String(255), nullable=True)
+    email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
+    email_verified_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Сброс пароля
+    password_reset_token = Column(String(255), nullable=True)
+    password_reset_sent_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Профиль студента
+    university = Column(String(255), nullable=True)
+    faculty = Column(String(255), nullable=True)
+    course = Column(Integer, nullable=True)
+    graduation_year = Column(Integer, nullable=True)
+    bio = Column(Text, nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    resume_url = Column(String(500), nullable=True)
+    
+    # Дополнительные поля профиля
+    github_url = Column(String(500), nullable=True)
+    portfolio_url = Column(String(500), nullable=True)
+    telegram = Column(String(100), nullable=True)
+    
+    # Приватность
+    privacy_level = Column(Enum(PrivacyLevel), default=PrivacyLevel.PUBLIC, nullable=True)
+    
+    # Связь с компанией
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    
+    # Временные метки
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    applicant_profile: Mapped["ApplicantProfile | None"] = relationship(
-        "ApplicantProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
-    )
-    company: Mapped["Company | None"] = relationship(
-        "Company", back_populates="owner", uselist=False,
-        foreign_keys="Company.owner_id", cascade="all, delete-orphan"
-    )
-    notifications: Mapped[list["Notification"]] = relationship(
-        "Notification", back_populates="user", cascade="all, delete-orphan"
-    )
+    company = relationship("Company", back_populates="employees")
 
-    def __repr__(self):
-        return f"<User {self.id} {self.email} [{self.role.value}]>"
+    @property
+    def full_name(self) -> str:
+        if self.display_name:
+            return self.display_name
+        parts = [self.last_name, self.first_name]
+        if self.patronymic:
+            parts.append(self.patronymic)
+        return " ".join(filter(None, parts))
+    
+    @property
+    def is_active(self) -> bool:
+        return self.status == UserStatus.ACTIVE and self.is_email_verified
+
+    # Для совместимости со старым кодом
+    @property
+    def password_hash(self) -> str:
+        return self.hashed_password
+    
+    @password_hash.setter
+    def password_hash(self, value: str):
+        self.hashed_password = value
 
 
-class ApplicantProfile(Base):
-    __tablename__ = "applicant_profiles"
-
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
-    )
-    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    patronymic: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    university: Mapped[str | None] = mapped_column(String(300), nullable=True)
-    faculty: Mapped[str | None] = mapped_column(String(300), nullable=True)
-    course: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    graduation_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
-    portfolio_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    github_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    resume_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    privacy_level: Mapped[PrivacyLevel] = mapped_column(
-        Enum(PrivacyLevel), default=PrivacyLevel.CONTACTS
-    )
-    show_applications_to_contacts: Mapped[bool] = mapped_column(Boolean, default=False)
-    show_resume_to_all: Mapped[bool] = mapped_column(Boolean, default=False)
-    profile_completeness: Mapped[int] = mapped_column(Integer, default=0)
-
-    # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="applicant_profile")
-    skills: Mapped[list["Tag"]] = relationship(
-        "Tag", secondary="applicant_tags", back_populates="applicants"
-    )
-    documents_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-
-    def __repr__(self):
-        return f"<ApplicantProfile {self.user_id} {self.first_name} {self.last_name}>"
+# Алиас для совместимости со старым кодом
+ApplicantProfile = User
