@@ -14,7 +14,6 @@ class CompanyStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
-# Алиас для совместимости
 class VerificationStatus(str, enum.Enum):
     PENDING = "pending_email"
     VERIFIED = "active"
@@ -29,7 +28,6 @@ class CompanySize(str, enum.Enum):
 
 
 class TrustLevel(str, enum.Enum):
-    """Уровень доверия (для совместимости)"""
     NEW = "new"
     TRUSTED = "trusted"
     VERIFIED = "verified"
@@ -39,83 +37,56 @@ class Company(Base):
     __tablename__ = "companies"
 
     id = Column(Integer, primary_key=True, index=True)
-    
-    # Данные из ФНС
     inn = Column(String(12), unique=True, index=True, nullable=False)
     ogrn = Column(String(15), nullable=True)
     kpp = Column(String(9), nullable=True)
-    
-    # Название
-    name = Column(String(500), nullable=True)  # Для совместимости
+    name = Column(String(500), nullable=True)
     full_name = Column(String(500), nullable=False)
     short_name = Column(String(255), nullable=True)
     brand_name = Column(String(255), nullable=True)
-    
-    # Адрес
     legal_address = Column(Text, nullable=True)
     actual_address = Column(Text, nullable=True)
     city = Column(String(100), nullable=True)
-    
-    # Координаты для карты
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
-    
-    # Руководитель
     director_name = Column(String(255), nullable=True)
     director_position = Column(String(100), nullable=True)
-    
-    # Владелец аккаунта
     owner_id = Column(Integer, nullable=True)
-    
-    # Контакты
     email = Column(String(255), nullable=False)
     phone = Column(String(20), nullable=True)
     website = Column(String(255), nullable=True)
     social_links = Column(JSON, nullable=True)
-    
-    # Верификация email
     is_email_verified = Column(Boolean, default=False)
     email_verification_token = Column(String(255), nullable=True)
     email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
-    
-    # Статус
     status = Column(Enum(CompanyStatus), default=CompanyStatus.PENDING_EMAIL, nullable=False)
     verification_status = Column(Enum(VerificationStatus), default=VerificationStatus.PENDING, nullable=True)
     rejection_reason = Column(Text, nullable=True)
     verified_at = Column(DateTime(timezone=True), nullable=True)
     verified_by = Column(Integer, nullable=True)
-    
-    # Уровень доверия
     trust_level = Column(Enum(TrustLevel), default=TrustLevel.NEW, nullable=True)
     approved_cards_count = Column(Integer, default=0)
-    
-    # Дополнительно
     description = Column(Text, nullable=True)
     industry = Column(String(255), nullable=True)
     size = Column(Enum(CompanySize), nullable=True)
     founded_year = Column(Integer, nullable=True)
     employee_count = Column(Integer, nullable=True)
-    
-    # Медиа
     logo_url = Column(String(500), nullable=True)
     cover_url = Column(String(500), nullable=True)
-    
-    # Данные ФНС
     fns_data = Column(JSON, nullable=True)
     fns_updated_at = Column(DateTime(timezone=True), nullable=True)
-    
-    # Временные метки
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     employees = relationship("User", back_populates="company")
+    opportunities = relationship("Opportunity", back_populates="company")
 
     @property
     def is_active(self) -> bool:
         return self.status == CompanyStatus.ACTIVE and self.is_email_verified
-    
+
     @property
     def display_name(self) -> str:
         return self.brand_name or self.short_name or self.name or self.full_name

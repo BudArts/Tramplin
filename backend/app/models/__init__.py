@@ -1,12 +1,8 @@
 # backend/app/models/__init__.py
+from app.database import Base
+from app.models.user import User, UserRole, UserStatus, PrivacyLevel, ApplicantProfile
+from app.models.company import Company, CompanyStatus, CompanySize, VerificationStatus, TrustLevel
 
-# User - основная модель
-from app.models.user import User, UserRole, UserStatus
-
-# Company
-from app.models.company import Company, CompanyStatus, CompanySize
-
-# Остальные модели импортируем с проверкой
 try:
     from app.models.opportunity import Opportunity
 except ImportError:
@@ -28,9 +24,8 @@ except ImportError:
     Notification = None
 
 try:
-    from app.models.chat import ChatRoom, ChatMessage
+    from app.models.chat import ChatMessage
 except ImportError:
-    ChatRoom = None
     ChatMessage = None
 
 try:
@@ -39,9 +34,10 @@ except ImportError:
     Contact = None
 
 try:
-    from app.models.tag import Tag
+    from app.models.tag import Tag, TagSynonym
 except ImportError:
     Tag = None
+    TagSynonym = None
 
 try:
     from app.models.recommendation import Recommendation
@@ -53,22 +49,9 @@ try:
 except ImportError:
     SupportTicket = None
 
-
 __all__ = [
-    "User",
-    "UserRole",
-    "UserStatus",
-    "Company",
-    "CompanyStatus", 
-    "CompanySize",
-    "Opportunity",
-    "Application",
-    "Favorite",
-    "Notification",
-    "ChatRoom",
-    "ChatMessage",
-    "Contact",
-    "Tag",
-    "Recommendation",
-    "SupportTicket",
+    "Base", "User", "UserRole", "UserStatus", "PrivacyLevel", "ApplicantProfile",
+    "Company", "CompanyStatus", "CompanySize", "VerificationStatus", "TrustLevel",
+    "Opportunity", "Application", "Favorite", "Notification",
+    "ChatMessage", "Contact", "Tag", "TagSynonym", "Recommendation", "SupportTicket",
 ]
