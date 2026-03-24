@@ -1,6 +1,8 @@
+// frontend/src/components/AuthModal.tsx
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, Building2, Briefcase, GraduationCap, Eye, EyeOff, AlertCircle, CheckCircle, Loader2, Phone, UserRound } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // <-- ДОБАВЬТЕ ЭТОТ ИМПОРТ
 import { useAuth } from '../hooks/useAuth';
 
 interface Props {
@@ -34,6 +36,7 @@ interface RegisterFormData {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) => {
+  const navigate = useNavigate(); // <-- ДОБАВЬТЕ ЭТУ СТРОКУ
   const [mode, setMode] = useState<FormMode>(defaultMode);
   const [loginData, setLoginData] = useState<LoginFormData>({
     email: '',
@@ -153,7 +156,10 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
       setSuccessMessage('Вход выполнен успешно!');
-      setTimeout(() => onClose(), 1500);
+      setTimeout(() => {
+        onClose();
+        navigate('/dashboard'); // <-- ДОБАВЬТЕ ПЕРЕНАПРАВЛЕНИЕ ПОСЛЕ ВХОДА
+      }, 1500);
     } catch (error: any) {
       setErrors({ form: error.message || 'Ошибка входа. Проверьте email и пароль' });
     } finally {
@@ -205,7 +211,9 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
           }
         }
 
-        setSuccessMessage('Регистрация прошла успешно! Проверьте почту для подтверждения');
+        // Успешная регистрация - закрываем модалку и перенаправляем на страницу подтверждения
+        onClose();
+        navigate('/email-verification-pending', { state: { email: registerData.email } });
         
       } else {
         // Регистрация компании
@@ -242,12 +250,10 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
           throw new Error(error.detail || 'Ошибка регистрации компании');
         }
 
-        setSuccessMessage('Регистрация компании успешна! Проверьте корпоративную почту');
+        // Успешная регистрация компании
+        onClose();
+        navigate('/email-verification-pending', { state: { email: registerData.company_email } });
       }
-
-      setTimeout(() => {
-        resetForms();
-      }, 3000);
 
     } catch (error: any) {
       setErrors({
@@ -365,7 +371,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                     <Lock className="input-icon" size={18} />
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Пароль (мин. 6 символов, буквы и цифры)"
+                      placeholder="Пароль"
                       value={loginData.password}
                       onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                       className={errors.password ? 'error' : ''}
@@ -389,17 +395,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                     <span>Войти</span>
                   )}
                 </motion.button>
-
-                <div className="auth-modal__divider">
-                  <span>Или войти через</span>
-                </div>
-
-                <div className="auth-modal__oauth">
-                  <button type="button" className="auth-modal__oauth-btn">Google</button>
-                  <button type="button" className="auth-modal__oauth-btn">Яндекс</button>
-                  <button type="button" className="auth-modal__oauth-btn">VK</button>
-                  <button type="button" className="auth-modal__oauth-btn">Mail.ru</button>
-                </div>
 
                 <div className="auth-modal__footer">
                   <span>Нет аккаунта?</span>
@@ -528,7 +523,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         </button>
                       </div>
                       {errors.password && <span className="error-message">{errors.password}</span>}
-                      <span className="input-hint">Пароль должен содержать буквы и цифры, минимум 6 символов</span>
                     </div>
 
                     <div className="form-group">
@@ -580,7 +574,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         />
                       </div>
                       {errors.inn && <span className="error-message">{errors.inn}</span>}
-                      <span className="input-hint">Проверка через ФНС</span>
                     </div>
 
                     <div className="form-group">
@@ -596,7 +589,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         />
                       </div>
                       {errors.company_email && <span className="error-message">{errors.company_email}</span>}
-                      <span className="input-hint">Только корпоративная почта (например, @company.ru)</span>
                     </div>
 
                     <div className="form-group">
@@ -686,7 +678,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         </button>
                       </div>
                       {errors.password && <span className="error-message">{errors.password}</span>}
-                      <span className="input-hint">Пароль должен содержать буквы и цифры, минимум 6 символов</span>
                     </div>
 
                     <div className="form-group">

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 import secrets
-
+from datetime import datetime, timedelta, timezone
 from app.config import settings
 from app.models.user import User, UserStatus, UserRole
 from app.schemas.user import UserRegister, UserCreate
@@ -39,7 +39,7 @@ class AuthService:
     @staticmethod
     def create_access_token(user: User) -> str:
         """Создание access token"""
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         payload = {
             "sub": str(user.id),
             "email": user.email,
@@ -52,7 +52,7 @@ class AuthService:
     @staticmethod
     def create_refresh_token(user: User) -> str:
         """Создание refresh token"""
-        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         payload = {
             "sub": str(user.id),
             "type": "refresh",
@@ -116,7 +116,7 @@ class AuthService:
             status=UserStatus.PENDING,
             is_email_verified=False,
             email_verification_token=verification_token,
-            email_verification_sent_at=datetime.utcnow()
+            email_verification_sent_at=datetime.now(timezone.utc)
         )
         
         db.add(user)
@@ -146,15 +146,17 @@ class AuthService:
         
         # Проверяем срок действия токена
         if user.email_verification_sent_at:
+            # Создаем offset-aware datetime для сравнения
             expires_at = user.email_verification_sent_at + timedelta(
                 hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS
             )
-            if datetime.utcnow() > expires_at:
+            # Используем datetime.now(timezone.utc) вместо utcnow()
+            if datetime.now(timezone.utc) > expires_at:
                 raise ValueError("Срок действия ссылки истёк. Запросите новую.")
         
         # Подтверждаем email
         user.is_email_verified = True
-        user.email_verified_at = datetime.utcnow()
+        user.email_verified_at = datetime.now(timezone.utc)  # Исправлено
         user.email_verification_token = None
         user.status = UserStatus.ACTIVE
         
@@ -182,7 +184,7 @@ class AuthService:
         # Генерируем новый токен
         verification_token = self.generate_token()
         user.email_verification_token = verification_token
-        user.email_verification_sent_at = datetime.utcnow()
+        user.email_verification_sent_at = datetime.now(timezone.utc)
         
         await db.commit()
         
@@ -235,7 +237,7 @@ class AuthService:
             raise ValueError("Аккаунт удалён")
         
         # Обновляем время последнего входа
-        user.last_login_at = datetime.utcnow()
+        user.last_login_at = datetime.now(timezone.utc)
         await db.commit()
         
         tokens = self.create_tokens(user)
@@ -272,7 +274,7 @@ class AuthService:
         
         reset_token = self.generate_token()
         user.password_reset_token = reset_token
-        user.password_reset_sent_at = datetime.utcnow()
+        user.password_reset_sent_at = datetime.now(timezone.utc)
         
         await db.commit()
         
@@ -300,7 +302,7 @@ class AuthService:
         # Проверяем срок действия (1 час)
         if user.password_reset_sent_at:
             expires_at = user.password_reset_sent_at + timedelta(hours=1)
-            if datetime.utcnow() > expires_at:
+            if datetime.now(timezone.utc) > expires_at:
                 raise ValueError("Срок действия ссылки истёк")
         
         user.hashed_password = self.hash_password(new_password)

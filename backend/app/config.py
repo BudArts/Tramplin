@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     
     # ============ Frontend ============
     FRONTEND_URL: str = "http://localhost:5173"
+    DOMAIN_NAME: str = "localhost:8000"  # default для dev
+    
+    
     
     # ============ FNS API ============
     FNS_API_URL: str = "https://api-fns.ru/api"

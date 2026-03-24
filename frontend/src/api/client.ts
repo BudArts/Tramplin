@@ -356,8 +356,13 @@ export const api = {
     },
 
     auth: {
-        register: (data: RegisterRequest) => apiClient.post<TokenResponse>('/api/auth/register', data),
-        login: (data: LoginRequest) => apiClient.post<TokenResponse>('/api/auth/login', data),
-        refresh: (refreshToken: string) => apiClient.post<TokenResponse>('/api/auth/refresh', { refresh_token: refreshToken }),
-},
+    // ... существующие методы
+    
+    // Добавьте эти методы:
+    verifyEmail: (data: { token: string }) => 
+      apiClient.post<MessageResponse>('/api/auth/verify-email', data),
+    
+    resendVerification: (data: { email: string }) => 
+      apiClient.post<MessageResponse>('/api/auth/resend-verification', data),
+  },
 };

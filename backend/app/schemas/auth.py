@@ -39,6 +39,10 @@ class RefreshTokenRequest(BaseModel):
 class MessageResponse(BaseModel):
     message: str
     success: bool = True
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    user_id: Optional[int] = None
+    email: Optional[str] = None
 
 
 # Импортируем для forward reference

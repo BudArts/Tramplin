@@ -152,7 +152,17 @@ async def root():
         "status": "running",
         "docs": "/docs",
     }
+# backend/app/main.py
+# Добавьте после создания app
 
+@app.get("/debug/cors", tags=["Debug"])
+async def debug_cors():
+    return {
+        "cors_origins": settings.CORS_ORIGINS,
+        "cors_origins_list": settings.cors_origins_list,
+        "frontend_url": settings.FRONTEND_URL,
+        "environment": settings.ENVIRONMENT
+    }
 
 @app.get("/health", tags=["Health"])
 async def health_check():

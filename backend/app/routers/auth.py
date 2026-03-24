@@ -1,6 +1,7 @@
 # backend/app/routers/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.database import get_db
 from app.services.auth_service import auth_service
@@ -88,18 +89,50 @@ async def verify_email(
     После подтверждения аккаунт становится активным.
     """
     try:
-        user = await auth_service.verify_email(db, data.token)
+        # Сначала ищем пользователя по токену
+        result = await db.execute(
+            select(User).where(User.email_verification_token == data.token)
+        )
+        user = result.scalar_one_or_none()
         
+        # Если пользователь не найден по токену, проверяем, может уже подтвержден?
         if not user:
+            # Пробуем найти пользователя с подтвержденным email
+            # Это нужно для случая, когда токен уже был использован
+            # Но мы не можем найти по токену, так как он уже очищен
+            # Поэтому возвращаем ошибку с понятным сообщением
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Невалидный или просроченный токен"
+                detail="Токен недействителен или уже был использован"
             )
         
-        return MessageResponse(
-            message="Email успешно подтверждён! Теперь вы можете войти.",
-            success=True
-        )
+        # Проверяем, не подтвержден ли уже email
+        if user.is_email_verified:
+            # Email уже подтвержден, возвращаем токены
+            tokens = auth_service.create_tokens(user)
+            return {
+                "message": "Email уже был подтвержден ранее",
+                "success": True,
+                "access_token": tokens.access_token,
+                "refresh_token": tokens.refresh_token,
+                "user_id": user.id,
+                "email": user.email
+            }
+        
+        # Подтверждаем email
+        user = await auth_service.verify_email(db, data.token)
+        
+        # Создаем токены для автоматического входа
+        tokens = auth_service.create_tokens(user)
+        
+        return {
+            "message": "Email успешно подтверждён!",
+            "success": True,
+            "access_token": tokens.access_token,
+            "refresh_token": tokens.refresh_token,
+            "user_id": user.id,
+            "email": user.email
+        }
     
     except ValueError as e:
         raise HTTPException(
