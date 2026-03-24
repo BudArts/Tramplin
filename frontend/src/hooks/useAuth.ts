@@ -1,190 +1,82 @@
 import { useState, useEffect, useCallback } from 'react';
-import { authApi } from '../api/auth';
-import type { UserRole, UserResponse } from '../api/types';
-
-interface AuthState {
-  user: UserResponse | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  accessToken: string | null;
-  refreshToken: string | null;
-}
-
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  display_name: string;
-  role: UserRole;
-  company_name?: string;
-  inn?: string;
-}
+import { api } from '../api/client';
+import type { UserResponse, RegisterRequest, TokenResponse } from '../api/types';
 
 export const useAuth = () => {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    isLoading: true,
-    accessToken: null,
-    refreshToken: null,
-  });
+  const [user, setUser] = useState<UserResponse | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Инициализация: проверяем сохранённые токены
-  useEffect(() => {
-    const initAuth = async () => {
-      const accessToken = localStorage.getItem('access_token');
-      const refreshToken = localStorage.getItem('refresh_token');
+  const loadUser = useCallback(async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-      if (accessToken && refreshToken) {
-        setState(prev => ({ ...prev, accessToken, refreshToken, isLoading: true }));
-        
-        try {
-          const user = await authApi.getCurrentUser();
-          setState({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-            accessToken,
-            refreshToken,
-          });
-        } catch (error) {
-          // Токен невалидный, пробуем обновить
-          try {
-            const response = await authApi.refreshToken(refreshToken);
-            localStorage.setItem('access_token', response.access_token);
-            localStorage.setItem('refresh_token', response.refresh_token);
-            
-            const user = await authApi.getCurrentUser();
-            setState({
-              user,
-              isAuthenticated: true,
-              isLoading: false,
-              accessToken: response.access_token,
-              refreshToken: response.refresh_token,
-            });
-          } catch (refreshError) {
-            // Обновление не удалось, очищаем
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            setState({
-              user: null,
-              isAuthenticated: false,
-              isLoading: false,
-              accessToken: null,
-              refreshToken: null,
-            });
-          }
-        }
+    try {
+      const response = await api.users.me();
+      if (response.data) {
+        setUser(response.data);
+        setIsAuthenticated(true);
       } else {
-        setState(prev => ({ ...prev, isLoading: false }));
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
       }
-    };
-
-    initAuth();
+    } catch (error) {
+      console.error('Ошибка загрузки пользователя:', error);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Логин
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
   const login = useCallback(async (email: string, password: string) => {
-    setState(prev => ({ ...prev, isLoading: true }));
-    
-    try {
-      const response = await authApi.login(email, password);
-      
-      localStorage.setItem('access_token', response.access_token);
-      localStorage.setItem('refresh_token', response.refresh_token);
-      
-      const user = await authApi.getCurrentUser();
-      
-      setState({
-        user,
-        isAuthenticated: true,
-        isLoading: false,
-        accessToken: response.access_token,
-        refreshToken: response.refresh_token,
-      });
-      
-      return response;
-    } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      throw error;
+    const response = await api.auth.login({ email, password });
+    if (response.data) {
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+      const userResponse = await api.users.me();
+      if (userResponse.data) {
+        setUser(userResponse.data);
+        setIsAuthenticated(true);
+      }
     }
+    return response;
   }, []);
 
-  // Регистрация
-  const register = useCallback(async (data: RegisterData) => {
-    setState(prev => ({ ...prev, isLoading: true }));
-    
-    try {
-      const response = await authApi.register(data);
-      
-      localStorage.setItem('access_token', response.access_token);
-      localStorage.setItem('refresh_token', response.refresh_token);
-      
-      const user = await authApi.getCurrentUser();
-      
-      setState({
-        user,
-        isAuthenticated: true,
-        isLoading: false,
-        accessToken: response.access_token,
-        refreshToken: response.refresh_token,
-      });
-      
-      return response;
-    } catch (error) {
-      setState(prev => ({ ...prev, isLoading: false }));
-      throw error;
+  const register = useCallback(async (data: RegisterRequest) => {
+    const response = await api.auth.register(data);
+    if (response.data) {
+      localStorage.setItem('access_token', response.data.access_token);
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+      const userResponse = await api.users.me();
+      if (userResponse.data) {
+        setUser(userResponse.data);
+        setIsAuthenticated(true);
+      }
     }
+    return response;
   }, []);
 
-  // Логаут
   const logout = useCallback(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    setState({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      accessToken: null,
-      refreshToken: null,
-    });
+    setUser(null);
+    setIsAuthenticated(false);
   }, []);
 
-  // Обновление токена
-  const refreshToken = useCallback(async () => {
-    if (!state.refreshToken) return null;
-    
-    try {
-      const response = await authApi.refreshToken(state.refreshToken);
-      localStorage.setItem('access_token', response.access_token);
-      localStorage.setItem('refresh_token', response.refresh_token);
-      
-      setState(prev => ({
-        ...prev,
-        accessToken: response.access_token,
-        refreshToken: response.refresh_token,
-      }));
-      
-      return response;
-    } catch (error) {
-      logout();
-      return null;
-    }
-  }, [state.refreshToken, logout]);
-
   return {
-    user: state.user,
-    isAuthenticated: state.isAuthenticated,
-    isLoading: state.isLoading,
-    accessToken: state.accessToken,
-    refreshToken: state.refreshToken,
+    user,
+    isAuthenticated,
+    loading,
     login,
     register,
     logout,
-    refreshToken,
   };
 };

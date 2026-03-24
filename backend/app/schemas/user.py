@@ -125,7 +125,7 @@ class UserResponse(BaseModel):
 
 class UserListResponse(BaseModel):
     id: int
-    email: EmailStr
+    email: str
     first_name: str
     last_name: str
     full_name: Optional[str] = None

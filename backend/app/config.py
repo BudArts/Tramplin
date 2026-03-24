@@ -1,25 +1,25 @@
 # backend/app/config.py
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 from functools import lru_cache
 
 
 class Settings(BaseSettings):
     # ============ Database ============
-    DATABASE_URL: str = "postgresql+asyncpg://tramplin:tramplin@db:5432/tramplin"
+    DATABASE_URL: str
     
     # ============ Security ============
-    SECRET_KEY: str = "your-super-secret-key"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # ============ Email ============
-    MAIL_USERNAME: str = ""
-    MAIL_PASSWORD: str = ""
-    MAIL_FROM: str = "noreply@tramplin.ru"
-    MAIL_PORT: int = 587
-    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_PORT: int
+    MAIL_SERVER: str
     MAIL_STARTTLS: bool = True
     MAIL_SSL_TLS: bool = False
     
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     
     # ============ FNS API ============
     FNS_API_URL: str = "https://api-fns.ru/api"
-    FNS_API_KEY: str = ""
+    FNS_API_KEY: Optional[str] = None
     
     # ============ Redis ============
     REDIS_URL: str = "redis://redis:6379/0"
@@ -42,8 +42,8 @@ class Settings(BaseSettings):
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
     
     # ============ Admin ============
-    ADMIN_EMAIL: str = "admin@tramplin.ru"
-    ADMIN_PASSWORD: str = "admin123"
+    ADMIN_EMAIL: str
+    ADMIN_PASSWORD: str
     
     # ============ CORS ============
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
@@ -58,6 +58,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"
 

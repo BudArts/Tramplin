@@ -79,6 +79,7 @@ const CategoryNav: React.FC<Props> = ({
   onFilterByType,
 }) => {
 
+  // В компоненте CategoryNav, обновляем handleClick
   const handleClick = (cat: CategoryConfig) => {
     // 1. Обновить активную категорию в навбаре
     onCategoryChange(cat.id);
@@ -95,7 +96,6 @@ const CategoryNav: React.FC<Props> = ({
         getComputedStyle(document.documentElement)
           .getPropertyValue('--header-height') || '72'
       );
-      // Высота самого category-nav
       const navHeight = document.querySelector('.category-nav')?.getBoundingClientRect().height ?? 60;
 
       const elementPosition = targetElement.getBoundingClientRect().top + window.scrollY;

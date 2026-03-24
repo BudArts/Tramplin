@@ -354,4 +354,10 @@ export const api = {
         editApplicant: (userId: number, data: ApplicantProfileUpdate) =>
             apiClient.put<MessageResponse>(`/api/curator/applicants/${userId}`, data),
     },
+
+    auth: {
+        register: (data: RegisterRequest) => apiClient.post<TokenResponse>('/api/auth/register', data),
+        login: (data: LoginRequest) => apiClient.post<TokenResponse>('/api/auth/login', data),
+        refresh: (refreshToken: string) => apiClient.post<TokenResponse>('/api/auth/refresh', { refresh_token: refreshToken }),
+},
 };

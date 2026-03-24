@@ -285,3 +285,49 @@ async def logout(
         message="Выход выполнен успешно",
         success=True
     )
+    
+    
+@router.get("/debug-smtp")
+async def debug_smtp():
+    """Временный тест SMTP — УДАЛИТЬ после отладки!"""
+    import aiosmtplib
+    from app.config import settings
+    
+    result = {
+        "server": settings.MAIL_SERVER,
+        "port": settings.MAIL_PORT,
+        "username": settings.MAIL_USERNAME,
+        "from": settings.MAIL_FROM,
+        "starttls": settings.MAIL_STARTTLS,
+        "ssl_tls": settings.MAIL_SSL_TLS,
+        "password_length": len(settings.MAIL_PASSWORD),
+        "password_first3": settings.MAIL_PASSWORD[:3] + "***",
+        "password_last3": "***" + settings.MAIL_PASSWORD[-3:],
+        # Проверяем нет ли мусора в пароле
+        "password_has_spaces": " " in settings.MAIL_PASSWORD,
+        "password_has_hash": "#" in settings.MAIL_PASSWORD,
+        "password_has_quotes": '"' in settings.MAIL_PASSWORD or "'" in settings.MAIL_PASSWORD,
+    }
+    
+    # Пробуем подключиться напрямую
+    try:
+        smtp = aiosmtplib.SMTP(
+            hostname=settings.MAIL_SERVER,
+            port=settings.MAIL_PORT,
+            use_tls=settings.MAIL_SSL_TLS,
+            start_tls=settings.MAIL_STARTTLS,
+        )
+        await smtp.connect()
+        result["connect"] = "✅ OK"
+        
+        try:
+            await smtp.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+            result["login"] = "✅ OK"
+        except Exception as e:
+            result["login"] = f"❌ {e}"
+        
+        await smtp.quit()
+    except Exception as e:
+        result["connect"] = f"❌ {e}"
+    
+    return result

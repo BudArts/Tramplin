@@ -4,6 +4,7 @@ import HeroSection from '../components/HeroSection';
 import CategoryNav from '../components/CategoryNav';
 import InteractiveMap from '../components/InteractiveMap';
 import OpportunityList, { OpportunityListRef } from '../components/OpportunityList';
+import CompanyRatingSection from '../components/CompanyRatingSection';
 import AuthModal from '../components/AuthModal';
 import Footer from '../components/Footer';
 import type { OpportunityResponse, OpportunityType } from '../api/types';
@@ -32,16 +33,13 @@ const LandingPage = () => {
 
   const opportunityListRef = useRef<OpportunityListRef>(null);
 
-  /* ── Обновление фильтров (partial merge) ── */
   const handleFilterChange = useCallback((partial: Partial<Filters>) => {
     setFilters(prev => ({ ...prev, ...partial }));
   }, []);
 
-  /* ── Колбэк из CategoryNav: применить фильтр по типу ── */
   const handleFilterByType = useCallback(
     (type: OpportunityType | undefined) => {
       handleFilterChange({ type });
-      // Синхронизируем активную категорию в навбаре
       if (type) {
         setActiveCategory(type);
       } else {
@@ -51,13 +49,9 @@ const LandingPage = () => {
     [handleFilterChange]
   );
 
-  /* ── Синхронизация: когда фильтр type меняется из OpportunityList,
-       обновляем активную вкладку в CategoryNav ── */
   const handleFilterChangeWithSync = useCallback(
     (partial: Partial<Filters>) => {
       handleFilterChange(partial);
-
-      // Если изменился type — синхронизируем активную категорию в навбаре
       if ('type' in partial) {
         if (partial.type) {
           setActiveCategory(partial.type);
@@ -69,12 +63,10 @@ const LandingPage = () => {
     [handleFilterChange]
   );
 
-  /* ── Обработчик обновления данных из списка возможностей ── */
   const handleDataUpdate = useCallback((opportunities: OpportunityResponse[]) => {
     setDisplayedOpportunities(opportunities);
   }, []);
 
-  /* ── Обработчик показа всех возможностей ── */
   const handleShowMore = useCallback(() => {
     setIsAuthModalOpen(true);
   }, []);
@@ -107,6 +99,8 @@ const LandingPage = () => {
           isMainPage={true}
           onDataUpdate={handleDataUpdate}
         />
+
+        <CompanyRatingSection />
       </main>
       <Footer />
 

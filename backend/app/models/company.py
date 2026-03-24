@@ -16,7 +16,7 @@ class CompanyStatus(str, enum.Enum):
 
 class VerificationStatus(str, enum.Enum):
     PENDING = "pending_email"
-    VERIFIED = "active"
+    VERIFIED = "verified"
     REJECTED = "rejected"
 
 

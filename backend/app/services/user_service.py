@@ -50,10 +50,14 @@ class UserService:
         is_verified: Optional[bool] = None,
         company_id: Optional[int] = None,
         order_by: str = "created_at",
-        order_desc: bool = True
+        order_desc: bool = True,
+        include_deleted: bool = False          # ← ДОБАВЛЕНО
     ) -> Tuple[List[User], int]:
         """
         Получение списка пользователей с фильтрацией и пагинацией.
+        
+        Args:
+            include_deleted: Если False — удалённые пользователи скрываются
         
         Returns:
             Tuple[List[User], int]: (список пользователей, общее количество)
@@ -64,6 +68,12 @@ class UserService:
         
         # Применяем фильтры
         filters = []
+        
+        # ==========================================
+        # Скрываем удалённых по умолчанию
+        # ==========================================
+        if not include_deleted and status != UserStatus.DELETED:
+            filters.append(User.status != UserStatus.DELETED)
         
         if role:
             filters.append(User.role == role)
@@ -120,11 +130,6 @@ class UserService:
     ) -> User:
         """
         Обновление профиля пользователя.
-        
-        Args:
-            user_id: ID пользователя
-            update_data: Данные для обновления
-            updated_by: ID пользователя, выполняющего обновление (для логирования)
         """
         user = await self.get_user_by_id(db, user_id)
         
@@ -202,14 +207,7 @@ class UserService:
         admin_id: int,
         reason: Optional[str] = None
     ) -> User:
-        """
-        Блокировка пользователя.
-        
-        Args:
-            user_id: ID блокируемого пользователя
-            admin_id: ID администратора, выполняющего блокировку
-            reason: Причина блокировки (опционально)
-        """
+        """Блокировка пользователя."""
         user = await self.get_user_by_id(db, user_id)
         
         if not user:
@@ -240,11 +238,7 @@ class UserService:
         user_id: int,
         admin_id: int
     ) -> User:
-        """
-        Активация пользователя (снятие блокировки).
-        
-        Требует подтверждённый email.
-        """
+        """Активация пользователя (снятие блокировки)."""
         user = await self.get_user_by_id(db, user_id)
         
         if not user:
@@ -273,7 +267,7 @@ class UserService:
         db: AsyncSession,
         user_id: int,
         deleted_by: int,
-        hard_delete: bool = False
+        hard_delete: bool = True              # ← ИЗМЕНЕНО: по умолчанию полное удаление
     ) -> bool:
         """
         Удаление пользователя.
@@ -281,34 +275,45 @@ class UserService:
         Args:
             user_id: ID удаляемого пользователя
             deleted_by: ID пользователя, выполняющего удаление
-            hard_delete: Если True - полное удаление из БД, иначе мягкое удаление
+            hard_delete: Если True — полное удаление, иначе мягкое
         """
         user = await self.get_user_by_id(db, user_id)
         
         if not user:
             raise ValueError("Пользователь не найден")
         
-        if user.role == UserRole.ADMIN and not hard_delete:
+        if user.role == UserRole.ADMIN:
             raise ValueError("Невозможно удалить администратора")
         
         if hard_delete:
-            # Полное удаление (осторожно с внешними ключами!)
+            # ==========================================
+            # Полное удаление из БД
+            # ==========================================
+            email_for_log = user.email
             await db.delete(user)
             await db.commit()
-            logger.warning(f"User {user_id} HARD DELETED by {deleted_by}")
+            logger.warning(
+                f"User {user_id} ({email_for_log}) HARD DELETED by {deleted_by}"
+            )
         else:
-            # Мягкое удаление
+            # ==========================================
+            # Мягкое удаление с анонимизацией
+            # Используем example.com (RFC 2606) вместо .local
+            # ==========================================
             user.status = UserStatus.DELETED
             user.updated_at = datetime.utcnow()
-            # Анонимизируем данные для GDPR
-            user.email = f"deleted_{user_id}@deleted.local"
+            user.email = f"deleted_{user_id}@deleted.example.com"  # ← ИСПРАВЛЕНО
             user.first_name = "Удалённый"
             user.last_name = "Пользователь"
             user.patronymic = None
+            user.display_name = None
             user.phone = None
             user.bio = None
             user.avatar_url = None
             user.resume_url = None
+            user.github_url = None
+            user.portfolio_url = None
+            user.telegram = None
             
             await db.commit()
             logger.info(f"User {user_id} soft deleted by {deleted_by}")
@@ -324,11 +329,7 @@ class UserService:
         new_role: UserRole,
         admin_id: int
     ) -> User:
-        """
-        Изменение роли пользователя.
-        
-        Только для администраторов.
-        """
+        """Изменение роли пользователя."""
         user = await self.get_user_by_id(db, user_id)
         
         if not user:
@@ -336,17 +337,14 @@ class UserService:
         
         old_role = user.role
         
-        # Проверки безопасности
         if old_role == UserRole.ADMIN:
             raise ValueError("Невозможно изменить роль администратора")
         
         if new_role == UserRole.ADMIN:
-            # Назначение админа требует особых прав
             admin = await self.get_user_by_id(db, admin_id)
             if not admin or admin.role != UserRole.ADMIN:
                 raise ValueError("Недостаточно прав для назначения администратора")
         
-        # При смене на роль компании требуется company_id
         if new_role == UserRole.COMPANY and not user.company_id:
             raise ValueError(
                 "Для роли 'company' пользователь должен быть привязан к компании"
@@ -372,17 +370,12 @@ class UserService:
         company_id: int,
         assigned_by: int
     ) -> User:
-        """
-        Привязка пользователя к компании.
-        
-        Автоматически меняет роль на COMPANY.
-        """
+        """Привязка пользователя к компании."""
         user = await self.get_user_by_id(db, user_id)
         
         if not user:
             raise ValueError("Пользователь не найден")
         
-        # Проверяем существование компании
         company_result = await db.execute(
             select(Company).where(Company.id == company_id)
         )
@@ -410,11 +403,7 @@ class UserService:
         user_id: int,
         removed_by: int
     ) -> User:
-        """
-        Отвязка пользователя от компании.
-        
-        Меняет роль обратно на STUDENT.
-        """
+        """Отвязка пользователя от компании."""
         user = await self.get_user_by_id(db, user_id)
         
         if not user:
@@ -450,11 +439,7 @@ class UserService:
         has_resume: Optional[bool] = None,
         search: Optional[str] = None
     ) -> Tuple[List[User], int]:
-        """
-        Получение списка студентов с фильтрацией.
-        
-        Используется компаниями для поиска кандидатов.
-        """
+        """Получение списка студентов с фильтрацией."""
         query = select(User).where(
             User.role == UserRole.STUDENT,
             User.status == UserStatus.ACTIVE,
@@ -498,11 +483,9 @@ class UserService:
             query = query.where(and_(*filters))
             count_query = count_query.where(and_(*filters))
         
-        # Общее количество
         total_result = await db.execute(count_query)
         total = total_result.scalar()
         
-        # Сортировка и пагинация
         query = query.order_by(User.created_at.desc()).offset(skip).limit(limit)
         
         result = await db.execute(query)
@@ -561,12 +544,7 @@ class UserService:
         self,
         db: AsyncSession
     ) -> dict:
-        """
-        Получение статистики по пользователям.
-        
-        Для админ-панели.
-        """
-        # Общее количество по ролям
+        """Получение статистики по пользователям."""
         role_stats = {}
         for role in UserRole:
             result = await db.execute(
@@ -577,7 +555,6 @@ class UserService:
             )
             role_stats[role.value] = result.scalar()
         
-        # По статусам
         status_stats = {}
         for status in UserStatus:
             result = await db.execute(
@@ -585,7 +562,6 @@ class UserService:
             )
             status_stats[status.value] = result.scalar()
         
-        # Неподтверждённые email
         unverified_result = await db.execute(
             select(func.count(User.id)).where(
                 User.is_email_verified == False,
@@ -594,7 +570,6 @@ class UserService:
         )
         unverified_count = unverified_result.scalar()
         
-        # Новые за последние 7 дней
         from datetime import timedelta
         week_ago = datetime.utcnow() - timedelta(days=7)
         new_users_result = await db.execute(
@@ -602,7 +577,6 @@ class UserService:
         )
         new_users_count = new_users_result.scalar()
         
-        # Активные за последние 24 часа
         day_ago = datetime.utcnow() - timedelta(days=1)
         active_result = await db.execute(
             select(func.count(User.id)).where(User.last_login_at >= day_ago)
@@ -623,11 +597,7 @@ class UserService:
         db: AsyncSession,
         limit: int = 50
     ) -> List[dict]:
-        """
-        Получение списка университетов с количеством студентов.
-        
-        Для фильтров и статистики.
-        """
+        """Получение списка университетов с количеством студентов."""
         result = await db.execute(
             select(
                 User.university,
@@ -658,13 +628,7 @@ class UserService:
         email: str,
         exclude_user_id: Optional[int] = None
     ) -> bool:
-        """
-        Проверка существования email.
-        
-        Args:
-            email: Email для проверки
-            exclude_user_id: ID пользователя для исключения (при обновлении)
-        """
+        """Проверка существования email."""
         query = select(User.id).where(User.email == email.lower())
         
         if exclude_user_id:
@@ -679,11 +643,7 @@ class UserService:
         query: str,
         limit: int = 10
     ) -> List[User]:
-        """
-        Быстрый поиск пользователей по имени/email.
-        
-        Для автокомплита.
-        """
+        """Быстрый поиск пользователей по имени/email."""
         if not query or len(query) < 2:
             return []
         
@@ -709,19 +669,14 @@ class UserService:
         new_status: UserStatus,
         admin_id: int
     ) -> int:
-        """
-        Массовое обновление статуса пользователей.
-        
-        Returns:
-            Количество обновлённых записей
-        """
+        """Массовое обновление статуса пользователей."""
         from sqlalchemy import update
         
         result = await db.execute(
             update(User)
             .where(
                 User.id.in_(user_ids),
-                User.role != UserRole.ADMIN  # Не трогаем админов
+                User.role != UserRole.ADMIN
             )
             .values(status=new_status, updated_at=datetime.utcnow())
         )
