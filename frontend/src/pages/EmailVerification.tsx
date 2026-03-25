@@ -3,25 +3,21 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Loader2, Home, LogIn } from 'lucide-react';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { useAuth } from '../hooks/useAuth';
 
 const EmailVerification = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const token = searchParams.get('token');
   
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
-  const hasVerified = useRef(false); // Защита от повторных вызовов
+  const hasVerified = useRef(false);
 
   useEffect(() => {
     const verifyEmail = async () => {
-      // Защита от повторного вызова
-      if (hasVerified.current) {
-        console.log('Already verified, skipping...');
-        return;
-      }
+      if (hasVerified.current) return;
       hasVerified.current = true;
 
       if (!token) {
@@ -31,57 +27,31 @@ const EmailVerification = () => {
       }
 
       try {
-        console.log('Verifying email with token:', token);
-        
-        const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+        const response = await fetch(`/auth/verify-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
         });
         
         const data = await response.json();
-        console.log('Verification response:', response.status, data);
         
         if (!response.ok) {
-          // Проверяем, может быть email уже подтвержден?
-          if (data.detail === "Невалидный или просроченный токен") {
-            // Пробуем проверить, не подтвержден ли уже email
-            // Временно показываем успех, так как пользователь уже в системе
-            setStatus('success');
-            setErrorMessage('');
-            
-            // Проверяем, есть ли токены в localStorage
-            const accessToken = localStorage.getItem('access_token');
-            if (accessToken) {
-              // Уже авторизован, перенаправляем на дашборд
-              setTimeout(() => {
-                navigate('/dashboard', { replace: true });
-              }, 1500);
-            } else {
-              // Нет токенов, перенаправляем на главную
-              setTimeout(() => {
-                navigate('/');
-              }, 2000);
-            }
-            return;
-          }
-          
           setStatus('error');
           setErrorMessage(data.detail || 'Не удалось подтвердить email');
           return;
         }
         
-        // Сохраняем токены
         if (data.access_token) {
           localStorage.setItem('access_token', data.access_token);
           localStorage.setItem('refresh_token', data.refresh_token);
+          await refreshUser();
         }
         
         setStatus('success');
         
-        // Перенаправляем на дашборд
+        // ВАЖНО: перенаправляем на /student/profile
         setTimeout(() => {
-          navigate('/dashboard', { replace: true });
+          navigate('/student/profile', { replace: true });
         }, 2000);
         
       } catch (error) {
@@ -92,7 +62,7 @@ const EmailVerification = () => {
     };
 
     verifyEmail();
-  }, [token, navigate]);
+  }, [token, navigate, refreshUser]);
 
   return (
     <div className="email-verification">
@@ -151,7 +121,7 @@ const EmailVerification = () => {
                 </button>
                 <button
                   className="email-verification__button secondary"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate('/')}
                 >
                   <LogIn size={18} />
                   <span>Войти</span>

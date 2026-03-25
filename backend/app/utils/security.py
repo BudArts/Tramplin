@@ -58,3 +58,7 @@ def decode_token(token: str) -> dict | None:
     except JWTError as e:
         logger.debug(f"JWT decode error: {e}")
         return None
+
+def get_password_hash(password: str) -> str:
+    """Алиас для hash_password"""
+    return hash_password(password)

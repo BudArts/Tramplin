@@ -1,10 +1,14 @@
+// frontend/src/components/Header.tsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
+interface HeaderProps {
+  onOpenAuthModal?: (mode: 'login' | 'register') => void;
+}
 
-const Header = () => {
+const Header: React.FC<HeaderProps> = ({ onOpenAuthModal }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -13,6 +17,13 @@ const Header = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  const handleAuthClick = (mode: 'login' | 'register') => {
+    if (onOpenAuthModal) {
+      onOpenAuthModal(mode);
+    }
+    setMobileOpen(false);
+  };
 
   return (
     <motion.header
@@ -23,7 +34,6 @@ const Header = () => {
     >
       <div className="header__inner">
         <Link to="/" className="header__logo">
-          {/* Замените на ваш логотип */}
           <img src="/logo.png" alt="Трамплин" onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
             (e.target as HTMLImageElement).parentElement!.innerHTML =
@@ -38,8 +48,18 @@ const Header = () => {
         </nav>
 
         <div className="header__auth">
-          <Link to="/login" className="header__btn header__btn--login">Войти</Link>
-          <Link to="/register" className="header__btn header__btn--register">Регистрация</Link>
+          <button 
+            className="header__btn header__btn--login"
+            onClick={() => handleAuthClick('login')}
+          >
+            Войти
+          </button>
+          <button 
+            className="header__btn header__btn--register"
+            onClick={() => handleAuthClick('register')}
+          >
+            Регистрация
+          </button>
         </div>
 
         <button
@@ -76,8 +96,18 @@ const Header = () => {
             <a href="#students" className="header__link" onClick={() => setMobileOpen(false)}>Студентам</a>
             <a href="#curators" className="header__link" onClick={() => setMobileOpen(false)}>Кураторам</a>
             <div style={{ display: 'flex', gap: 12, paddingTop: 8 }}>
-              <Link to="/login" className="header__btn header__btn--login" onClick={() => setMobileOpen(false)}>Войти</Link>
-              <Link to="/register" className="header__btn header__btn--register" onClick={() => setMobileOpen(false)}>Регистрация</Link>
+              <button 
+                className="header__btn header__btn--login"
+                onClick={() => handleAuthClick('login')}
+              >
+                Войти
+              </button>
+              <button 
+                className="header__btn header__btn--register"
+                onClick={() => handleAuthClick('register')}
+              >
+                Регистрация
+              </button>
             </div>
           </motion.div>
         )}

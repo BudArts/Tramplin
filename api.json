@@ -1,7 +1,7 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "Tramplin",
+        "title": "Трамплин",
         "description": "\n## Трамплин API\n\nПлатформа для стажировок и карьеры студентов.\n\n### Возможности:\n- Регистрация студентов и компаний\n- Подтверждение email\n- Проверка компаний через ФНС API\n- Публикация вакансий и стажировок\n- Отклики на вакансии\n- Чат между соискателями и компаниями\n    ",
         "version": "1.0.0"
     },
@@ -352,6 +352,26 @@
                         "HTTPBearer": []
                     }
                 ]
+            }
+        },
+        "/auth/debug-smtp": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Debug Smtp",
+                "description": "Временный тест SMTP — УДАЛИТЬ после отладки!",
+                "operationId": "debug_smtp_auth_debug_smtp_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
             }
         },
         "/users/me": {
@@ -1052,61 +1072,19 @@
                 }
             }
         },
-        "/companies/check-inn": {
+        "/companies/auth/register": {
             "post": {
                 "tags": [
-                    "Companies"
+                    "Company Registration"
                 ],
-                "summary": "Шаг 1: Проверка ИНН через ФНС",
-                "description": "Проверка ИНН компании через API ФНС.\n\nВозвращает данные о компании из реестра:\n- Полное и сокращённое наименование\n- ОГРН, КПП\n- Юридический адрес\n- ФИО и должность руководителя\n- Статус компании\n\nЕсли компания уже зарегистрирована или ликвидирована - вернёт ошибку.",
-                "operationId": "check_company_inn_companies_check_inn_post",
+                "summary": "Регистрация компании",
+                "description": "Регистрация компании на платформе.",
+                "operationId": "register_company_companies_auth_register_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/CompanyRegisterStep1"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/CompanyFNSData"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/companies/register": {
-            "post": {
-                "tags": [
-                    "Companies"
-                ],
-                "summary": "Шаг 2: Регистрация компании",
-                "description": "Регистрация компании на платформе.\n\nТребуется:\n1. Предварительно проверить ИНН через /check-inn\n2. Указать корпоративную почту (бесплатные почтовые сервисы не принимаются)\n3. Данные администратора компании\n\nПосле регистрации:\n- На корпоративную почту будет отправлено письмо для подтверждения\n- На почту администратора будет отправлено письмо для активации аккаунта\n- После подтверждения обеих почт заявка будет направлена на модерацию",
-                "operationId": "register_company_companies_register_post",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CompanyRegisterStep2"
+                                "$ref": "#/components/schemas/CompanyRegisterRequest"
                             }
                         }
                     },
@@ -1136,14 +1114,14 @@
                 }
             }
         },
-        "/companies/verify-email": {
+        "/companies/auth/verify-email": {
             "post": {
                 "tags": [
-                    "Companies"
+                    "Company Registration"
                 ],
                 "summary": "Подтверждение корпоративной почты",
-                "description": "Подтверждение корпоративной почты компании.\n\nПосле подтверждения заявка будет направлена на модерацию.",
-                "operationId": "verify_company_email_companies_verify_email_post",
+                "description": "Подтверждение корпоративной почты компании.",
+                "operationId": "verify_company_email_companies_auth_verify_email_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1184,7 +1162,7 @@
                     "Companies"
                 ],
                 "summary": "Список компаний",
-                "description": "Получение списка активных компаний.\n\nДоступно всем пользователям.",
+                "description": "Получение списка активных компаний.",
                 "operationId": "get_companies_companies__get",
                 "parameters": [
                     {
@@ -1228,6 +1206,69 @@
                                         "$ref": "#/components/schemas/CompanyListResponse"
                                     },
                                     "title": "Response Get Companies Companies  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/companies/moderation/pending": {
+            "get": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Компании на модерации",
+                "description": "Получение списка компаний, ожидающих модерацию.",
+                "operationId": "get_pending_companies_companies_moderation_pending_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "skip",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "Skip"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "title": "Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CompanyResponse"
+                                    },
+                                    "title": "Response Get Pending Companies Companies Moderation Pending Get"
                                 }
                             }
                         }
@@ -1292,7 +1333,7 @@
                     "Companies"
                 ],
                 "summary": "Обновление данных компании",
-                "description": "Обновление данных компании.\n\nДоступно только администраторам компании.",
+                "description": "Обновление данных компании.",
                 "operationId": "update_company_companies__company_id__patch",
                 "security": [
                     {
@@ -1344,76 +1385,13 @@
                 }
             }
         },
-        "/companies/moderation/pending": {
-            "get": {
-                "tags": [
-                    "Companies"
-                ],
-                "summary": "Компании на модерации",
-                "description": "Получение списка компаний, ожидающих модерацию.\n\nДоступно только администраторам и кураторам.",
-                "operationId": "get_pending_companies_companies_moderation_pending_get",
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "skip",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 0,
-                            "title": "Skip"
-                        }
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 20,
-                            "title": "Limit"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/CompanyResponse"
-                                    },
-                                    "title": "Response Get Pending Companies Companies Moderation Pending Get"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/companies/{company_id}/approve": {
             "post": {
                 "tags": [
                     "Companies"
                 ],
                 "summary": "Одобрить компанию",
-                "description": "Одобрение компании после модерации.\n\nПосле одобрения компания становится активной и может публиковать вакансии.",
+                "description": "Одобрение компании после модерации.",
                 "operationId": "approve_company_companies__company_id__approve_post",
                 "security": [
                     {
@@ -1461,7 +1439,7 @@
                     "Companies"
                 ],
                 "summary": "Отклонить компанию",
-                "description": "Отклонение компании с указанием причины.\n\nКомпания получит уведомление с причиной отклонения.",
+                "description": "Отклонение компании с указанием причины.",
                 "operationId": "reject_company_companies__company_id__reject_post",
                 "security": [
                     {
@@ -5345,6 +5323,25 @@
                 }
             }
         },
+        "/debug/cors": {
+            "get": {
+                "tags": [
+                    "Debug"
+                ],
+                "summary": "Debug Cors",
+                "operationId": "debug_cors_debug_cors_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "tags": [
@@ -5743,119 +5740,6 @@
                 ],
                 "title": "CompanyEmailVerificationRequest"
             },
-            "CompanyFNSData": {
-                "properties": {
-                    "inn": {
-                        "type": "string",
-                        "title": "Inn"
-                    },
-                    "ogrn": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Ogrn"
-                    },
-                    "kpp": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Kpp"
-                    },
-                    "full_name": {
-                        "type": "string",
-                        "title": "Full Name"
-                    },
-                    "short_name": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Short Name"
-                    },
-                    "legal_address": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Legal Address"
-                    },
-                    "director_name": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Director Name"
-                    },
-                    "director_position": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Director Position"
-                    },
-                    "status": {
-                        "type": "string",
-                        "title": "Status"
-                    },
-                    "registration_date": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Registration Date"
-                    },
-                    "raw_data": {
-                        "anyOf": [
-                            {
-                                "additionalProperties": true,
-                                "type": "object"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Raw Data"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "inn",
-                    "full_name",
-                    "status"
-                ],
-                "title": "CompanyFNSData",
-                "description": "Данные компании из ФНС API"
-            },
             "CompanyListResponse": {
                 "properties": {
                     "id": {
@@ -5982,54 +5866,40 @@
                 "title": "CompanyRatingStats",
                 "description": "Статистика рейтинга компании"
             },
-            "CompanyRegisterStep1": {
+            "CompanyRegisterRequest": {
                 "properties": {
                     "inn": {
                         "type": "string",
                         "maxLength": 12,
                         "minLength": 10,
-                        "title": "Inn"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "inn"
-                ],
-                "title": "CompanyRegisterStep1",
-                "description": "Шаг 1: Ввод ИНН"
-            },
-            "CompanyRegisterStep2": {
-                "properties": {
-                    "inn": {
+                        "title": "Inn",
+                        "description": "ИНН компании"
+                    },
+                    "company_name": {
                         "type": "string",
-                        "title": "Inn"
+                        "maxLength": 200,
+                        "minLength": 2,
+                        "title": "Company Name",
+                        "description": "Название компании"
                     },
                     "email": {
                         "type": "string",
                         "format": "email",
-                        "title": "Email"
+                        "title": "Email",
+                        "description": "Корпоративная почта компании"
                     },
                     "phone": {
                         "anyOf": [
                             {
-                                "type": "string"
+                                "type": "string",
+                                "maxLength": 20
                             },
                             {
                                 "type": "null"
                             }
                         ],
-                        "title": "Phone"
-                    },
-                    "website": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Website"
+                        "title": "Phone",
+                        "description": "Телефон компании"
                     },
                     "user_first_name": {
                         "type": "string",
@@ -6058,12 +5928,13 @@
                     "user_email": {
                         "type": "string",
                         "format": "email",
-                        "title": "User Email"
+                        "title": "User Email",
+                        "description": "Email контактного лица"
                     },
                     "user_password": {
                         "type": "string",
                         "maxLength": 100,
-                        "minLength": 8,
+                        "minLength": 6,
                         "title": "User Password"
                     },
                     "user_password_confirm": {
@@ -6074,6 +5945,7 @@
                 "type": "object",
                 "required": [
                     "inn",
+                    "company_name",
                     "email",
                     "user_first_name",
                     "user_last_name",
@@ -6081,8 +5953,8 @@
                     "user_password",
                     "user_password_confirm"
                 ],
-                "title": "CompanyRegisterStep2",
-                "description": "Шаг 2: Подтверждение и ввод email"
+                "title": "CompanyRegisterRequest",
+                "description": "Регистрация компании - упрощённая форма"
             },
             "CompanyResponse": {
                 "properties": {
@@ -9192,6 +9064,59 @@
                         "type": "boolean",
                         "title": "Success",
                         "default": true
+                    },
+                    "access_token": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Access Token"
+                    },
+                    "refresh_token": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Refresh Token"
+                    },
+                    "user_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Id"
+                    },
+                    "email": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Email"
+                    },
+                    "data": {
+                        "anyOf": [
+                            {},
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data"
                     }
                 },
                 "type": "object",

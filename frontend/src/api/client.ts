@@ -1,7 +1,7 @@
-// api/client.ts
+// frontend/src/api/client.ts
 // API клиент для работы с бэкендом
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = '/api';
 
 interface ApiResponse<T> {
     data?: T;
@@ -59,7 +59,6 @@ class ApiClient {
         try {
             let response = await fetch(url, { ...options, headers });
             
-            // Если токен истек, пытаемся обновить
             if (response.status === 401 && this.refreshToken) {
                 const refreshed = await this.refreshAccessToken();
                 if (refreshed) {
@@ -91,7 +90,7 @@ class ApiClient {
     private async refreshAccessToken(): Promise<boolean> {
         if (!this.refreshToken) return false;
 
-        const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+        const response = await fetch(`${this.baseUrl}/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh_token: this.refreshToken }),
@@ -111,7 +110,7 @@ class ApiClient {
         if (params) {
             const searchParams = new URLSearchParams();
             Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
+                if (value !== undefined && value !== null && value !== '') {
                     searchParams.append(key, String(value));
                 }
             });
@@ -191,38 +190,42 @@ export const apiClient = new ApiClient(API_BASE_URL);
 export const api = {
     // Auth
     auth: {
-        register: (data: RegisterRequest) => apiClient.post<TokenResponse>('/api/auth/register', data),
-        login: (data: LoginRequest) => apiClient.post<TokenResponse>('/api/auth/login', data),
-        refresh: (refreshToken: string) => apiClient.post<TokenResponse>('/api/auth/refresh', { refresh_token: refreshToken }),
+        register: (data: any) => apiClient.post('/auth/register', data),
+        login: (data: any) => apiClient.post('/auth/login', data),
+        refresh: (refreshToken: string) => apiClient.post('/auth/refresh', { refresh_token: refreshToken }),
+        verifyEmail: (data: { token: string }) => apiClient.post('/auth/verify-email', data),
+        resendVerification: (data: { email: string }) => apiClient.post('/auth/resend-verification', data),
     },
 
     // Users
     users: {
-        me: () => apiClient.get<UserResponse>('/api/users/me'),
-        updateMe: (data: UserUpdate) => apiClient.put<UserResponse>('/api/users/me', data),
-        getApplicantProfile: () => apiClient.get<ApplicantProfileResponse>('/api/users/me/applicant-profile'),
-        updateApplicantProfile: (data: ApplicantProfileUpdate) => apiClient.put<ApplicantProfileResponse>('/api/users/me/applicant-profile', data),
-        updatePrivacySettings: (data: PrivacySettingsUpdate) => apiClient.put<MessageResponse>('/api/users/me/privacy', data),
-        getUserProfile: (userId: number) => apiClient.get<ApplicantPublicProfile | UserResponse>(`/api/users/${userId}`),
+        me: () => apiClient.get('/users/me'),
+        updateMe: (data: any) => apiClient.put('/users/me', data),
+        getApplicantProfile: () => apiClient.get('/users/me/applicant-profile'),
+        updateApplicantProfile: (data: any) => apiClient.put('/users/me/applicant-profile', data),
+        updatePrivacySettings: (data: any) => apiClient.put('/users/me/privacy', data),
+        getUserProfile: (userId: number) => apiClient.get(`/users/${userId}`),
     },
 
     // Companies
     companies: {
         list: (params?: { search?: string; industry?: string; city?: string; verified_only?: boolean; page?: number; per_page?: number }) =>
-            apiClient.get<CompanyShort[]>('/api/companies', params),
-        getMyCompany: () => apiClient.get<CompanyDetailResponse>('/api/companies/me'),
-        updateMyCompany: (data: CompanyUpdate) => apiClient.put<CompanyResponse>('/api/companies/me', data),
-        requestVerification: (data: VerificationRequest) => apiClient.post<MessageResponse>('/api/companies/me/verify', data),
-        getCompany: (companyId: number) => apiClient.get<CompanyResponse>(`/api/companies/${companyId}`),
-        getCompanyStats: (companyId: number) => apiClient.get<Record<string, any>>(`/api/companies/${companyId}/stats`),
+            apiClient.get('/companies', params),
+        getMyCompany: () => apiClient.get('/companies/me'),
+        updateMyCompany: (data: any) => apiClient.put('/companies/me', data),
+        requestVerification: (data: any) => apiClient.post('/companies/me/verify', data),
+        getCompany: (companyId: number) => apiClient.get(`/companies/${companyId}`),
+        getCompanyStats: (companyId: number) => apiClient.get(`/companies/${companyId}/stats`),
+        checkInn: (data: { inn: string }) => apiClient.post('/companies/check-inn', data),
+        register: (data: any) => apiClient.post('/companies/register', data),
     },
 
     // Tags
     tags: {
-        list: (params?: { category?: TagCategory; approved_only?: boolean }) => apiClient.get<TagResponse[]>('/api/tags', params),
-        propose: (data: TagCreate) => apiClient.post<TagResponse>('/api/tags', data),
-        popular: (limit?: number) => apiClient.get<TagResponse[]>('/api/tags/popular', { limit }),
-        suggest: (q: string, limit?: number) => apiClient.get<TagResponse[]>('/api/tags/suggest', { q, limit }),
+        list: (params?: { category?: string; approved_only?: boolean }) => apiClient.get('/tags', params),
+        propose: (data: any) => apiClient.post('/tags', data),
+        popular: (limit?: number) => apiClient.get('/tags/popular', { limit }),
+        suggest: (q: string, limit?: number) => apiClient.get('/tags/suggest', { q, limit }),
     },
 
     // Opportunities
@@ -240,129 +243,122 @@ export const api = {
             order?: string;
             page?: number;
             per_page?: number;
-        }) => apiClient.get<OpportunityListResponse>('/api/opportunities', params),
-        getMapPoints: (params?: {
-            type?: string;
-            work_format?: string;
-            tags?: string;
-            salary_min?: number;
-            salary_max?: number;
-            city?: string;
-        }) => apiClient.get<MapPointResponse[]>('/api/opportunities/map', params),
-        getMy: (status?: string) => apiClient.get<OpportunityResponse[]>('/api/opportunities/my', { status }),
-        create: (data: OpportunityCreate) => apiClient.post<OpportunityResponse>('/api/opportunities', data),
-        getById: (opportunityId: number) => apiClient.get<OpportunityResponse>(`/api/opportunities/${opportunityId}`),
-        update: (opportunityId: number, data: OpportunityUpdate) => apiClient.put<OpportunityResponse>(`/api/opportunities/${opportunityId}`, data),
-        delete: (opportunityId: number) => apiClient.delete<MessageResponse>(`/api/opportunities/${opportunityId}`),
-        changeStatus: (opportunityId: number, data: StatusUpdate) => apiClient.patch<OpportunityResponse>(`/api/opportunities/${opportunityId}/status`, data),
+        }) => apiClient.get('/opportunities', params),
+        getMapPoints: (params?: any) => apiClient.get('/opportunities/map', params),
+        getMy: (status?: string) => apiClient.get('/opportunities/my', { status }),
+        create: (data: any) => apiClient.post('/opportunities', data),
+        getById: (opportunityId: number) => apiClient.get(`/opportunities/${opportunityId}`),
+        update: (opportunityId: number, data: any) => apiClient.put(`/opportunities/${opportunityId}`, data),
+        delete: (opportunityId: number) => apiClient.delete(`/opportunities/${opportunityId}`),
+        changeStatus: (opportunityId: number, data: any) => apiClient.patch(`/opportunities/${opportunityId}/status`, data),
     },
 
     // Applications
     applications: {
-        create: (data: ApplicationCreate) => apiClient.post<ApplicationResponse>('/api/applications', data),
+        create: (data: any) => apiClient.post('/applications', data),
         getMy: (params?: { status?: string; page?: number; per_page?: number }) =>
-            apiClient.get<ApplicationListResponse>('/api/applications/my', params),
-        withdraw: (applicationId: number) => apiClient.delete<MessageResponse>(`/api/applications/${applicationId}`),
+            apiClient.get('/applications/my', params),
+        withdraw: (applicationId: number) => apiClient.delete(`/applications/${applicationId}`),
         getByOpportunity: (opportunityId: number, status?: string) =>
-            apiClient.get<ApplicationWithApplicant[]>(`/api/applications/opportunity/${opportunityId}`, { status }),
-        updateStatus: (applicationId: number, data: ApplicationStatusUpdate) =>
-            apiClient.patch<ApplicationResponse>(`/api/applications/${applicationId}/status`, data),
+            apiClient.get(`/applications/opportunity/${opportunityId}`, { status }),
+        updateStatus: (applicationId: number, data: any) =>
+            apiClient.patch(`/applications/${applicationId}/status`, data),
     },
 
     // Favorites
     favorites: {
-        getOpportunities: () => apiClient.get<OpportunityCardResponse[]>('/api/favorites'),
-        addOpportunity: (opportunityId: number) => apiClient.post<MessageResponse>(`/api/favorites/opportunity/${opportunityId}`),
-        removeOpportunity: (opportunityId: number) => apiClient.delete<MessageResponse>(`/api/favorites/opportunity/${opportunityId}`),
-        getCompanies: () => apiClient.get<CompanyShort[]>('/api/favorites/companies'),
-        addCompany: (companyId: number) => apiClient.post<MessageResponse>(`/api/favorites/company/${companyId}`),
-        removeCompany: (companyId: number) => apiClient.delete<MessageResponse>(`/api/favorites/company/${companyId}`),
-        getCompanyIds: () => apiClient.get<number[]>('/api/favorites/companies/ids'),
+        getOpportunities: () => apiClient.get('/favorites'),
+        addOpportunity: (opportunityId: number) => apiClient.post(`/favorites/opportunity/${opportunityId}`),
+        removeOpportunity: (opportunityId: number) => apiClient.delete(`/favorites/opportunity/${opportunityId}`),
+        getCompanies: () => apiClient.get('/favorites/companies'),
+        addCompany: (companyId: number) => apiClient.post(`/favorites/company/${companyId}`),
+        removeCompany: (companyId: number) => apiClient.delete(`/favorites/company/${companyId}`),
+        getCompanyIds: () => apiClient.get('/favorites/companies/ids'),
     },
 
     // Notifications
     notifications: {
-        get: () => apiClient.get<NotificationListResponse>('/api/notifications'),
-        markAsRead: (notificationId: number) => apiClient.patch<MessageResponse>(`/api/notifications/${notificationId}/read`),
-        markAllAsRead: () => apiClient.patch<MessageResponse>('/api/notifications/read-all'),
-        getUnreadCount: () => apiClient.get<{ unread_count: number }>('/api/notifications/unread-count'),
+        get: () => apiClient.get('/notifications'),
+        markAsRead: (notificationId: number) => apiClient.patch(`/notifications/${notificationId}/read`),
+        markAllAsRead: () => apiClient.patch('/notifications/read-all'),
+        getUnreadCount: () => apiClient.get('/notifications/unread-count'),
     },
 
     // Contacts
     contacts: {
-        list: () => apiClient.get<ContactListResponse>('/api/contacts'),
-        incomingRequests: () => apiClient.get<ContactListResponse>('/api/contacts/requests'),
-        outgoingRequests: () => apiClient.get<ContactListResponse>('/api/contacts/outgoing'),
-        sendRequest: (targetUserId: number) => apiClient.post<MessageResponse>(`/api/contacts/${targetUserId}/request`),
-        accept: (contactId: number) => apiClient.post<MessageResponse>(`/api/contacts/${contactId}/accept`),
-        reject: (contactId: number) => apiClient.post<MessageResponse>(`/api/contacts/${contactId}/reject`),
-        remove: (contactId: number) => apiClient.delete<MessageResponse>(`/api/contacts/${contactId}`),
-        recommend: (data: RecommendationCreate) => apiClient.post<MessageResponse>('/api/contacts/recommend', data),
-        getRecommendations: () => apiClient.get<RecommendationResponse[]>('/api/contacts/recommendations'),
+        list: () => apiClient.get('/contacts'),
+        incomingRequests: () => apiClient.get('/contacts/requests'),
+        outgoingRequests: () => apiClient.get('/contacts/outgoing'),
+        sendRequest: (targetUserId: number) => apiClient.post(`/contacts/${targetUserId}/request`),
+        accept: (contactId: number) => apiClient.post(`/contacts/${contactId}/accept`),
+        reject: (contactId: number) => apiClient.post(`/contacts/${contactId}/reject`),
+        remove: (contactId: number) => apiClient.delete(`/contacts/${contactId}`),
+        recommend: (data: any) => apiClient.post('/contacts/recommend', data),
+        getRecommendations: () => apiClient.get('/contacts/recommendations'),
     },
 
     // Chat
     chat: {
-        getConversations: () => apiClient.get<ConversationResponse[]>('/api/chat/conversations'),
+        getConversations: () => apiClient.get('/chat/conversations'),
         getMessages: (otherUserId: number, page?: number, per_page?: number) =>
-            apiClient.get<ChatMessageResponse[]>(`/api/chat/with/${otherUserId}`, { page, per_page }),
-        sendMessage: (data: ChatMessageCreate) => apiClient.post<ChatMessageResponse>('/api/chat', data),
-        getUnreadCount: () => apiClient.get<{ unread_count: number }>('/api/chat/unread'),
+            apiClient.get(`/chat/with/${otherUserId}`, { page, per_page }),
+        sendMessage: (data: any) => apiClient.post('/chat', data),
+        getUnreadCount: () => apiClient.get('/chat/unread'),
     },
 
     // Uploads
     uploads: {
-        image: (file: File) => apiClient.uploadFile('/api/uploads/image', file),
-        document: (file: File) => apiClient.uploadFile('/api/uploads/document', file),
+        image: (file: File) => apiClient.uploadFile('/uploads/image', file),
+        document: (file: File) => apiClient.uploadFile('/uploads/document', file),
     },
 
     // Support
     support: {
-        createTicket: (data: TicketCreate) => apiClient.post<TicketResponse>('/api/support', data),
-        getMyTickets: () => apiClient.get<TicketResponse[]>('/api/support/my'),
+        createTicket: (data: any) => apiClient.post('/support', data),
+        getMyTickets: () => apiClient.get('/support/my'),
     },
 
     // Curator
     curator: {
-        getStats: () => apiClient.get<PlatformStats>('/api/curator/stats'),
-        getPendingCompanies: () => apiClient.get<CompanyDetailResponse[]>('/api/curator/companies/pending'),
+        getStats: () => apiClient.get('/curator/stats'),
+        getPendingCompanies: () => apiClient.get('/curator/companies/pending'),
         getAllCompanies: (params?: { status?: string; search?: string }) =>
-            apiClient.get<CompanyDetailResponse[]>('/api/curator/companies', params),
-        verifyCompany: (companyId: number, data: VerificationDecision) =>
-            apiClient.patch<MessageResponse>(`/api/curator/companies/${companyId}/verify`, data),
-        getPendingOpportunities: () => apiClient.get<OpportunityResponse[]>('/api/curator/opportunities/pending'),
+            apiClient.get('/curator/companies', params),
+        verifyCompany: (companyId: number, data: any) =>
+            apiClient.patch(`/curator/companies/${companyId}/verify`, data),
+        getPendingOpportunities: () => apiClient.get('/curator/opportunities/pending'),
         approveOpportunity: (opportunityId: number) =>
-            apiClient.patch<MessageResponse>(`/api/curator/opportunities/${opportunityId}/approve`),
-        rejectOpportunity: (opportunityId: number, data: ModerationDecision) =>
-            apiClient.patch<MessageResponse>(`/api/curator/opportunities/${opportunityId}/reject`, data),
-        requestChanges: (opportunityId: number, data: ModerationDecision) =>
-            apiClient.patch<MessageResponse>(`/api/curator/opportunities/${opportunityId}/request-changes`, data),
+            apiClient.patch(`/curator/opportunities/${opportunityId}/approve`),
+        rejectOpportunity: (opportunityId: number, data: any) =>
+            apiClient.patch(`/curator/opportunities/${opportunityId}/reject`, data),
+        requestChanges: (opportunityId: number, data: any) =>
+            apiClient.patch(`/curator/opportunities/${opportunityId}/request-changes`, data),
         listUsers: (params?: { role?: string; search?: string; is_active?: boolean; page?: number; per_page?: number }) =>
-            apiClient.get<UserResponse[]>('/api/curator/users', params),
-        updateUserStatus: (userId: number, data: UserStatusUpdate) =>
-            apiClient.patch<MessageResponse>(`/api/curator/users/${userId}/status`, data),
-        editUser: (userId: number, displayName?: string | null, role?: UserRole | null) =>
-            apiClient.put<UserResponse>(`/api/curator/users/${userId}`, undefined, { display_name: displayName, role } as any),
-        getPendingTags: () => apiClient.get<TagResponse[]>('/api/curator/tags/pending'),
-        approveTag: (tagId: number) => apiClient.patch<MessageResponse>(`/api/curator/tags/${tagId}/approve`),
-        rejectTag: (tagId: number) => apiClient.patch<MessageResponse>(`/api/curator/tags/${tagId}/reject`),
-        createCurator: (data: CuratorCreate) => apiClient.post<UserResponse>('/api/curator/curators', data),
-        editOpportunity: (opportunityId: number, data: OpportunityUpdate) =>
-            apiClient.put<OpportunityResponse>(`/api/curator/opportunities/${opportunityId}`, data),
-        editCompany: (companyId: number, data: CompanyUpdate) =>
-            apiClient.put<CompanyDetailResponse>(`/api/curator/companies/${companyId}`, data),
-        editApplicant: (userId: number, data: ApplicantProfileUpdate) =>
-            apiClient.put<MessageResponse>(`/api/curator/applicants/${userId}`, data),
+            apiClient.get('/curator/users', params),
+        updateUserStatus: (userId: number, data: any) =>
+            apiClient.patch(`/curator/users/${userId}/status`, data),
+        editUser: (userId: number, displayName?: string | null, role?: string | null) =>
+            apiClient.put(`/curator/users/${userId}`, { display_name: displayName, role }),
+        getPendingTags: () => apiClient.get('/curator/tags/pending'),
+        approveTag: (tagId: number) => apiClient.patch(`/curator/tags/${tagId}/approve`),
+        rejectTag: (tagId: number) => apiClient.patch(`/curator/tags/${tagId}/reject`),
+        createCurator: (data: any) => apiClient.post('/curator/curators', data),
+        editOpportunity: (opportunityId: number, data: any) =>
+            apiClient.put(`/curator/opportunities/${opportunityId}`, data),
+        editCompany: (companyId: number, data: any) =>
+            apiClient.put(`/curator/companies/${companyId}`, data),
+        editApplicant: (userId: number, data: any) =>
+            apiClient.put(`/curator/applicants/${userId}`, data),
     },
 
-    auth: {
-    // ... существующие методы
-    
-    // Добавьте эти методы:
-    verifyEmail: (data: { token: string }) => 
-      apiClient.post<MessageResponse>('/api/auth/verify-email', data),
-    
-    resendVerification: (data: { email: string }) => 
-      apiClient.post<MessageResponse>('/api/auth/resend-verification', data),
-  },
+    // Reviews
+    reviews: {
+        getCompanyStats: (companyId: number) => apiClient.get(`/companies/${companyId}/stats`),
+        getCompanyReviews: (companyId: number, params?: { page?: number; per_page?: number }) =>
+            apiClient.get(`/companies/${companyId}/reviews`, params),
+        createReview: (data: any) => apiClient.post('/reviews', data),
+        updateReview: (reviewId: number, data: any) => apiClient.put(`/reviews/${reviewId}`, data),
+        deleteReview: (reviewId: number) => apiClient.delete(`/reviews/${reviewId}`),
+        getMyReviews: () => apiClient.get('/reviews/my'),
+    },
 };

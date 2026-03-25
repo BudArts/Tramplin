@@ -1,6 +1,6 @@
 # backend/app/schemas/auth.py
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 
 
@@ -43,6 +43,7 @@ class MessageResponse(BaseModel):
     refresh_token: Optional[str] = None
     user_id: Optional[int] = None
     email: Optional[str] = None
+    data: Optional[Any] = None  # Добавьте это поле
 
 
 # Импортируем для forward reference

@@ -1,5 +1,5 @@
 # backend/app/schemas/company.py
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from enum import Enum
@@ -7,11 +7,11 @@ import re
 
 
 class CompanyStatus(str, Enum):
-    PENDING_EMAIL = "pending_email"
-    PENDING_REVIEW = "pending_review"
-    ACTIVE = "active"
-    SUSPENDED = "suspended"
-    REJECTED = "rejected"
+    PENDING_EMAIL = "pending_email"      # Ожидает подтверждения email
+    PENDING_REVIEW = "pending_review"    # На модерации
+    ACTIVE = "active"                    # Активна
+    SUSPENDED = "suspended"              # Приостановлена
+    REJECTED = "rejected"                # Отклонена
 
 
 class VerificationStatus(str, Enum):
@@ -33,14 +33,75 @@ class TrustLevel(str, Enum):
     VERIFIED = "verified"
 
 
-# === Регистрация компании ===
+# === Регистрация компании (упрощённая) ===
+
+class CompanyRegisterRequest(BaseModel):
+    """Регистрация компании - упрощённая форма"""
+    # Данные компании
+    inn: str = Field(..., min_length=10, max_length=12, description="ИНН компании")
+    company_name: str = Field(..., min_length=2, max_length=200, description="Название компании")
+    email: EmailStr = Field(..., description="Корпоративная почта компании")
+    phone: Optional[str] = Field(None, max_length=20, description="Телефон компании")
+    
+    # Данные администратора (контактного лица)
+    user_first_name: str = Field(..., min_length=2, max_length=100)
+    user_last_name: str = Field(..., min_length=2, max_length=100)
+    user_patronymic: Optional[str] = Field(None, max_length=100)
+    user_email: EmailStr = Field(..., description="Email контактного лица")
+    user_password: str = Field(..., min_length=6, max_length=100)
+    user_password_confirm: str
+    
+    @field_validator('inn')
+    @classmethod
+    def validate_inn(cls, v: str) -> str:
+        v = v.strip()
+        if not v.isdigit():
+            raise ValueError('ИНН должен содержать только цифры')
+        if len(v) not in [10, 12]:
+            raise ValueError('ИНН должен содержать 10 или 12 цифр')
+        return v
+    
+    @field_validator('email')
+    @classmethod
+    def validate_corporate_email(cls, v: str) -> str:
+        """Проверка на корпоративную почту"""
+        free_domains = [
+            'gmail.com', 'mail.ru', 'yandex.ru', 'yahoo.com', 
+            'hotmail.com', 'outlook.com', 'rambler.ru', 'bk.ru',
+            'list.ru', 'inbox.ru', 'gmx.com', 'icloud.com', 
+            'me.com', 'live.com', 'mail.com', 'protonmail.com'
+        ]
+        domain = v.split('@')[1].lower()
+        if domain in free_domains:
+            raise ValueError('Требуется корпоративная почта (например, @company.ru)')
+        return v
+    
+    @field_validator('user_password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError('Пароль должен содержать минимум 6 символов')
+        if not re.search(r'[A-Za-zА-Яа-я]', v):
+            raise ValueError('Пароль должен содержать хотя бы одну букву')
+        return v
+    
+    @field_validator('user_password_confirm')
+    @classmethod
+    def passwords_match(cls, v: str, info) -> str:
+        if 'user_password' in info.data and v != info.data['user_password']:
+            raise ValueError('Пароли не совпадают')
+        return v
+
+
+# === Старые схемы (для совместимости) ===
 
 class CompanyRegisterStep1(BaseModel):
-    """Шаг 1: Ввод ИНН"""
-    inn: str = Field(..., min_length=10, max_length=12)
+    """Шаг 1: Ввод ИНН (deprecated)"""
+    inn: str = Field(..., min_length=10, max_length=12, description="ИНН компании")
     
-    @validator('inn')
-    def validate_inn(cls, v):
+    @field_validator('inn')
+    @classmethod
+    def validate_inn(cls, v: str) -> str:
         v = v.strip()
         if not v.isdigit():
             raise ValueError('ИНН должен содержать только цифры')
@@ -50,51 +111,22 @@ class CompanyRegisterStep1(BaseModel):
 
 
 class CompanyFNSData(BaseModel):
-    """Данные компании из ФНС API"""
+    """Данные компании (упрощённые, без ФНС)"""
     inn: str
     ogrn: Optional[str] = None
     kpp: Optional[str] = None
-    full_name: str
+    full_name: Optional[str] = None
     short_name: Optional[str] = None
     legal_address: Optional[str] = None
     director_name: Optional[str] = None
     director_position: Optional[str] = None
-    status: str
+    status: str = "active"
     registration_date: Optional[str] = None
     raw_data: Optional[Dict[str, Any]] = None
 
 
-class CompanyRegisterStep2(BaseModel):
-    """Шаг 2: Подтверждение и ввод email"""
-    inn: str
-    email: EmailStr
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    
-    user_first_name: str = Field(..., min_length=2, max_length=100)
-    user_last_name: str = Field(..., min_length=2, max_length=100)
-    user_patronymic: Optional[str] = Field(None, max_length=100)
-    user_email: EmailStr
-    user_password: str = Field(..., min_length=8, max_length=100)
-    user_password_confirm: str
-    
-    @validator('email')
-    def validate_corporate_email(cls, v):
-        free_domains = [
-            'gmail.com', 'mail.ru', 'yandex.ru', 'yahoo.com', 
-            'hotmail.com', 'outlook.com', 'rambler.ru', 'bk.ru',
-            'list.ru', 'inbox.ru'
-        ]
-        domain = v.split('@')[1].lower()
-        if domain in free_domains:
-            raise ValueError('Требуется корпоративная почта')
-        return v
-    
-    @validator('user_password_confirm')
-    def passwords_match(cls, v, values):
-        if 'user_password' in values and v != values['user_password']:
-            raise ValueError('Пароли не совпадают')
-        return v
+# Алиас для обратной совместимости
+CompanyRegisterStep2 = CompanyRegisterRequest
 
 
 class CompanyCreate(BaseModel):
@@ -172,6 +204,8 @@ class CompanyResponse(BaseModel):
     trust_level: Optional[TrustLevel] = None
     social_links: Optional[List[str]] = None
     created_at: Optional[datetime] = None
+    rating: float = Field(default=0.0, description="Средний рейтинг компании")
+    reviews_count: int = Field(default=0, description="Количество отзывов")
     
     class Config:
         from_attributes = True
@@ -188,6 +222,8 @@ class CompanyListResponse(BaseModel):
     city: Optional[str] = None
     status: CompanyStatus
     logo_url: Optional[str] = None
+    rating: float = Field(default=0.0, description="Средний рейтинг компании")
+    reviews_count: int = Field(default=0, description="Количество отзывов")
     
     class Config:
         from_attributes = True
@@ -197,5 +233,13 @@ class CompanyListResponse(BaseModel):
 
 class CompanyEmailVerificationRequest(BaseModel):
     token: str
-    
+
+
+class CompanyRegisterResponse(BaseModel):
+    """Ответ на регистрацию компании"""
+    message: str
+    company_id: int
+    email: str
+
+
 CompanyDetailResponse = CompanyResponse

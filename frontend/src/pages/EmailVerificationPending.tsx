@@ -3,10 +3,8 @@ import { motion } from 'framer-motion';
 import { Mail, ArrowRight, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { api } from '../api/client';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
+const API_BASE_URL = ''; // Пустая строка для относительных запросов
 
 const EmailVerificationPending = () => {
   const navigate = useNavigate();
@@ -17,7 +15,6 @@ const EmailVerificationPending = () => {
   const [resendError, setResendError] = useState('');
   const [countdown, setCountdown] = useState(0);
   
-  // Автоматический таймер для повторной отправки
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -33,7 +30,7 @@ const EmailVerificationPending = () => {
     setResendError('');
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+      const response = await fetch(`/auth/resend-verification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -43,7 +40,7 @@ const EmailVerificationPending = () => {
       
       if (response.ok) {
         setResendMessage('Письмо отправлено повторно! Проверьте почту.');
-        setCountdown(60); // Блокируем повторную отправку на 60 секунд
+        setCountdown(60);
       } else {
         setResendError(data.detail || 'Не удалось отправить письмо');
       }
@@ -56,7 +53,6 @@ const EmailVerificationPending = () => {
 
   return (
     <div className="email-verification-pending">
-      {/* Фоновые свечения */}
       <div className="app__bg-glow app__bg-glow--1"></div>
       <div className="app__bg-glow app__bg-glow--2"></div>
       <div className="app__bg-glow app__bg-glow--3"></div>

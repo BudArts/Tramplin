@@ -70,7 +70,6 @@ app = FastAPI(
 )
 
 # === Middleware ===
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -109,11 +108,13 @@ def load_router(module_path: str, router_attr: str = "router"):
 # Основные (обязательные)
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
+from app.routers.company_registration import router as company_registration_router  # ← НОВЫЙ!
 from app.routers.companies import router as companies_router
 
 app.include_router(auth_router)
 app.include_router(users_router)
-app.include_router(companies_router)
+app.include_router(company_registration_router)  # ← ПОДКЛЮЧАЕМ ПЕРВЫМ!
+app.include_router(companies_router)             # ← companies идёт после
 app.include_router(reviews.router)
 
 # Опциональные роутеры
@@ -152,8 +153,6 @@ async def root():
         "status": "running",
         "docs": "/docs",
     }
-# backend/app/main.py
-# Добавьте после создания app
 
 @app.get("/debug/cors", tags=["Debug"])
 async def debug_cors():

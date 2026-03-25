@@ -1,4 +1,5 @@
 # backend/app/services/fns_service.py
+# backend/app/services/fns_service.py
 import httpx
 from typing import Optional, Dict, Any
 from app.config import settings
@@ -9,24 +10,43 @@ logger = logging.getLogger(__name__)
 
 
 class FNSService:
-    """Сервис для работы с API ФНС (api-fns.ru или dadata.ru)"""
+    """Сервис для работы с API ФНС"""
     
     def __init__(self):
         self.api_url = settings.FNS_API_URL
         self.api_key = settings.FNS_API_KEY
+        self.dadata_key = settings.DADATA_API_KEY  # Отдельный ключ для DaData
     
     async def get_company_by_inn(self, inn: str) -> Optional[CompanyFNSData]:
         """
         Получить данные компании по ИНН из ФНС API
+        """
+        # Проверка валидности ИНН
+        if not self.validate_inn(inn):
+            logger.error(f"Invalid INN format: {inn}")
+            return None
         
-        Поддерживаемые API:
-        - api-fns.ru
-        - dadata.ru
-        - egrul.nalog.ru (официальный)
+        # Пробуем сначала основной API
+        result = await self._get_company_from_fns(inn)
+        
+        # Если основной API не работает, пробуем DaData
+        if result is None and self.dadata_key:
+            logger.info(f"Trying DaData for INN: {inn}")
+            result = await self.get_company_by_inn_dadata(inn)
+        
+        return result
+    
+    async def _get_company_from_fns(self, inn: str) -> Optional[CompanyFNSData]:
+        """
+        Запрос к официальному API ФНС
         """
         try:
-            # Вариант 1: Использование api-fns.ru
             async with httpx.AsyncClient(timeout=30.0) as client:
+                # Проверяем, что URL и ключ не пустые
+                if not self.api_url or not self.api_key:
+                    logger.warning("FNS API URL or KEY not configured")
+                    return None
+                
                 response = await client.get(
                     f"{self.api_url}/egr",
                     params={
@@ -35,13 +55,27 @@ class FNSService:
                     }
                 )
                 
+                # Логируем статус и ответ для отладки
+                logger.info(f"FNS API response status: {response.status_code}")
+                
                 if response.status_code != 200:
                     logger.error(f"FNS API error: {response.status_code}")
+                    logger.error(f"Response content: {response.text[:500]}")
                     return None
                 
-                data = response.json()
+                # Проверяем, не пустой ли ответ
+                if not response.text:
+                    logger.error("Empty response from FNS API")
+                    return None
                 
-                # Парсинг ответа от api-fns.ru
+                try:
+                    data = response.json()
+                except Exception as json_error:
+                    logger.error(f"Failed to parse JSON from FNS API: {json_error}")
+                    logger.error(f"Response text: {response.text[:500]}")
+                    return None
+                
+                # Парсинг ответа
                 if "items" not in data or len(data["items"]) == 0:
                     logger.warning(f"Company not found for INN: {inn}")
                     return None
@@ -54,7 +88,7 @@ class FNSService:
                     ogrn=item.get("ОГРН") or item.get("ogrn"),
                     kpp=item.get("КПП") or item.get("kpp"),
                     full_name=self._extract_name(item),
-                    short_name=item.get("НаsimСокр") or item.get("short_name"),
+                    short_name=item.get("НаимСокр") or item.get("short_name"),
                     legal_address=self._extract_address(item),
                     director_name=self._extract_director_name(item),
                     director_position=self._extract_director_position(item),
@@ -64,6 +98,90 @@ class FNSService:
                 )
                 
                 return fns_data
+                
+        except httpx.TimeoutException:
+            logger.error(f"FNS API timeout for INN: {inn}")
+            return None
+        except Exception as e:
+            logger.error(f"FNS API error for INN {inn}: {e}")
+            return None
+    
+    async def get_company_by_inn_dadata(self, inn: str) -> Optional[CompanyFNSData]:
+        """
+        Альтернативный метод через DaData API
+        """
+        # Проверяем, что токен установлен
+        if not self.dadata_key:
+            logger.error("DaData API key is not configured")
+            return None
+        
+        # Очищаем токен от лишних пробелов
+        dadata_token = self.dadata_key.strip()
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                headers = {
+                    "Authorization": f"Token {dadata_token}",
+                    "Content-Type": "application/json"
+                }
+                
+                logger.info(f"Calling DaData API for INN: {inn}")
+                
+                response = await client.post(
+                    "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party",
+                    headers=headers,
+                    json={"query": inn}
+                )
+                
+                logger.info(f"DaData API response status: {response.status_code}")
+                
+                if response.status_code != 200:
+                    logger.error(f"DaData API error: {response.status_code}")
+                    logger.error(f"Response: {response.text[:500]}")
+                    return None
+                
+                # Проверяем, не пустой ли ответ
+                if not response.text:
+                    logger.error("Empty response from DaData API")
+                    return None
+                
+                try:
+                    data = response.json()
+                except Exception as json_error:
+                    logger.error(f"Failed to parse JSON from DaData: {json_error}")
+                    return None
+                
+                if not data.get("suggestions"):
+                    logger.warning(f"Company not found in DaData for INN: {inn}")
+                    return None
+                
+                suggestion = data["suggestions"][0]
+                company_data = suggestion.get("data", {})
+                
+                fns_data = CompanyFNSData(
+                    inn=inn,
+                    ogrn=company_data.get("ogrn"),
+                    kpp=company_data.get("kpp"),
+                    full_name=company_data.get("name", {}).get("full_with_opf", ""),
+                    short_name=company_data.get("name", {}).get("short_with_opf"),
+                    legal_address=company_data.get("address", {}).get("value"),
+                    director_name=company_data.get("management", {}).get("name"),
+                    director_position=company_data.get("management", {}).get("post"),
+                    status=self._map_dadata_status(company_data.get("state", {}).get("status")),
+                    registration_date=company_data.get("state", {}).get("registration_date"),
+                    raw_data=company_data
+                )
+                
+                return fns_data
+                
+        except httpx.TimeoutException:
+            logger.error(f"DaData API timeout for INN: {inn}")
+            return None
+        except Exception as e:
+            logger.error(f"DaData API error for INN {inn}: {e}")
+            return None
+    
+    # ... остальные методы остаются без изменений
                 
         except httpx.TimeoutException:
             logger.error(f"FNS API timeout for INN: {inn}")

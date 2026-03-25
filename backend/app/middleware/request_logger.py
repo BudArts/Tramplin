@@ -1,17 +1,32 @@
 # backend/app/middleware/request_logger.py
+import logging
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-import time
+import json
 
+logger = logging.getLogger(__name__)
 
 class RequestLoggerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        start_time = time.time()
+        # Логируем входящий запрос
+        body = await request.body()
+        
+        logger.info(f"=== INCOMING REQUEST ===")
+        logger.info(f"Method: {request.method}")
+        logger.info(f"URL: {request.url}")
+        logger.info(f"Headers: {dict(request.headers)}")
+        
+        if body:
+            try:
+                body_str = body.decode('utf-8')
+                logger.info(f"Body: {body_str}")
+            except:
+                logger.info(f"Body: <binary>")
+        
+        # Получаем ответ
         response = await call_next(request)
-        process_time = time.time() - start_time
         
-        # Логируем только в debug режиме
-        # print(f"{request.method} {request.url.path} - {response.status_code} ({process_time:.3f}s)")
+        logger.info(f"Response status: {response.status_code}")
+        logger.info("========================")
         
-        response.headers["X-Process-Time"] = str(process_time)
         return response

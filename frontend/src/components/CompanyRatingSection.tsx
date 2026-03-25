@@ -1,6 +1,8 @@
+// frontend/src/components/CompanyRatingSection.tsx
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Star, MapPin, Briefcase, ExternalLink } from 'lucide-react';
+import { Trophy, Star, MapPin, Briefcase } from 'lucide-react';
 import { api } from '../api/client';
 
 interface Company {
@@ -14,6 +16,8 @@ interface Company {
   city: string | null;
   status: string;
   logo_url: string | null;
+  rating: number;
+  reviews_count: number;
 }
 
 interface CompanyRatingStats {
@@ -47,9 +51,9 @@ const CompanyRatingCard: React.FC<{ company: Company; index: number }> = ({ comp
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        // Загружаем статистику рейтинга
+        // Загружаем статистику рейтинга - ИСПРАВЛЕННЫЙ URL
         const statsResponse = await fetch(
-          `http://localhost:8000/api/reviews/companies/${company.id}/stats`
+          `/api/reviews/companies/${company.id}/stats`
         );
         
         if (statsResponse.ok) {
@@ -58,15 +62,15 @@ const CompanyRatingCard: React.FC<{ company: Company; index: number }> = ({ comp
         } else {
           // Если нет отзывов, используем демо-данные
           setRatingStats({
-            average_rating: 4.5,
-            total_reviews: 0,
+            average_rating: company.rating || 0,
+            total_reviews: company.reviews_count || 0,
             rating_distribution: { "5": 0, "4": 0, "3": 0, "2": 0, "1": 0 }
           });
         }
 
-        // Загружаем последние отзывы
+        // Загружаем последние отзывы - ИСПРАВЛЕННЫЙ URL
         const reviewsResponse = await fetch(
-          `http://localhost:8000/api/reviews/companies/${company.id}?per_page=1&sort_by=created_at`
+          `/api/reviews/companies/${company.id}?page=1&per_page=1&sort_by=created_at`
         );
         
         if (reviewsResponse.ok) {
@@ -83,13 +87,20 @@ const CompanyRatingCard: React.FC<{ company: Company; index: number }> = ({ comp
     fetchCompanyData();
   }, [company.id]);
 
-  const rating = ratingStats?.average_rating || 0;
-  const reviewsCount = ratingStats?.total_reviews || 0;
+  const rating = ratingStats?.average_rating || company.rating || 0;
+  const reviewsCount = ratingStats?.total_reviews || company.reviews_count || 0;
   
-  // Получаем последний отзыв для предпросмотра
   const latestReview = reviews[0];
-  const reviewText = latestReview?.text || latestReview?.pros || 
-    (reviewsCount > 0 ? 'Отличная компания!' : 'Пока нет отзывов');
+  let reviewText = '';
+  
+  if (latestReview) {
+    reviewText = latestReview.text || latestReview.pros || 
+      (reviewsCount > 0 ? 'Отличная компания!' : '');
+  } else if (reviewsCount > 0) {
+    reviewText = 'Отличная компания!';
+  } else {
+    reviewText = 'Пока нет отзывов';
+  }
 
   return (
     <motion.div
@@ -171,19 +182,17 @@ const CompanyRatingSection = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCompanies = async () => {
+    const fetchTopCompanies = async () => {
       try {
-        // Получаем список активных компаний
-        const response = await fetch('http://localhost:8000/companies/?skip=0&limit=20');
-        const data = await response.json();
+        // Получаем топ-3 компании по рейтингу - ИСПРАВЛЕННЫЙ URL
+        const response = await fetch('/companies/top-rated/?limit=3');
         
-        if (data && data.length > 0) {
-          // Фильтруем только активные компании и берем первые 3
-          const activeCompanies = data
-            .filter((c: Company) => c.status === 'active')
-            .slice(0, 3);
-          setCompanies(activeCompanies);
+        if (!response.ok) {
+          throw new Error('Ошибка загрузки компаний');
         }
+        
+        const data = await response.json();
+        setCompanies(data);
       } catch (error) {
         console.error('Ошибка загрузки компаний:', error);
       } finally {
@@ -191,7 +200,7 @@ const CompanyRatingSection = () => {
       }
     };
 
-    fetchCompanies();
+    fetchTopCompanies();
   }, []);
 
   return (

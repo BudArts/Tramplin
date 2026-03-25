@@ -3,7 +3,7 @@
 """
 import asyncio
 import random
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from passlib.context import CryptContext
 
 from sqlalchemy import select
@@ -46,19 +46,156 @@ TAGS_BY_CATEGORY = {
     ]
 }
 
-# Тестовые компании
+# Тестовые компании с координатами
 COMPANIES = [
-    {"inn": "7707083893", "name": "ТехноСтарт", "full_name": 'ООО "ТехноСтарт"', "description": "IT-компания", "industry": "IT", "city": "Москва", "website": "https://technostart.ru"},
-    {"inn": "7708123456", "name": "DataMind", "full_name": 'ООО "ДатаМайнд"', "description": "Анализ данных", "industry": "Data Science", "city": "Санкт-Петербург", "website": "https://datamind.ru"},
-    {"inn": "7709234567", "name": "CloudBase", "full_name": 'ООО "КлаудБейс"', "description": "Облачные решения", "industry": "Cloud", "city": "Новосибирск", "website": "https://cloudbase.ru"},
-    {"inn": "7710345678", "name": "FinTech Pro", "full_name": 'ООО "ФинТех Про"', "description": "Финтех", "industry": "Финтех", "city": "Москва", "website": "https://fintechpro.ru"},
-    {"inn": "7711456789", "name": "EduPlatform", "full_name": 'ООО "ЭдуПлатформ"', "description": "EdTech", "industry": "EdTech", "city": "Казань", "website": "https://eduplatform.ru"},
-    {"inn": "7712567890", "name": "GameStudio X", "full_name": 'ООО "ГеймСтудио"', "description": "GameDev", "industry": "GameDev", "city": "Москва", "website": "https://gamestudiox.ru"},
-    {"inn": "7713678901", "name": "SecureNet", "full_name": 'ООО "СекьюрНет"', "description": "Кибербезопасность", "industry": "Security", "city": "Екатеринбург", "website": "https://securenet.ru"},
-    {"inn": "7714789012", "name": "MedTech Solutions", "full_name": 'ООО "МедТех"', "description": "HealthTech", "industry": "HealthTech", "city": "Москва", "website": "https://medtech.ru"},
-    {"inn": "7715890123", "name": "RoboLogic", "full_name": 'ООО "РобоЛоджик"', "description": "Робототехника", "industry": "Robotics", "city": "Санкт-Петербург", "website": "https://robologic.ru"},
-    {"inn": "7716901234", "name": "AI Labs", "full_name": 'ООО "ЭйАй Лабс"', "description": "AI/ML", "industry": "AI/ML", "city": "Москва", "website": "https://ailabs.ru"},
+    {
+        "inn": "7707083893", 
+        "name": "ТехноСтарт", 
+        "full_name": 'ООО "ТехноСтарт"', 
+        "description": "IT-компания", 
+        "industry": "IT", 
+        "city": "Москва", 
+        "website": "https://technostart.ru",
+        "latitude": 55.751244,
+        "longitude": 37.618423
+    },
+    {
+        "inn": "7708123456", 
+        "name": "DataMind", 
+        "full_name": 'ООО "ДатаМайнд"', 
+        "description": "Анализ данных", 
+        "industry": "Data Science", 
+        "city": "Санкт-Петербург", 
+        "website": "https://datamind.ru",
+        "latitude": 59.934280,
+        "longitude": 30.335099
+    },
+    {
+        "inn": "7709234567", 
+        "name": "CloudBase", 
+        "full_name": 'ООО "КлаудБейс"', 
+        "description": "Облачные решения", 
+        "industry": "Cloud", 
+        "city": "Новосибирск", 
+        "website": "https://cloudbase.ru",
+        "latitude": 55.030199,
+        "longitude": 82.920430
+    },
+    {
+        "inn": "7710345678", 
+        "name": "FinTech Pro", 
+        "full_name": 'ООО "ФинТех Про"', 
+        "description": "Финтех", 
+        "industry": "Финтех", 
+        "city": "Москва", 
+        "website": "https://fintechpro.ru",
+        "latitude": 55.760186,
+        "longitude": 37.618423
+    },
+    {
+        "inn": "7711456789", 
+        "name": "EduPlatform", 
+        "full_name": 'ООО "ЭдуПлатформ"', 
+        "description": "EdTech", 
+        "industry": "EdTech", 
+        "city": "Казань", 
+        "website": "https://eduplatform.ru",
+        "latitude": 55.796127,
+        "longitude": 49.106405
+    },
+    {
+        "inn": "7712567890", 
+        "name": "GameStudio X", 
+        "full_name": 'ООО "ГеймСтудио"', 
+        "description": "GameDev", 
+        "industry": "GameDev", 
+        "city": "Москва", 
+        "website": "https://gamestudiox.ru",
+        "latitude": 55.761744,
+        "longitude": 37.608993
+    },
+    {
+        "inn": "7713678901", 
+        "name": "SecureNet", 
+        "full_name": 'ООО "СекьюрНет"', 
+        "description": "Кибербезопасность", 
+        "industry": "Security", 
+        "city": "Екатеринбург", 
+        "website": "https://securenet.ru",
+        "latitude": 56.838011,
+        "longitude": 60.597466
+    },
+    {
+        "inn": "7714789012", 
+        "name": "MedTech Solutions", 
+        "full_name": 'ООО "МедТех"', 
+        "description": "HealthTech", 
+        "industry": "HealthTech", 
+        "city": "Москва", 
+        "website": "https://medtech.ru",
+        "latitude": 55.752121,
+        "longitude": 37.623504
+    },
+    {
+        "inn": "7715890123", 
+        "name": "RoboLogic", 
+        "full_name": 'ООО "РобоЛоджик"', 
+        "description": "Робототехника", 
+        "industry": "Robotics", 
+        "city": "Санкт-Петербург", 
+        "website": "https://robologic.ru",
+        "latitude": 59.938630,
+        "longitude": 30.314130
+    },
+    {
+        "inn": "7716901234", 
+        "name": "AI Labs", 
+        "full_name": 'ООО "ЭйАй Лабс"', 
+        "description": "AI/ML", 
+        "industry": "AI/ML", 
+        "city": "Москва", 
+        "website": "https://ailabs.ru",
+        "latitude": 55.749725,
+        "longitude": 37.623504
+    },
 ]
+
+# Дополнительные координаты для возможностей (разные точки в том же городе)
+EXTRA_LOCATIONS = {
+    "Москва": [
+        (55.751244, 37.618423),   # Центр
+        (55.760186, 37.618423),   # Тверская
+        (55.761744, 37.608993),   # Пушкинская
+        (55.752121, 37.623504),   # Лубянка
+        (55.749725, 37.623504),   # Китай-город
+        (55.755814, 37.617635),   # Красная площадь
+        (55.764584, 37.606537),   # Маяковская
+        (55.772245, 37.587404),   # Белорусская
+    ],
+    "Санкт-Петербург": [
+        (59.934280, 30.335099),   # Невский проспект
+        (59.938630, 30.314130),   # Дворцовая площадь
+        (59.941324, 30.298645),   # Васильевский остров
+        (59.926975, 30.322147),   # Сенная площадь
+        (59.930675, 30.358795),   # Владимирская
+        (59.920759, 30.352759),   # Технологический институт
+    ],
+    "Новосибирск": [
+        (55.030199, 82.920430),   # Центр
+        (55.045475, 82.919403),   # Красный проспект
+        (55.024029, 82.927875),   # Вокзальная магистраль
+    ],
+    "Казань": [
+        (55.796127, 49.106405),   # Центр
+        (55.787679, 49.122739),   # Кремлевская
+        (55.802487, 49.107052),   # Баумана
+    ],
+    "Екатеринбург": [
+        (56.838011, 60.597466),   # Центр
+        (56.839476, 60.609271),   # Площадь 1905 года
+        (56.838520, 60.582300),   # Уралмаш
+    ],
+}
 
 OPPORTUNITY_TEMPLATES = [
     {"type": OpportunityType.INTERNSHIP, "title": "Стажировка: {role}"},
@@ -180,21 +317,29 @@ async def seed_database():
         companies = []
         for i, data in enumerate(COMPANIES):
             company = Company(
-                **data,
+                inn=data["inn"],
+                name=data["name"],
+                full_name=data["full_name"],
+                description=data["description"],
+                industry=data["industry"],
+                city=data["city"],
+                website=data["website"],
                 owner_id=company_owners[i].id,
                 status=CompanyStatus.ACTIVE,
                 verification_status=VerificationStatus.VERIFIED,
                 email=f"info@company{i+1}.ru",
                 phone=f"+7 (495) {random.randint(100,999)}-{random.randint(10,99)}-{random.randint(10,99)}",
                 rating=round(random.uniform(3.5, 5.0), 1),
-                reviews_count=random.randint(5, 50)
+                reviews_count=random.randint(5, 50),
+                latitude=data.get("latitude"),
+                longitude=data.get("longitude")
             )
             db.add(company)
             companies.append(company)
         await db.commit()
         print(f"   ✅ Создано {len(companies)} компаний")
         
-         # 4. Создаём возможности
+        # 4. Создаём возможности
         print("📋 Создаём возможности...")
         opportunities_count = 0
         
@@ -218,32 +363,49 @@ async def seed_database():
                     salary_min = random.randint(20, 40) * 1000
                     salary_max = random.randint(50, 80) * 1000
                 
+                # Выбираем координаты для возможности
+                # Если у компании есть координаты, используем их или немного смещаем
+                if company.latitude and company.longitude:
+                    # Небольшое смещение в пределах 0.005 градуса (~500 метров)
+                    lat_offset = random.uniform(-0.005, 0.005)
+                    lon_offset = random.uniform(-0.005, 0.005)
+                    latitude = company.latitude + lat_offset
+                    longitude = company.longitude + lon_offset
+                else:
+                    # Если нет координат компании, используем из списка по городу
+                    city_locations = EXTRA_LOCATIONS.get(company.city, [(55.751244, 37.618423)])
+                    latitude, longitude = random.choice(city_locations)
+                
                 # Создаем объект
                 opp = Opportunity(
                     company_id=company.id,
                     title=title,
                     description=f"Отличная возможность для развития в компании {company.name}. "
-                               f"Мы ищем талантливых и мотивированных людей!",
+                               f"Мы ищем талантливых и мотивированных людей! "
+                               f"Адрес: {company.city}, ул. Примерная, д. {random.randint(1, 100)}",
                     type=template["type"],
                     work_format=random.choice(list(WorkFormat)),
                     status=OpportunityStatus.ACTIVE,
                     salary_min=salary_min,
                     salary_max=salary_max,
                     city=company.city,
+                    address=f"г. {company.city}, ул. {random.choice(['Ленина', 'Пушкина', 'Гагарина', 'Мира', 'Советская'])}",
+                    latitude=latitude,
+                    longitude=longitude,
                     views_count=random.randint(50, 500),
                     applications_count=random.randint(5, 30),
                     expires_at=date.today() + timedelta(days=random.randint(30, 90)),
-                    published_at=datetime.utcnow() # Замена utcnow()
+                    published_at=datetime.now(timezone.utc)
                 )
                 
-                # Привязываем теги СРАЗУ ЖЕ ДО коммита
+                # Привязываем теги
                 opp.tags = random.sample(tags, random.randint(3, 6))
                 
                 db.add(opp)
                 opportunities_count += 1
 
         await db.commit()
-        print(f"   ✅ Создано {opportunities_count} возможностей с тегами")
+        print(f"   ✅ Создано {opportunities_count} возможностей с тегами и координатами")
         
         # 5. Создаём отзывы
         print("⭐ Создаём отзывы...")
@@ -255,9 +417,9 @@ async def seed_database():
                     user_id=user.id,
                     rating=random.randint(3, 5),
                     title="Отличная компания!",
-                    text="Хороший коллектив",
-                    pros="Развитие",
-                    cons="Много работы",
+                    text="Хороший коллектив, отличные условия работы",
+                    pros="Профессиональный рост, дружный коллектив",
+                    cons="Сложно найти парковку",
                     helpful_count=random.randint(0, 20)
                 )
                 db.add(review)
@@ -272,7 +434,7 @@ async def seed_database():
                 user_id=user.id,
                 type=NotificationType.SYSTEM,
                 title="Добро пожаловать!",
-                message=f"Привет, {user.first_name}!",
+                message=f"Привет, {user.first_name}! Добро пожаловать на платформу Tramplin!",
                 is_read=random.choice([True, False])
             ))
         await db.commit()
@@ -281,11 +443,23 @@ async def seed_database():
         print("\n" + "="*50)
         print("✨ База данных заполнена!")
         print("="*50)
-        print(f"\n📊 Тегов: {len(tags)}, Пользователей: {len(users)}, Компаний: {len(companies)}")
-        print(f"   Возможностей: {len(opportunities)}, Отзывов: {len(reviews)}")
-        print("\n🔐 Аккаунты: admin@tramplin.ru / admin123")
-        print("             company1@example.com / password123")
-        print("             user1@example.com / password123")
+        print(f"\n📊 Статистика:")
+        print(f"   Тегов: {len(tags)}")
+        print(f"   Пользователей: {len(users)}")
+        print(f"   Компаний: {len(companies)}")
+        print(f"   Возможностей: {opportunities_count}")
+        print(f"   Отзывов: {len(reviews)}")
+        print(f"   Уведомлений: {len(users)}")
+        
+        # Проверяем координаты
+        opps_with_coords = sum(1 for opp in companies if opp.latitude and opp.longitude)
+        print(f"\n📍 Компании с координатами: {opps_with_coords}/{len(companies)}")
+        
+        print("\n🔐 Тестовые аккаунты:")
+        print("   Админ:     admin@tramplin.ru / admin123")
+        print("   Компания:  company1@example.com / password123")
+        print("   Студент:   user1@example.com / password123")
+        print("   Куратор:   curator1@tramplin.ru / curator123")
 
 
 if __name__ == "__main__":

@@ -12,6 +12,13 @@ services:
       POSTGRES_USER: ${DB_USER:-tramplin_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-strongpassword123}
       PGDATA: /var/lib/postgresql/data/pgdata
+      MAIL_USERNAME: tramplin_official@mail.ru
+      MAIL_PASSWORD: a1dqwa3f9QaUNJlZkcKI
+      MAIL_FROM: tramplin_official@mail.ru
+      MAIL_SERVER: smtp.mail.ru
+      MAIL_PORT: 587
+      MAIL_STARTTLS: True
+      MAIL_SSL_TLS: False
     ports:
       - "5432:5432"
     volumes:
@@ -44,7 +51,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
       
-      # Email (ДОБАВЛЯЕМ!)
+      # Email
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-noreply@tramplin.ru}
@@ -54,40 +61,65 @@ services:
       MAIL_SSL_TLS: ${MAIL_SSL_TLS:-False}
       
       # Frontend
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       
       # App
       APP_NAME: ${APP_NAME:-Tramplin}
-      ENVIRONMENT: ${ENVIRONMENT:-development}
-      DEBUG: ${DEBUG:-true}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
       EMAIL_VERIFICATION_EXPIRE_HOURS: ${EMAIL_VERIFICATION_EXPIRE_HOURS:-24}
       
       # Admin
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tramplin.ru}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       
-      # CORS
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost:80,http://localhost}
+      # CORS - добавляем домен Cloudflare
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,https://*.trycloudflare.com,http://*.trycloudflare.com}
       
       # Rate Limiting
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
       
-      # Redis (если используется)
+      # Redis
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       
-      # FNS API (если используется)
+      # FNS API
       FNS_API_URL: ${FNS_API_URL:-https://api-fns.ru/api}
       FNS_API_KEY: ${FNS_API_KEY:-}
       
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/app:/app/app          # hot-reload для разработки
+      - ./backend/app:/app/app
       - uploaded_files:/app/uploads
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - tramplin-network
+
+  # ============================================
+  # Frontend
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tramplin-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - tramplin-network
+  
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"  # SMTP порт
+      - "8025:8025"  # Web интерфейс
     networks:
       - tramplin-network
 

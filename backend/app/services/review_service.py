@@ -20,6 +20,43 @@ class ReviewService:
         self.db = db
         self.notification_service = NotificationService(db)
     
+    async def update_company_rating(self, db: AsyncSession, company_id: int):
+        """Обновление рейтинга компании на основе отзывов"""
+        from app.models.company import Company
+        
+        # Получаем все активные отзывы компании
+        query = select(Review).where(
+            Review.company_id == company_id,
+            Review.is_hidden == False
+        )
+        result = await db.execute(query)
+        reviews = result.scalars().all()
+        
+        if reviews:
+            # Вычисляем средний рейтинг
+            total_rating = sum(r.rating for r in reviews)
+            avg_rating = total_rating / len(reviews)
+            
+            # Обновляем компанию
+            company_query = select(Company).where(Company.id == company_id)
+            company_result = await db.execute(company_query)
+            company = company_result.scalar_one()
+            
+            company.rating = round(avg_rating, 1)
+            company.reviews_count = len(reviews)
+            
+            await db.commit()
+        else:
+            # Если отзывов нет, сбрасываем рейтинг
+            company_query = select(Company).where(Company.id == company_id)
+            company_result = await db.execute(company_query)
+            company = company_result.scalar_one()
+            
+            company.rating = 0.0
+            company.reviews_count = 0
+            
+            await db.commit()
+    
     async def create_review(
         self,
         company_id: int,

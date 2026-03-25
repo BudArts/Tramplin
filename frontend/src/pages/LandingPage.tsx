@@ -1,4 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+// frontend/src/pages/LandingPage.tsx
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import HeroSection from '../components/HeroSection';
 import CategoryNav from '../components/CategoryNav';
@@ -7,6 +9,7 @@ import OpportunityList, { OpportunityListRef } from '../components/OpportunityLi
 import CompanyRatingSection from '../components/CompanyRatingSection';
 import AuthModal from '../components/AuthModal';
 import Footer from '../components/Footer';
+import { useAuth } from '../hooks/useAuth';
 import type { OpportunityResponse, OpportunityType } from '../api/types';
 
 export interface Filters {
@@ -18,9 +21,16 @@ export interface Filters {
   salaryMax?: number;
 }
 
-const LandingPage = () => {
+interface LandingPageProps {
+  onOpenAuthModal?: (mode: 'login' | 'register') => void;
+}
+
+const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuthModal }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated, user, loading } = useAuth();
   const [activeCategory, setActiveCategory] = useState('all');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [displayedOpportunities, setDisplayedOpportunities] = useState<OpportunityResponse[]>([]);
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -32,6 +42,24 @@ const LandingPage = () => {
   });
 
   const opportunityListRef = useRef<OpportunityListRef>(null);
+
+  // ВАЖНО: редирект авторизованных студентов
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      if (user.role === 'student') {
+        navigate('/student/profile', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, loading, navigate]);
+
+  const handleOpenAuthModal = (mode: 'login' | 'register' = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleCloseAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
 
   const handleFilterChange = useCallback((partial: Partial<Filters>) => {
     setFilters(prev => ({ ...prev, ...partial }));
@@ -68,12 +96,12 @@ const LandingPage = () => {
   }, []);
 
   const handleShowMore = useCallback(() => {
-    setIsAuthModalOpen(true);
+    handleOpenAuthModal('register');
   }, []);
 
   return (
     <div className="landing-page">
-      <Header />
+      <Header onOpenAuthModal={handleOpenAuthModal} />
       <main>
         <HeroSection />
 
@@ -106,7 +134,8 @@ const LandingPage = () => {
 
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={handleCloseAuthModal}
+        defaultMode={authModalMode}
       />
     </div>
   );

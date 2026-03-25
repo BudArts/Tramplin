@@ -2,7 +2,14 @@
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 from functools import lru_cache
+from pathlib import Path
+from dotenv import load_dotenv
 
+# Загружаем .env из корня проекта (папка выше backend)
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"Config loaded env from: {env_path}")
 
 class Settings(BaseSettings):
     # ============ Database ============
@@ -13,6 +20,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    DOMAIN_NAME: str = "localhost:8000"
     
     # ============ Email ============
     MAIL_USERNAME: str
@@ -24,32 +32,30 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool = False
     
     # ============ Frontend ============
-    FRONTEND_URL: str = "http://localhost:5173"
-    DOMAIN_NAME: str = "localhost:8000"  # default для dev
-    
-    
+    FRONTEND_URL: str = "http://localhost:80"
+    APP_NAME: str = "Трамплин"
+    APP_TITLE: str = "Tramplin API"
+    APP_VERSION: str = "1.0.0"
     
     # ============ FNS API ============
     FNS_API_URL: str = "https://api-fns.ru/api"
-    FNS_API_KEY: Optional[str] = None
+    FNS_API_KEY: str = ""  # Ключ для api-fns.ru
+    DADATA_API_KEY: str = ""  # Отдельный ключ для DaData
     
     # ============ Redis ============
-    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_URL: str = "redis://localhost:6379/0"
     
     # ============ App ============
-    APP_NAME: str = "Tramplin"
-    APP_TITLE: str = "Tramplin API"
-    APP_VERSION: str = "1.0.0"
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
-    EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
     
     # ============ Admin ============
     ADMIN_EMAIL: str
     ADMIN_PASSWORD: str
     
     # ============ CORS ============
-    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000,http://localhost:8000"
     
     # ============ Rate Limiting ============
     RATE_LIMIT_PER_MINUTE: int = 60
@@ -60,7 +66,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
 
     class Config:
-        env_file = ".env"
+        # Не указываем env_file, так как загружаем через dotenv выше
         env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"

@@ -1,32 +1,32 @@
-FROM python:3.12-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PIP_DEFAULT_TIMEOUT=300
-ENV PIP_RETRIES=10
+FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Устанавливаем системные зависимости
+RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Копируем зависимости (убираем backend/ префикс)
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir \
     --timeout 300 \
     --retries 10 \
+    --trusted-host pypi.org \
+    --trusted-host pypi.python.org \
+    --trusted-host files.pythonhosted.org \
     -r requirements.txt
 
+# Копируем весь код бэкенда (убираем backend/ префикс)
 COPY . .
 
-RUN chmod +x start.sh
+# Переменные окружения
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
+# Открываем порт
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-CMD ["bash", "start.sh"]
+# Запускаем
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

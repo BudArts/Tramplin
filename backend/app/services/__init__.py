@@ -1,8 +1,7 @@
 # backend/app/services/__init__.py
 
-from app.services.auth_service import auth_service, AuthService
+
 from app.services.user_service import user_service, UserService
-from app.services.company_service import company_service, CompanyService
 
 # Опциональные сервисы
 try:

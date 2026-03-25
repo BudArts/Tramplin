@@ -1,8 +1,9 @@
 // frontend/src/components/AuthModal.tsx
+
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, Building2, Briefcase, GraduationCap, Eye, EyeOff, AlertCircle, CheckCircle, Loader2, Phone, UserRound } from 'lucide-react';
+import { X, Mail, Lock, Building2, Briefcase, GraduationCap, Eye, EyeOff, AlertCircle, CheckCircle, Loader2, Phone, UserRound } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // <-- ДОБАВЬТЕ ЭТОТ ИМПОРТ
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 interface Props {
@@ -36,7 +37,7 @@ interface RegisterFormData {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) => {
-  const navigate = useNavigate(); // <-- ДОБАВЬТЕ ЭТУ СТРОКУ
+  const navigate = useNavigate();
   const [mode, setMode] = useState<FormMode>(defaultMode);
   const [loginData, setLoginData] = useState<LoginFormData>({
     email: '',
@@ -60,13 +61,42 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, isAuthenticated } = useAuth();
+  const { isAuthenticated, refreshUser } = useAuth();
+
+  // Обновляем режим при изменении defaultMode (когда открывается модалка с другим режимом)
+  useEffect(() => {
+    if (isOpen) {
+      setMode(defaultMode);
+      // Очищаем ошибки и сообщения при смене режима
+      setErrors({});
+      setSuccessMessage('');
+      // Сбрасываем формы
+      setLoginData({ email: '', password: '' });
+      setRegisterData({
+        email: '',
+        password: '',
+        password_confirm: '',
+        first_name: '',
+        last_name: '',
+        patronymic: '',
+        phone: '',
+        role: 'applicant',
+        company_name: '',
+        inn: '',
+        company_email: '',
+      });
+    }
+  }, [defaultMode, isOpen]);
 
   useEffect(() => {
     if (isAuthenticated && isOpen) {
-      setTimeout(() => onClose(), 1500);
+      setTimeout(() => {
+        onClose();
+        // После успешной авторизации перенаправляем в студенческий кабинет
+        navigate('/student/profile');
+      }, 1500);
     }
-  }, [isAuthenticated, isOpen, onClose]);
+  }, [isAuthenticated, isOpen, onClose, navigate]);
 
   useEffect(() => {
     setErrors({});
@@ -106,6 +136,16 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
         newErrors.inn = 'ИНН должен быть 10 или 12 цифр';
       }
       if (!registerData.company_email) newErrors.company_email = 'Корпоративный email обязателен';
+      
+      // Проверка корпоративного email
+      if (registerData.company_email) {
+        const domain = registerData.company_email.split('@')[1]?.toLowerCase();
+        const freeDomains = ['gmail.com', 'mail.ru', 'yandex.ru', 'yahoo.com', 'hotmail.com', 'outlook.com', 'rambler.ru', 'bk.ru', 'list.ru', 'inbox.ru', 'gmx.com', 'icloud.com', 'me.com', 'live.com', 'mail.com', 'protonmail.com'];
+        if (freeDomains.includes(domain)) {
+          newErrors.company_email = 'Требуется корпоративная почта (например, @company.ru)';
+        }
+      }
+      
       if (!registerData.first_name) newErrors.first_name = 'Имя контактного лица обязательно';
       if (!registerData.last_name) newErrors.last_name = 'Фамилия контактного лица обязательна';
       if (!registerData.email) newErrors.email = 'Email контактного лица обязателен';
@@ -155,10 +195,14 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
       
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
+      
+      await refreshUser();
+      
       setSuccessMessage('Вход выполнен успешно!');
       setTimeout(() => {
         onClose();
-        navigate('/dashboard'); // <-- ДОБАВЬТЕ ПЕРЕНАПРАВЛЕНИЕ ПОСЛЕ ВХОДА
+        // ПЕРЕНАПРАВЛЯЕМ НА СТУДЕНЧЕСКИЙ ДАШБОРД
+        navigate('/student/profile');
       }, 1500);
     } catch (error: any) {
       setErrors({ form: error.message || 'Ошибка входа. Проверьте email и пароль' });
@@ -176,6 +220,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
 
     try {
       if (registerData.role === 'applicant') {
+        // Регистрация соискателя
         const payload = {
           email: registerData.email,
           password: registerData.password,
@@ -211,54 +256,96 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
           }
         }
 
-        // Успешная регистрация - закрываем модалку и перенаправляем на страницу подтверждения
+        const data = await response.json();
         onClose();
-        navigate('/email-verification-pending', { state: { email: registerData.email } });
+        
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+          localStorage.setItem('refresh_token', data.refresh_token);
+          await refreshUser();
+          // ПЕРЕНАПРАВЛЯЕМ НА СТУДЕНЧЕСКИЙ ДАШБОРД
+          navigate('/student/profile');
+        } else {
+          navigate('/verify-email-pending', { state: { email: registerData.email } });
+        }
         
       } else {
         // Регистрация компании
-        const checkResponse = await fetch(`${API_BASE_URL}/companies/check-inn`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inn: registerData.inn }),
-        });
+        const payload = {
+          inn: registerData.inn,
+          company_name: registerData.company_name,
+          email: registerData.company_email,
+          phone: registerData.phone || '',
+          user_first_name: registerData.first_name,
+          user_last_name: registerData.last_name,
+          user_patronymic: registerData.patronymic || '',
+          user_email: registerData.email,
+          user_password: registerData.password,
+          user_password_confirm: registerData.password_confirm,
+        };
 
-        if (!checkResponse.ok) {
-          const error = await checkResponse.json();
-          throw new Error(error.detail || 'ИНН не найден или компания не активна');
+        const response = await fetch(`${API_BASE_URL}/companies/auth/register`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        const responseText = await response.text();
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          errorData = { detail: responseText };
         }
 
-        const registerResponse = await fetch(`${API_BASE_URL}/companies/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            inn: registerData.inn,
-            email: registerData.company_email,
-            phone: registerData.phone || '',
-            website: '',
-            user_first_name: registerData.first_name,
-            user_last_name: registerData.last_name,
-            user_patronymic: registerData.patronymic || '',
-            user_email: registerData.email,
-            user_password: registerData.password,
-            user_password_confirm: registerData.password_confirm,
-          }),
-        });
-
-        if (!registerResponse.ok) {
-          const error = await registerResponse.json();
-          throw new Error(error.detail || 'Ошибка регистрации компании');
+        if (!response.ok) {
+          if (errorData.detail && Array.isArray(errorData.detail)) {
+            const fieldErrors: Record<string, string> = {};
+            errorData.detail.forEach((err: any) => {
+              const field = err.loc[err.loc.length - 1];
+              const fieldMapping: Record<string, string> = {
+                'user_password': 'password',
+                'user_password_confirm': 'password_confirm',
+                'user_email': 'email',
+                'user_first_name': 'first_name',
+                'user_last_name': 'last_name',
+                'user_patronymic': 'patronymic',
+              };
+              const displayField = fieldMapping[field] || field;
+              fieldErrors[displayField] = err.msg;
+            });
+            setErrors(fieldErrors);
+            throw new Error('Пожалуйста, исправьте ошибки в форме');
+          } else {
+            throw new Error(errorData.detail || 'Ошибка регистрации компании');
+          }
         }
 
-        // Успешная регистрация компании
+        const data = errorData;
         onClose();
-        navigate('/email-verification-pending', { state: { email: registerData.company_email } });
+        
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+          localStorage.setItem('refresh_token', data.refresh_token);
+          await refreshUser();
+          // ПЕРЕНАПРАВЛЯЕМ НА СТУДЕНЧЕСКИЙ ДАШБОРД
+          navigate('/student/profile');
+        } else {
+          navigate('/verify-email-pending', { state: { email: registerData.company_email } });
+        }
       }
 
     } catch (error: any) {
-      setErrors({
-        form: error.message || 'Ошибка регистрации. Попробуйте другой email'
-      });
+      console.error('❌ Ошибка регистрации:', error);
+      if (!errors.form && Object.keys(errors).length === 0) {
+        setErrors({
+          form: error.message || 'Ошибка регистрации. Попробуйте другой email'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -512,7 +599,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         <Lock className="input-icon" size={18} />
                         <input
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Пароль (мин. 6 символов, буквы и цифры) *"
+                          placeholder="Пароль (мин. 6 символов) *"
                           value={registerData.password}
                           onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                           className={errors.password ? 'error' : ''}
@@ -581,7 +668,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         <Mail className="input-icon" size={18} />
                         <input
                           type="email"
-                          placeholder="Корпоративный email *"
+                          placeholder="Корпоративный email * (например, @company.ru)"
                           value={registerData.company_email}
                           onChange={(e) => setRegisterData({ ...registerData, company_email: e.target.value })}
                           className={errors.company_email ? 'error' : ''}
@@ -589,6 +676,19 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         />
                       </div>
                       {errors.company_email && <span className="error-message">{errors.company_email}</span>}
+                    </div>
+
+                    <div className="form-group">
+                      <div className="input-wrapper">
+                        <Phone className="input-icon" size={18} />
+                        <input
+                          type="tel"
+                          placeholder="Телефон компании"
+                          value={registerData.phone}
+                          onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                          autoComplete="tel"
+                        />
+                      </div>
                     </div>
 
                     <div className="form-group">
@@ -636,19 +736,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
 
                     <div className="form-group">
                       <div className="input-wrapper">
-                        <Phone className="input-icon" size={18} />
-                        <input
-                          type="tel"
-                          placeholder="Телефон контактного лица"
-                          value={registerData.phone}
-                          onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-                          autoComplete="tel"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <div className="input-wrapper">
                         <Mail className="input-icon" size={18} />
                         <input
                           type="email"
@@ -667,7 +754,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                         <Lock className="input-icon" size={18} />
                         <input
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Пароль (мин. 6 символов, буквы и цифры) *"
+                          placeholder="Пароль (мин. 6 символов) *"
                           value={registerData.password}
                           onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                           className={errors.password ? 'error' : ''}
