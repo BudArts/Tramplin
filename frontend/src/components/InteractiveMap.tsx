@@ -1,3 +1,5 @@
+// frontend/src/components/InteractiveMap.tsx
+
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -30,13 +32,12 @@ const TYPE_LABELS: Record<OpportunityType, string> = {
   event: 'Мероприятия',
 };
 
-// Границы для ограничения перемещения карты (территория России + ближнее зарубежье)
+// Границы для ограничения перемещения карты
 const MAP_BOUNDS: L.LatLngBoundsExpression = [
-  [41.0, 19.0],   // Юго-западный угол (нижняя граница, левая)
-  [82.0, 190.0],  // Северо-восточный угол (верхняя граница, правая)
+  [41.0, 19.0],
+  [82.0, 190.0],
 ];
 
-// Максимальные границы с отступом для плавного ограничения
 const MAX_BOUNDS: L.LatLngBoundsExpression = [
   [35.0, 10.0],
   [85.0, 200.0],
@@ -46,14 +47,12 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   const map = useMap();
   useEffect(() => {
     if (center) {
-      // Проверяем, что центр находится в допустимых границах
       const bounds = L.latLngBounds(MAP_BOUNDS);
       const newCenter = L.latLng(center[0], center[1]);
       
       if (bounds.contains(newCenter)) {
         map.flyTo(center, zoom, { duration: 1.5 });
       } else {
-        // Если город вне границ, летим к центру России
         map.flyTo([55.75, 37.61], 5, { duration: 1.5 });
         alert('Выбранный город находится за пределами доступной области');
       }
@@ -62,50 +61,19 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-// Компонент для ограничения перемещения карты
 function MapBounds() {
   const map = useMap();
   
   useEffect(() => {
-    // Устанавливаем максимальные границы
     map.setMaxBounds(MAX_BOUNDS);
-    
-    // Запрещаем выходить за границы при перетаскивании
-    map.on('drag', () => {
-      const bounds = map.getBounds();
-      const maxBounds = L.latLngBounds(MAX_BOUNDS);
-      
-      if (!maxBounds.contains(bounds.getSouthWest()) || !maxBounds.contains(bounds.getNorthEast())) {
-        // Если вышли за границы, возвращаем обратно
-        map.panInsideBounds(maxBounds, { animate: true, duration: 0.5 });
-      }
-    });
-    
-    // Ограничиваем зум (не даём уходить слишком далеко)
     map.setMinZoom(3);
     map.setMaxZoom(18);
-    
-    return () => {
-      map.off('drag');
-    };
   }, [map]);
   
   return null;
 }
 
-const createClusterCustomIcon = function (cluster: any) {
-  const count = cluster.getChildCount();
-  let size = 'small';
-  if (count > 10) size = 'medium';
-  if (count > 50) size = 'large';
-  
-  return L.divIcon({
-    html: `<div class="cluster-content">${count}</div>`,
-    className: `custom-cluster-icon cluster-${size}`,
-    iconSize: L.point(40, 40),
-  });
-};
-
+// ✅ ИСПРАВЛЕНО: создание иконки для одиночного маркера
 function createMarkerIcon(type: OpportunityType): L.DivIcon {
   const color = TYPE_COLORS[type] || '#fff';
   return L.divIcon({
@@ -118,11 +86,56 @@ function createMarkerIcon(type: OpportunityType): L.DivIcon {
         border-radius: 50%; 
         box-shadow: 0 0 8px ${color}, 0 0 12px ${color};
         border: 1.5px solid white;
-        animation: pulse 1.5s infinite;
       "></div>
     `,
     iconSize: [12, 12],
     iconAnchor: [6, 6],
+    popupAnchor: [0, -6],
+  });
+}
+
+// ✅ ИСПРАВЛЕНО: создание иконки для кластера с правильным позиционированием
+function createClusterIcon(cluster: any) {
+  const count = cluster.getChildCount();
+  let size = 40;
+  let fontSize = 16;
+  
+  if (count > 10) size = 48;
+  if (count > 50) size = 56;
+  if (count > 100) size = 64;
+  
+  // Определяем цвет кластера в зависимости от количества
+  let bgColor = '#33ccff';
+  let borderColor = '#33ccff';
+  if (count > 10) {
+    bgColor = '#ffcc33';
+    borderColor = '#ffcc33';
+  }
+  if (count > 50) {
+    bgColor = '#ff3366';
+    borderColor = '#ff3366';
+  }
+  
+  return L.divIcon({
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      background: radial-gradient(circle, ${bgColor}, ${bgColor}dd);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: ${fontSize}px;
+      color: white;
+      border: 2px solid ${borderColor};
+      box-shadow: 0 0 15px ${borderColor};
+      backdrop-filter: blur(2px);
+    ">${count}</div>`,
+    className: 'custom-cluster-icon',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
   });
 }
 
@@ -146,7 +159,7 @@ const InteractiveMap = ({ opportunities = [] }: InteractiveMapProps) => {
         latitude: opp.latitude!,
         longitude: opp.longitude!,
         title: opp.title,
-        company_name: opp.company_name,
+        company_name: opp.company?.name || opp.company_name,
         type: opp.type,
       }));
   }, [opportunities]);
@@ -173,7 +186,6 @@ const InteractiveMap = ({ opportunities = [] }: InteractiveMapProps) => {
         const lat = parseFloat(data[0].lat);
         const lon = parseFloat(data[0].lon);
         
-        // Проверяем, находится ли город в допустимых границах
         const bounds = L.latLngBounds(MAP_BOUNDS);
         const cityPoint = L.latLng(lat, lon);
         
@@ -249,24 +261,23 @@ const InteractiveMap = ({ opportunities = [] }: InteractiveMapProps) => {
                 doubleClickZoom={true}
                 touchZoom={true}
                 dragging={true}
-                bounceAtZoomLimits={true}
               >
                 <TileLayer
                   url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                   attribution='&copy; <a href="https://carto.com/">CARTO</a>'
                 />
                 
-                {/* Компонент для ограничения границ */}
                 <MapBounds />
                 
                 {flyTo && <MapController center={flyTo.center} zoom={flyTo.zoom} />}
 
                 <MarkerClusterGroup
                   chunkedLoading
-                  iconCreateFunction={createClusterCustomIcon}
-                  maxClusterRadius={60}
+                  iconCreateFunction={createClusterIcon}
+                  maxClusterRadius={80}
                   spiderfyOnMaxZoom={true}
                   showCoverageOnHover={false}
+                  spiderLegPolylineOptions={{ weight: 1.5, color: '#ff3366', opacity: 0.5 }}
                 >
                   {mapPoints.map((point) => (
                     <Marker
@@ -274,7 +285,13 @@ const InteractiveMap = ({ opportunities = [] }: InteractiveMapProps) => {
                       position={[point.latitude, point.longitude]}
                       icon={createMarkerIcon(point.type)}
                     >
-                      <Tooltip direction="top" offset={[0, -10]} opacity={1} permanent={false}>
+                      <Tooltip 
+                        direction="top" 
+                        offset={[0, -10]} 
+                        opacity={1} 
+                        permanent={false}
+                        className="custom-tooltip"
+                      >
                         <div className="map-tooltip-card">
                           <strong>{point.title}</strong>
                           {point.company_name && (

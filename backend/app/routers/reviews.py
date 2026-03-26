@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import get_current_user
-from app.models.user import User
+from app.dependencies import get_current_user, require_roles
+from app.models.user import User, UserRole
 from app.schemas.review import (
     ReviewCreate, ReviewUpdate, ReviewResponse,
     ReviewListResponse, CompanyResponseCreate, CompanyRatingStats
@@ -21,7 +21,7 @@ async def create_review(
     company_id: int,
     data: ReviewCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.CURATOR])),
 ):
     """Создать отзыв о компании"""
     service = ReviewService(db)
@@ -36,12 +36,11 @@ async def get_company_reviews(
     per_page: int = Query(20, ge=1, le=100),
     sort_by: str = Query("created_at", pattern="^(created_at|rating_high|rating_low|helpful)$"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
 ):
     """Получить отзывы компании"""
     service = ReviewService(db)
     reviews, total = await service.get_company_reviews(
-        company_id, page, per_page, sort_by, current_user.id
+        company_id, page, per_page, sort_by
     )
     
     pages = (total + per_page - 1) // per_page

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import {
+  Home,
   User,
   Heart,
   Briefcase,
@@ -13,6 +14,7 @@ import {
   GraduationCap,
   Menu,
   X,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -142,7 +144,10 @@ const StudentLayout = () => {
   const initials = `${user.first_name?.[0]}${user.last_name?.[0]}`.toUpperCase();
 
   const navItems = [
+    { to: '/student', icon: Home, label: 'Главная', exact: true },
     { to: '/student/profile', icon: User, label: 'Профиль' },
+    { to: '/student/opportunities', icon: Briefcase, label: 'Возможности' },
+    { to: '/student/companies', icon: Building2, label: 'Компании' },
     { to: '/student/favorites', icon: Heart, label: 'Избранное', badge: stats.favorites },
     { to: '/student/applications', icon: Briefcase, label: 'Мои отклики', badge: stats.applications },
     { to: '/student/contacts', icon: Users, label: 'Контакты', badge: stats.contacts },
@@ -158,6 +163,7 @@ const StudentLayout = () => {
       <header className="student-dashboard__header">
         <div className="container student-dashboard__header-inner">
           <div className="student-dashboard__logo" onClick={() => navigate('/student')}>
+            <img src="/logo.png" alt="Трамплин" className="student-dashboard__logo-img" />
             <span className="student-dashboard__logo-text">Трамплин</span>
           </div>
           <div className="student-dashboard__header-actions">
@@ -222,6 +228,7 @@ const StudentLayout = () => {
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={item.exact}
                 className={({ isActive }) =>
                   `student-dashboard__nav-item ${isActive ? 'active' : ''}`
                 }

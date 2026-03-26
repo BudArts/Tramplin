@@ -3618,3 +3618,111 @@ body::after {
     text-align: center;
   }
 }
+
+
+/* Добавьте в конец файла landing.css */
+
+/* Стили для кастомных маркеров и кластеров */
+.custom-cluster-icon {
+  background: transparent !important;
+  border: none !important;
+  transition: transform 0.2s ease;
+}
+
+.custom-cluster-icon:hover {
+  transform: scale(1.1);
+}
+
+.custom-marker-icon {
+  background: transparent !important;
+  border: none !important;
+  transition: transform 0.2s ease;
+}
+
+.custom-marker-icon:hover {
+  transform: scale(1.3);
+}
+
+/* Анимация пульсации для маркеров */
+@keyframes markerPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.custom-marker-icon div {
+  animation: markerPulse 1.5s infinite;
+}
+
+/* Стили для тултипа */
+.leaflet-tooltip.custom-tooltip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.map-tooltip-card {
+  background: rgba(5, 5, 16, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border-left: 3px solid var(--hyper-pink);
+  min-width: 180px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  font-family: 'Inter', sans-serif;
+}
+
+.map-tooltip-card strong {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.map-tooltip-card__company {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+
+.map-tooltip-card__type {
+  font-size: 0.7rem;
+  color: var(--hyper-pink);
+  font-weight: 600;
+}
+
+/* Стили для кластеров разных размеров */
+.leaflet-cluster-anim .leaflet-marker-icon,
+.leaflet-cluster-anim .leaflet-marker-shadow {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Добавьте в landing.css */
+.map-tooltip-card__btn {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border: none;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  width: 100%;
+}
+
+.map-tooltip-card__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+}
+

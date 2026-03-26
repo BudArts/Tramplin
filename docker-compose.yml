@@ -1,9 +1,6 @@
 version: '3.9'
 
 services:
-  # ============================================
-  # PostgreSQL
-  # ============================================
   db:
     image: postgres:16-alpine
     container_name: tramplin-db
@@ -12,13 +9,6 @@ services:
       POSTGRES_USER: ${DB_USER:-tramplin_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-strongpassword123}
       PGDATA: /var/lib/postgresql/data/pgdata
-      MAIL_USERNAME: tramplin_official@mail.ru
-      MAIL_PASSWORD: a1dqwa3f9QaUNJlZkcKI
-      MAIL_FROM: tramplin_official@mail.ru
-      MAIL_SERVER: smtp.mail.ru
-      MAIL_PORT: 587
-      MAIL_STARTTLS: True
-      MAIL_SSL_TLS: False
     ports:
       - "5432:5432"
     volumes:
@@ -33,25 +23,17 @@ services:
     networks:
       - tramplin-network
 
-  # ============================================
-  # Backend API
-  # ============================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: tramplin-backend
     environment:
-      # Database
       DATABASE_URL: postgresql+asyncpg://${DB_USER:-tramplin_user}:${DB_PASSWORD:-strongpassword123}@db:5432/${DB_NAME:-tramplin}
-      
-      # Security
       SECRET_KEY: ${SECRET_KEY:-super-secret-jwt-key-2026}
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
-      
-      # Email
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-noreply@tramplin.ru}
@@ -59,38 +41,26 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_STARTTLS: ${MAIL_STARTTLS:-True}
       MAIL_SSL_TLS: ${MAIL_SSL_TLS:-False}
-      
-      # Frontend
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
-      
-      # App
       APP_NAME: ${APP_NAME:-Tramplin}
       ENVIRONMENT: ${ENVIRONMENT:-production}
       DEBUG: ${DEBUG:-false}
       EMAIL_VERIFICATION_EXPIRE_HOURS: ${EMAIL_VERIFICATION_EXPIRE_HOURS:-24}
-      
-      # Admin
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@tramplin.ru}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
-      
-      # CORS - добавляем домен Cloudflare
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,https://*.trycloudflare.com,http://*.trycloudflare.com}
-      
-      # Rate Limiting
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
-      
-      # Redis
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      
-      # FNS API
       FNS_API_URL: ${FNS_API_URL:-https://api-fns.ru/api}
       FNS_API_KEY: ${FNS_API_KEY:-}
-      
+      # ✅ ВАЖНО: правильный путь
+      UPLOADS_PATH: /app/app/uploads
     ports:
       - "8000:8000"
     volumes:
       - ./backend/app:/app/app
-      - uploaded_files:/app/uploads
+      # ✅ ИСПРАВЛЕНО: правильный путь
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -98,9 +68,6 @@ services:
     networks:
       - tramplin-network
 
-  # ============================================
-  # Frontend
-  # ============================================
   frontend:
     build:
       context: ./frontend
@@ -108,25 +75,18 @@ services:
     container_name: tramplin-frontend
     ports:
       - "80:80"
+    volumes:
+      - uploads_data:/usr/share/nginx/uploads:ro
     depends_on:
       - backend
     restart: unless-stopped
-    networks:
-      - tramplin-network
-  
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: mailhog
-    ports:
-      - "1025:1025"  # SMTP порт
-      - "8025:8025"  # Web интерфейс
     networks:
       - tramplin-network
 
 volumes:
   postgres_data:
     driver: local
-  uploaded_files:
+  uploads_data:
     driver: local
 
 networks:

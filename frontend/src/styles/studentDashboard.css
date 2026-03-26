@@ -2471,3 +2471,1718 @@
   background: rgba(255, 204, 51, 0.3);
   transform: translateY(-1px);
 }
+
+/* Добавьте в конец файла studentDashboard.css */
+
+/* Opportunity Detail Modal */
+.opportunity-modal__backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.opportunity-modal__content {
+  position: relative;
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.98), rgba(10, 10, 31, 0.98));
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 51, 102, 0.1);
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px;
+  color: white;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.opportunity-modal__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.opportunity-modal__content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.opportunity-modal__content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border-radius: 3px;
+}
+
+.opportunity-modal__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.opportunity-modal__close:hover {
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--hyper-pink);
+  transform: rotate(90deg);
+}
+
+.opportunity-modal__header {
+  margin-bottom: 24px;
+}
+
+.opportunity-modal__badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.opportunity-modal__badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.opportunity-modal__badge--internship {
+  background: rgba(51, 255, 102, 0.2);
+  color: #33ff66;
+}
+
+.opportunity-modal__badge--vacancy {
+  background: rgba(51, 204, 255, 0.2);
+  color: #33ccff;
+}
+
+.opportunity-modal__badge--mentorship {
+  background: rgba(255, 204, 51, 0.2);
+  color: #ffcc33;
+}
+
+.opportunity-modal__badge--event {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+.opportunity-modal__badge--format {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+
+.opportunity-modal__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.opportunity-modal__company {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.opportunity-modal__company img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.opportunity-modal__company-placeholder {
+  width: 48px;
+  height: 48px;
+  background: var(--gradient-primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.opportunity-modal__company h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.opportunity-modal__company p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.opportunity-modal__info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+}
+
+.opportunity-modal__info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.opportunity-modal__salary {
+  color: #33ff66;
+  font-weight: 600;
+}
+
+.opportunity-modal__description {
+  margin-bottom: 24px;
+}
+
+.opportunity-modal__description h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.opportunity-modal__description p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.opportunity-modal__tags {
+  margin-bottom: 24px;
+}
+
+.opportunity-modal__tags h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.opportunity-modal__tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.opportunity-modal__tag {
+  padding: 6px 12px;
+  background: rgba(204, 51, 255, 0.15);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: #cc33ff;
+}
+
+.opportunity-modal__contacts {
+  margin-bottom: 24px;
+}
+
+.opportunity-modal__contacts h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.opportunity-modal__contacts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.opportunity-modal__contact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 40px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition);
+}
+
+.opportunity-modal__contact:hover {
+  background: rgba(255, 51, 102, 0.1);
+  color: var(--hyper-pink);
+  transform: translateY(-2px);
+}
+
+.opportunity-modal__actions {
+  display: flex;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.opportunity-modal__apply-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.opportunity-modal__apply-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+}
+
+.opportunity-modal__save-btn {
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.opportunity-modal__save-btn:hover {
+  border-color: var(--hyper-pink);
+  color: var(--hyper-pink);
+}
+
+@media (max-width: 768px) {
+  .opportunity-modal__content {
+    padding: 24px;
+  }
+  
+  .opportunity-modal__title {
+    font-size: 1.2rem;
+  }
+  
+  .opportunity-modal__info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .opportunity-modal__actions {
+    flex-direction: column;
+  }
+  
+  .opportunity-modal__apply-btn,
+  .opportunity-modal__save-btn {
+    width: 100%;
+  }
+}
+
+.student-dashboard__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.student-dashboard__logo-img {
+  height: 40px;
+  width: auto;
+}
+
+/* Добавьте в конец файла studentDashboard.css */
+
+/* Dashboard Home Page */
+.dashboard-home {
+  width: 100%;
+}
+
+.dashboard-home__loading {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.dashboard-home__welcome {
+  background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(204, 51, 255, 0.05));
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: 24px;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.dashboard-home__welcome h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.dashboard-home__welcome p {
+  color: var(--text-secondary);
+}
+
+.dashboard-home__date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.dashboard-home__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.dashboard-home__stat-card {
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-home__stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-home__stat-info h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.dashboard-home__stat-info p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.dashboard-home__section {
+  margin-bottom: 40px;
+}
+
+.dashboard-home__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dashboard-home__section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-home__section-title svg {
+  color: var(--hyper-pink);
+}
+
+.dashboard-home__section-title h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.dashboard-home__section-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--hyper-pink);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.dashboard-home__section-link:hover {
+  gap: 8px;
+}
+
+.dashboard-home__recommendations-grid,
+.dashboard-home__opportunities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.dashboard-home__recommendation-card,
+.dashboard-home__opportunity-card {
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.dashboard-home__recommendation-card:hover,
+.dashboard-home__opportunity-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--hyper-pink);
+  box-shadow: 0 10px 30px rgba(255, 51, 102, 0.2);
+}
+
+.dashboard-home__recommendation-badge {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  background: linear-gradient(135deg, #ffcc33, #ffaa00);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dashboard-home__card-header {
+  margin-bottom: 12px;
+}
+
+.dashboard-home__card-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dashboard-home__type-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.dashboard-home__type-badge--internship {
+  background: rgba(51, 255, 102, 0.2);
+  color: #33ff66;
+}
+
+.dashboard-home__type-badge--vacancy {
+  background: rgba(51, 204, 255, 0.2);
+  color: #33ccff;
+}
+
+.dashboard-home__type-badge--mentorship {
+  background: rgba(255, 204, 51, 0.2);
+  color: #ffcc33;
+}
+
+.dashboard-home__type-badge--event {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+.dashboard-home__format-badge {
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.dashboard-home__card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dashboard-home__card-company {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dashboard-home__card-company img,
+.dashboard-home__card-company-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.dashboard-home__card-company-placeholder {
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+}
+
+.dashboard-home__card-company span {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.dashboard-home__card-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.dashboard-home__card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dashboard-home__card-salary {
+  color: #33ff66;
+  font-weight: 600;
+}
+
+.dashboard-home__card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.dashboard-home__card-tag {
+  padding: 2px 8px;
+  background: rgba(204, 51, 255, 0.15);
+  border-radius: 12px;
+  font-size: 0.7rem;
+  color: #cc33ff;
+}
+
+.dashboard-home__card-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dashboard-home__card-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.dashboard-home__recommendation-message {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  border-left: 2px solid #ffcc33;
+}
+
+.dashboard-home__quick-actions {
+  margin-top: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+}
+
+.dashboard-home__quick-actions h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.dashboard-home__actions-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dashboard-home__action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.dashboard-home__action-btn:hover {
+  border-color: var(--hyper-pink);
+  background: rgba(255, 51, 102, 0.1);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .dashboard-home__recommendations-grid,
+  .dashboard-home__opportunities-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-home__welcome {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .dashboard-home__actions-grid {
+    flex-direction: column;
+  }
+  
+  .dashboard-home__action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+/* Добавьте в конец файла studentDashboard.css */
+
+/* Companies Page */
+.companies-page {
+  width: 100%;
+}
+
+.companies-page__loading {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.companies-page__header {
+  margin-bottom: 32px;
+}
+
+.companies-page__header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, #ff3366);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.companies-page__header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.companies-page__search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(5, 5, 16, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 40px;
+  padding: 12px 20px;
+  margin-bottom: 32px;
+  transition: all var(--transition);
+}
+
+.companies-page__search:focus-within {
+  border-color: var(--hyper-pink);
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.2);
+}
+
+.companies-page__search svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.companies-page__search input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.companies-page__search input::placeholder {
+  color: var(--text-muted);
+}
+
+.companies-page__search button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition);
+}
+
+.companies-page__search button:hover {
+  color: var(--hyper-pink);
+}
+
+.companies-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.companies-page__card {
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.companies-page__card:hover {
+  transform: translateY(-4px);
+  border-color: var(--hyper-pink);
+  box-shadow: 0 10px 30px rgba(255, 51, 102, 0.2);
+}
+
+.companies-page__favorite-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-muted);
+}
+
+.companies-page__favorite-btn:hover {
+  border-color: var(--hyper-pink);
+  background: rgba(255, 51, 102, 0.1);
+  color: var(--hyper-pink);
+}
+
+.companies-page__favorite-btn.active {
+  color: #ff3366;
+  border-color: #ff3366;
+}
+
+.companies-page__card-logo {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+}
+
+.companies-page__card-logo img,
+.companies-page__card-logo-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.companies-page__card-logo-placeholder {
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.companies-page__card-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.companies-page__card-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.companies-page__card-rating span:first-of-type {
+  color: #ffcc33;
+  font-weight: 600;
+}
+
+.companies-page__card-reviews {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.companies-page__card-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.companies-page__card-info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.companies-page__card-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.companies-page__card-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--hyper-pink);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  padding: 0;
+}
+
+.companies-page__card-btn:hover {
+  gap: 10px;
+}
+
+.companies-page__empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.companies-page__empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.companies-page__empty h3 {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+}
+
+.companies-page__empty p {
+  color: var(--text-secondary);
+}
+
+/* Company Modal */
+.company-modal__backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.company-modal__content {
+  position: relative;
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.98), rgba(10, 10, 31, 0.98));
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px;
+  color: white;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.company-modal__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.company-modal__content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.company-modal__content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border-radius: 3px;
+}
+
+.company-modal__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.company-modal__close:hover {
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--hyper-pink);
+  transform: rotate(90deg);
+}
+
+.company-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.company-modal__logo {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.company-modal__logo img,
+.company-modal__logo-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  object-fit: cover;
+}
+
+.company-modal__logo-placeholder {
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.company-modal__info {
+  flex: 1;
+}
+
+.company-modal__info h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.company-modal__rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.company-modal__rating span:first-of-type {
+  color: #ffcc33;
+  font-weight: 600;
+}
+
+.company-modal__reviews-count {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.company-modal__favorite {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.company-modal__favorite:hover {
+  border-color: var(--hyper-pink);
+  background: rgba(255, 51, 102, 0.1);
+}
+
+.company-modal__favorite.active {
+  color: #ff3366;
+  border-color: #ff3366;
+}
+
+.company-modal__details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.company-modal__detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.company-modal__detail-item a {
+  color: var(--hyper-pink);
+  text-decoration: none;
+}
+
+.company-modal__detail-item a:hover {
+  text-decoration: underline;
+}
+
+.company-modal__description {
+  margin-bottom: 24px;
+}
+
+.company-modal__description h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.company-modal__description p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.company-modal__opportunities h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.company-modal__loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  justify-content: center;
+}
+
+.company-modal__no-opportunities {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+
+.company-modal__opportunities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.company-modal__opportunity-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.company-modal__opportunity-card:hover {
+  border-color: var(--hyper-pink);
+  background: rgba(255, 51, 102, 0.05);
+  transform: translateX(4px);
+}
+
+.company-modal__opportunity-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.company-modal__opportunity-type {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.company-modal__opportunity-type--internship {
+  background: rgba(51, 255, 102, 0.2);
+  color: #33ff66;
+}
+
+.company-modal__opportunity-type--vacancy {
+  background: rgba(51, 204, 255, 0.2);
+  color: #33ccff;
+}
+
+.company-modal__opportunity-type--mentorship {
+  background: rgba(255, 204, 51, 0.2);
+  color: #ffcc33;
+}
+
+.company-modal__opportunity-type--event {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+.company-modal__opportunity-format {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.company-modal__opportunity-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.company-modal__opportunity-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.company-modal__opportunity-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.company-modal__opportunity-salary {
+  color: #33ff66;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.company-modal__opportunity-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--hyper-pink);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: gap var(--transition);
+}
+
+.company-modal__opportunity-btn:hover {
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .companies-page__grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .company-modal__header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .company-modal__favorite {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .company-modal__details {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Добавьте в studentDashboard.css */
+
+/* Opportunities Page */
+.opportunities-page {
+  width: 100%;
+}
+
+.opportunities-page__loading {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.opportunities-page__header {
+  margin-bottom: 32px;
+}
+
+.opportunities-page__header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, #ff3366);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.opportunities-page__header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.opportunities-page__toolbar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.opportunities-page__search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(5, 5, 16, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 40px;
+  padding: 12px 20px;
+  transition: all var(--transition);
+}
+
+.opportunities-page__search:focus-within {
+  border-color: var(--hyper-pink);
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.2);
+}
+
+.opportunities-page__search svg {
+  color: var(--text-muted);
+}
+
+.opportunities-page__search input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.opportunities-page__search input::placeholder {
+  color: var(--text-muted);
+}
+
+.opportunities-page__search button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.opportunities-page__search button:hover {
+  color: var(--hyper-pink);
+}
+
+.opportunities-page__filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.opportunities-page__filter-btn:hover {
+  border-color: var(--hyper-pink);
+  color: var(--hyper-pink);
+}
+
+.opportunities-page__view-toggle {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  padding: 4px;
+}
+
+.opportunities-page__view-toggle button {
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  border-radius: 40px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.opportunities-page__view-toggle button.active {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.opportunities-page__filters {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.opportunities-page__filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.opportunities-page__filter-group label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.opportunities-page__filter-group select {
+  background: rgba(5, 5, 16, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.opportunities-page__clear-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: rgba(255, 51, 102, 0.1);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: 40px;
+  color: #ff3366;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.opportunities-page__clear-filters:hover {
+  background: rgba(255, 51, 102, 0.2);
+}
+
+.opportunities-page__map {
+  height: 500px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.opportunities-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.opportunities-page__card {
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.opportunities-page__card:hover {
+  transform: translateY(-4px);
+  border-color: var(--hyper-pink);
+  box-shadow: 0 10px 30px rgba(255, 51, 102, 0.2);
+}
+
+.opportunities-page__favorite-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-muted);
+}
+
+.opportunities-page__favorite-btn:hover {
+  border-color: var(--hyper-pink);
+  background: rgba(255, 51, 102, 0.1);
+  color: var(--hyper-pink);
+}
+
+.opportunities-page__favorite-btn.active {
+  color: #ff3366;
+  border-color: #ff3366;
+}
+
+.opportunities-page__card-header {
+  margin-bottom: 12px;
+}
+
+.opportunities-page__card-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.opportunities-page__type-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.opportunities-page__type-badge--internship {
+  background: rgba(51, 255, 102, 0.2);
+  color: #33ff66;
+}
+
+.opportunities-page__type-badge--vacancy {
+  background: rgba(51, 204, 255, 0.2);
+  color: #33ccff;
+}
+
+.opportunities-page__type-badge--mentorship {
+  background: rgba(255, 204, 51, 0.2);
+  color: #ffcc33;
+}
+
+.opportunities-page__type-badge--event {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+.opportunities-page__format-badge {
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.opportunities-page__card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.opportunities-page__card-company {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.opportunities-page__card-company img,
+.opportunities-page__card-company-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.opportunities-page__card-company-placeholder {
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+}
+
+.opportunities-page__card-company span {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.opportunities-page__card-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.opportunities-page__card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.opportunities-page__card-salary {
+  color: #33ff66;
+  font-weight: 600;
+}
+
+.opportunities-page__card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.opportunities-page__card-tag {
+  padding: 2px 8px;
+  background: rgba(204, 51, 255, 0.15);
+  border-radius: 12px;
+  font-size: 0.7rem;
+  color: #cc33ff;
+}
+
+.opportunities-page__card-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.opportunities-page__card-details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--hyper-pink);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: gap var(--transition);
+}
+
+.opportunities-page__card-details:hover {
+  gap: 10px;
+}
+
+.opportunities-page__empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.opportunities-page__empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.opportunities-page__empty h3 {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+}
+
+.opportunities-page__empty p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.opportunities-page__empty-btn {
+  padding: 10px 24px;
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.opportunities-page__empty-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+}

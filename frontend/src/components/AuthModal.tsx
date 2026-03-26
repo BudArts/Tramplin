@@ -34,10 +34,9 @@ interface RegisterFormData {
   company_email: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) => {
   const navigate = useNavigate();
+  const { login, register, loadUser, isAuthenticated } = useAuth();
   const [mode, setMode] = useState<FormMode>(defaultMode);
   const [loginData, setLoginData] = useState<LoginFormData>({
     email: '',
@@ -61,16 +60,11 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { isAuthenticated, refreshUser } = useAuth();
-
-  // Обновляем режим при изменении defaultMode (когда открывается модалка с другим режимом)
   useEffect(() => {
     if (isOpen) {
       setMode(defaultMode);
-      // Очищаем ошибки и сообщения при смене режима
       setErrors({});
       setSuccessMessage('');
-      // Сбрасываем формы
       setLoginData({ email: '', password: '' });
       setRegisterData({
         email: '',
@@ -92,7 +86,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
     if (isAuthenticated && isOpen) {
       setTimeout(() => {
         onClose();
-        // После успешной авторизации перенаправляем в студенческий кабинет
         navigate('/student/profile');
       }, 1500);
     }
@@ -120,12 +113,12 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
       if (!registerData.email) newErrors.email = 'Email обязателен';
       if (!registerData.password) newErrors.password = 'Пароль обязателен';
       if (registerData.password.length < 6) newErrors.password = 'Минимум 6 символов';
-      
+
       const hasLetter = /[a-zA-Zа-яА-Я]/.test(registerData.password);
       if (!hasLetter) {
         newErrors.password = 'Пароль должен содержать хотя бы одну букву';
       }
-      
+
       if (registerData.password !== registerData.password_confirm) {
         newErrors.password_confirm = 'Пароли не совпадают';
       }
@@ -136,8 +129,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
         newErrors.inn = 'ИНН должен быть 10 или 12 цифр';
       }
       if (!registerData.company_email) newErrors.company_email = 'Корпоративный email обязателен';
-      
-      // Проверка корпоративного email
+
       if (registerData.company_email) {
         const domain = registerData.company_email.split('@')[1]?.toLowerCase();
         const freeDomains = ['gmail.com', 'mail.ru', 'yandex.ru', 'yahoo.com', 'hotmail.com', 'outlook.com', 'rambler.ru', 'bk.ru', 'list.ru', 'inbox.ru', 'gmx.com', 'icloud.com', 'me.com', 'live.com', 'mail.com', 'protonmail.com'];
@@ -145,18 +137,18 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
           newErrors.company_email = 'Требуется корпоративная почта (например, @company.ru)';
         }
       }
-      
+
       if (!registerData.first_name) newErrors.first_name = 'Имя контактного лица обязательно';
       if (!registerData.last_name) newErrors.last_name = 'Фамилия контактного лица обязательна';
       if (!registerData.email) newErrors.email = 'Email контактного лица обязателен';
       if (!registerData.password) newErrors.password = 'Пароль обязателен';
       if (registerData.password.length < 6) newErrors.password = 'Минимум 6 символов';
-      
+
       const hasLetter = /[a-zA-Zа-яА-Я]/.test(registerData.password);
       if (!hasLetter) {
         newErrors.password = 'Пароль должен содержать хотя бы одну букву';
       }
-      
+
       if (registerData.password !== registerData.password_confirm) {
         newErrors.password_confirm = 'Пароли не совпадают';
       }
@@ -166,6 +158,8 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
     return Object.keys(newErrors).length === 0;
   };
 
+  // frontend/src/components/AuthModal.tsx - замените handleLogin и handleRegister
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateLogin()) return;
@@ -174,38 +168,16 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
     setErrors({});
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          email: loginData.email,
-          password: loginData.password,
-        }),
-      });
+      const result = await login(loginData.email, loginData.password);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Ошибка входа');
+      if (result.error) {
+        setErrors({ form: result.error });
+      } else {
+        setSuccessMessage('Вход выполнен успешно!');
+        // Редирект произойдет в useEffect, который следит за isAuthenticated
       }
-
-      const data = await response.json();
-      
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      
-      await refreshUser();
-      
-      setSuccessMessage('Вход выполнен успешно!');
-      setTimeout(() => {
-        onClose();
-        // ПЕРЕНАПРАВЛЯЕМ НА СТУДЕНЧЕСКИЙ ДАШБОРД
-        navigate('/student/profile');
-      }, 1500);
     } catch (error: any) {
-      setErrors({ form: error.message || 'Ошибка входа. Проверьте email и пароль' });
+      setErrors({ form: error.message || 'Ошибка входа' });
     } finally {
       setIsLoading(false);
     }
@@ -220,8 +192,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
 
     try {
       if (registerData.role === 'applicant') {
-        // Регистрация соискателя
-        const payload = {
+        const result = await register({
           email: registerData.email,
           password: registerData.password,
           password_confirm: registerData.password_confirm,
@@ -229,123 +200,51 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
           last_name: registerData.last_name,
           patronymic: registerData.patronymic || '',
           phone: registerData.phone || '',
-        };
-        
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(payload),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          
-          if (errorData.detail && Array.isArray(errorData.detail)) {
-            const fieldErrors: Record<string, string> = {};
-            errorData.detail.forEach((err: any) => {
-              const field = err.loc[err.loc.length - 1];
-              fieldErrors[field] = err.msg;
-            });
-            setErrors(fieldErrors);
-            throw new Error('Пожалуйста, исправьте ошибки в форме');
-          } else {
-            throw new Error(errorData?.detail || `Ошибка регистрации: ${response.status}`);
-          }
-        }
-
-        const data = await response.json();
-        onClose();
-        
-        if (data.access_token) {
-          localStorage.setItem('access_token', data.access_token);
-          localStorage.setItem('refresh_token', data.refresh_token);
-          await refreshUser();
-          // ПЕРЕНАПРАВЛЯЕМ НА СТУДЕНЧЕСКИЙ ДАШБОРД
-          navigate('/student/profile');
+        if (result.error) {
+          setErrors({ form: result.error });
         } else {
-          navigate('/verify-email-pending', { state: { email: registerData.email } });
+          setSuccessMessage('Регистрация успешна! Проверьте почту для подтверждения.');
+          setTimeout(() => {
+            onClose();
+            navigate('/verify-email-pending', { state: { email: registerData.email } });
+          }, 2000);
         }
-        
       } else {
         // Регистрация компании
-        const payload = {
-          inn: registerData.inn,
-          company_name: registerData.company_name,
-          email: registerData.company_email,
-          phone: registerData.phone || '',
-          user_first_name: registerData.first_name,
-          user_last_name: registerData.last_name,
-          user_patronymic: registerData.patronymic || '',
-          user_email: registerData.email,
-          user_password: registerData.password,
-          user_password_confirm: registerData.password_confirm,
-        };
-
-        const response = await fetch(`${API_BASE_URL}/companies/auth/register`, {
+        const response = await fetch('/companies/auth/register', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            inn: registerData.inn,
+            company_name: registerData.company_name,
+            email: registerData.company_email,
+            phone: registerData.phone || '',
+            user_first_name: registerData.first_name,
+            user_last_name: registerData.last_name,
+            user_patronymic: registerData.patronymic || '',
+            user_email: registerData.email,
+            user_password: registerData.password,
+            user_password_confirm: registerData.password_confirm,
+          }),
         });
-        
-        const responseText = await response.text();
-        
-        let errorData;
-        try {
-          errorData = JSON.parse(responseText);
-        } catch (e) {
-          errorData = { detail: responseText };
-        }
+
+        const data = await response.json();
 
         if (!response.ok) {
-          if (errorData.detail && Array.isArray(errorData.detail)) {
-            const fieldErrors: Record<string, string> = {};
-            errorData.detail.forEach((err: any) => {
-              const field = err.loc[err.loc.length - 1];
-              const fieldMapping: Record<string, string> = {
-                'user_password': 'password',
-                'user_password_confirm': 'password_confirm',
-                'user_email': 'email',
-                'user_first_name': 'first_name',
-                'user_last_name': 'last_name',
-                'user_patronymic': 'patronymic',
-              };
-              const displayField = fieldMapping[field] || field;
-              fieldErrors[displayField] = err.msg;
-            });
-            setErrors(fieldErrors);
-            throw new Error('Пожалуйста, исправьте ошибки в форме');
-          } else {
-            throw new Error(errorData.detail || 'Ошибка регистрации компании');
-          }
-        }
-
-        const data = errorData;
-        onClose();
-        
-        if (data.access_token) {
-          localStorage.setItem('access_token', data.access_token);
-          localStorage.setItem('refresh_token', data.refresh_token);
-          await refreshUser();
-          // ПЕРЕНАПРАВЛЯЕМ НА СТУДЕНЧЕСКИЙ ДАШБОРД
-          navigate('/student/profile');
+          setErrors({ form: data.detail || 'Ошибка регистрации компании' });
         } else {
-          navigate('/verify-email-pending', { state: { email: registerData.company_email } });
+          setSuccessMessage('Регистрация компании успешна! Проверьте почту для подтверждения.');
+          setTimeout(() => {
+            onClose();
+            navigate('/verify-email-pending', { state: { email: registerData.company_email } });
+          }, 2000);
         }
       }
-
     } catch (error: any) {
-      console.error('❌ Ошибка регистрации:', error);
-      if (!errors.form && Object.keys(errors).length === 0) {
-        setErrors({
-          form: error.message || 'Ошибка регистрации. Попробуйте другой email'
-        });
-      }
+      console.error('Registration error:', error);
+      setErrors({ form: error.message || 'Ошибка регистрации' });
     } finally {
       setIsLoading(false);
     }
@@ -434,7 +333,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
               </motion.div>
             )}
 
-            {/* Форма входа */}
             {mode === 'login' && (
               <motion.form key="login" className="auth-modal__form" onSubmit={handleLogin}>
                 <div className="form-group">
@@ -492,10 +390,8 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
               </motion.form>
             )}
 
-            {/* Форма регистрации */}
             {mode === 'register' && (
               <motion.form key="register" className="auth-modal__form" onSubmit={handleRegister}>
-                {/* Выбор роли */}
                 <div className="form-group">
                   <div className="role-selector">
                     {roleOptions.map(option => {
@@ -520,7 +416,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                   </div>
                 </div>
 
-                {/* Поля для соискателя */}
                 {registerData.role === 'applicant' && (
                   <div>
                     <div className="form-group">
@@ -629,7 +524,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                   </div>
                 )}
 
-                {/* Поля для работодателя */}
                 {registerData.role === 'employer' && (
                   <div>
                     <div className="form-group">

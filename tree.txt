@@ -1,6 +1,5 @@
-﻿Tramplin
+﻿Tramplin/get_treee.py
 ├── .dockerignore
-├── .env.exemple
 ├── .gitignore
 ├── api.json
 ├── backend
@@ -9,7 +8,6 @@
 │   │   ├── README
 │   │   ├── script.py.mako
 │   │   └── versions
-│   │       └── 2b02bbec1a24_initial_tables.py
 │   ├── alembic.ini
 │   ├── app
 │   │   ├── config.py
@@ -31,6 +29,7 @@
 │   │   │   ├── notification.py
 │   │   │   ├── opportunity.py
 │   │   │   ├── recommendation.py
+│   │   │   ├── review.py
 │   │   │   ├── support.py
 │   │   │   ├── tag.py
 │   │   │   ├── user.py
@@ -40,13 +39,15 @@
 │   │   │   ├── auth.py
 │   │   │   ├── chat.py
 │   │   │   ├── companies.py
+│   │   │   ├── company_registration.py
 │   │   │   ├── contacts.py
 │   │   │   ├── curator.py
 │   │   │   ├── favorites.py
-│   │   │   ├── haelth.py
+│   │   │   ├── health.py
 │   │   │   ├── notifications.py
 │   │   │   ├── opportunities.py
 │   │   │   ├── recommendations.py
+│   │   │   ├── reviews.py
 │   │   │   ├── support.py
 │   │   │   ├── tags.py
 │   │   │   ├── uploads.py
@@ -62,23 +63,30 @@
 │   │   │   ├── curator.py
 │   │   │   ├── notification.py
 │   │   │   ├── opportunity.py
+│   │   │   ├── review.py
 │   │   │   ├── tag.py
 │   │   │   ├── user.py
 │   │   │   └── __init__.py
 │   │   ├── services
-│   │   │   ├── application_dervice.py
+│   │   │   ├── application_service.py
 │   │   │   ├── auth_service.py
 │   │   │   ├── company_service.py
 │   │   │   ├── contact_service.py
+│   │   │   ├── email_service.py
+│   │   │   ├── fns_service.py
 │   │   │   ├── geo_service.py
 │   │   │   ├── moderation_service.py
 │   │   │   ├── notification_service.py
 │   │   │   ├── opportunity_service.py
+│   │   │   ├── review_service.py
 │   │   │   ├── tag_service.py
 │   │   │   ├── user_service.py
 │   │   │   ├── verification_service.py
 │   │   │   └── __init__.py
 │   │   ├── utils
+│   │   │   ├── add_reviews_and_rating.py
+│   │   │   ├── city_coords.py
+│   │   │   ├── init_db.py
 │   │   │   ├── logger.py
 │   │   │   ├── permissions.py
 │   │   │   ├── sanitize.py
@@ -87,16 +95,19 @@
 │   │   │   ├── validators.py
 │   │   │   └── __init__.py
 │   │   └── __init__.py
+│   ├── ckeck.py
 │   ├── Dockerfile
+│   ├── Dockerfile.local
 │   ├── requirements.txt
-│   ├── start.sh
-│   └── uploads
+│   └── start.sh
 ├── docker-compose.yml
-├── Dockerfile
 ├── frontend
 │   ├── .gitignore
+│   ├── Dockerfile
+│   ├── Dockerfile.local
 │   ├── eslint.config.js
 │   ├── index.html
+│   ├── nginx.conf
 │   ├── package-lock.json
 │   ├── package.json
 │   ├── public
@@ -115,6 +126,8 @@
 │   │   ├── components
 │   │   │   ├── AuthModal.tsx
 │   │   │   ├── CategoryNav.tsx
+│   │   │   ├── CompanyRatingCard.tsx
+│   │   │   ├── CompanyRatingSection.tsx
 │   │   │   ├── Footer.tsx
 │   │   │   ├── Header.tsx
 │   │   │   ├── HeroSection.tsx
@@ -122,15 +135,30 @@
 │   │   │   ├── OpportunityCard.tsx
 │   │   │   ├── OpportunityList.tsx
 │   │   │   └── ScrollProgressBar.tsx
+│   │   ├── context
+│   │   │   └── AuthContext.tsx
 │   │   ├── hooks
 │   │   │   ├── useAuth.ts
 │   │   │   └── useLocalFavorites.ts
 │   │   ├── index.css
 │   │   ├── main.tsx
 │   │   ├── pages
-│   │   │   └── LandingPage.tsx
+│   │   │   ├── companyDashboard
+│   │   │   ├── curatorDashboard
+│   │   │   ├── EmailVerification.tsx
+│   │   │   ├── EmailVerificationPending.tsx
+│   │   │   ├── LandingPage.tsx
+│   │   │   └── studentDashboard
+│   │   │       ├── ApplicationsPage.tsx
+│   │   │       ├── ContactsPage.tsx
+│   │   │       ├── FavoritesPage.tsx
+│   │   │       ├── ProfilePage.tsx
+│   │   │       ├── RecommendationPage.tsx
+│   │   │       ├── SettingsPage.tsx
+│   │   │       └── StudentLayout.tsx
 │   │   └── styles
-│   │       └── landing.css
+│   │       ├── landing.css
+│   │       └── studentDashboard.css
 │   └── vite.config.js
 ├── get_treee.py
 ├── README.md

@@ -80,6 +80,7 @@ class UserUpdate(BaseModel):
     github_url: Optional[str] = None
     portfolio_url: Optional[str] = None
     telegram: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 # === Ответы ===

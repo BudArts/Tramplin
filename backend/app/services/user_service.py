@@ -121,6 +121,8 @@ class UserService:
         
         return users, total
     
+    # backend/app/services/user_service.py - только метод update_user
+
     async def update_user(
         self,
         db: AsyncSession,
@@ -139,9 +141,13 @@ class UserService:
         # Применяем обновления
         update_dict = update_data.model_dump(exclude_unset=True)
         
+        # Логируем что обновляем
+        logger.info(f"Updating user {user_id} with fields: {list(update_dict.keys())}")
+        
         for field, value in update_dict.items():
             if hasattr(user, field):
                 setattr(user, field, value)
+                logger.debug(f"Set {field} = {value}")
         
         user.updated_at = datetime.utcnow()
         
@@ -154,7 +160,7 @@ class UserService:
         )
         
         return user
-    
+        
     async def update_avatar(
         self,
         db: AsyncSession,

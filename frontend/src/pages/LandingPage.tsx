@@ -43,10 +43,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuthModal }) => {
 
   const opportunityListRef = useRef<OpportunityListRef>(null);
 
-  // ВАЖНО: редирект авторизованных студентов
   useEffect(() => {
+    console.log('LandingPage - Auth state:', { loading, isAuthenticated, user });
     if (!loading && isAuthenticated && user) {
+      console.log('User role:', user.role);
       if (user.role === 'student') {
+        console.log('Redirecting to /student/profile');
         navigate('/student/profile', { replace: true });
       }
     }

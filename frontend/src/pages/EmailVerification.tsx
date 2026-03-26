@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 const EmailVerification = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { loadUser } = useAuth();
   const token = searchParams.get('token');
   
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -44,12 +44,11 @@ const EmailVerification = () => {
         if (data.access_token) {
           localStorage.setItem('access_token', data.access_token);
           localStorage.setItem('refresh_token', data.refresh_token);
-          await refreshUser();
+          await loadUser();
         }
         
         setStatus('success');
         
-        // ВАЖНО: перенаправляем на /student/profile
         setTimeout(() => {
           navigate('/student/profile', { replace: true });
         }, 2000);
@@ -62,7 +61,7 @@ const EmailVerification = () => {
     };
 
     verifyEmail();
-  }, [token, navigate, refreshUser]);
+  }, [token, navigate, loadUser]);
 
   return (
     <div className="email-verification">
