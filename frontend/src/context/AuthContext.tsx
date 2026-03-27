@@ -1,90 +1,73 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { authAPI } from '../api/auth';
-import { User } from '../api/types';
+// frontend/src/context/AuthContext.tsx
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useAuth as useAuthHook, UserResponse } from '../hooks/useAuth';
 
 interface AuthContextType {
-  user: User | null;
+  user: UserResponse | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<void>;
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  register: (data: any) => Promise<{ error?: string }>;
   logout: () => void;
-  isLoading: boolean;
+  loadUser: () => Promise<void>;
+  updateUser: (userData: Partial<UserResponse>) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const auth = useAuthHook();
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const storedToken = localStorage.getItem('access_token');
+    setToken(storedToken);
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      const data = await authAPI.login(email, password);
-      
-      // Сохраняем данные
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      // Обновляем состояние
-      setToken(data.access_token);
-      setUser(data.user);
-      
-      // ✅ ИСПРАВЛЕНО: редирект происходит ПОСЛЕ сохранения
-      // Используем setTimeout чтобы дать React обновить состояние
-      setTimeout(() => {
-        switch (data.user.role) {
-          case 'student':
-            window.location.href = '/student/recommendations';
-            break;
-          case 'company':
-            window.location.href = '/company/dashboard';
-            break;
-          case 'curator':
-            window.location.href = '/curator/dashboard';
-            break;
-          default:
-            window.location.href = '/';
-        }
-      }, 100);
-      
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+    const result = await auth.login(email, password);
+    if (result.data) {
+      setToken(result.data.access_token);
     }
+    return { error: result.error || undefined };
   };
 
-  const register = async (email: string, password: string, fullName: string) => {
-    try {
-      await authAPI.register(email, password, fullName);
-      // ✅ После регистрации НЕ делаем автологин, показываем сообщение о письме
-    } catch (error) {
-      console.error('Registration error:', error);
-      throw error;
+  const register = async (data: any) => {
+    const result = await auth.register(data);
+    if (result.data && result.data.access_token) {
+      setToken(result.data.access_token);
     }
+    return { error: result.error || undefined };
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    auth.logout();
     setToken(null);
-    setUser(null);
-    window.location.href = '/';
+  };
+
+  const loadUser = async () => {
+    await auth.loadUser();
+  };
+
+  const updateUser = (userData: Partial<UserResponse>) => {
+    auth.updateUserPartial(userData);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user: auth.user,
+        token,
+        isAuthenticated: auth.isAuthenticated,
+        loading: auth.loading,
+        login,
+        register,
+        logout,
+        loadUser,
+        updateUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

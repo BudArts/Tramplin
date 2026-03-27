@@ -1,6 +1,6 @@
 # backend/app/schemas/company.py
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 from datetime import datetime
 from enum import Enum
 import re
@@ -18,6 +18,14 @@ class VerificationStatus(str, Enum):
     PENDING = "pending"
     VERIFIED = "verified"
     REJECTED = "rejected"
+    PENDING_EMAIL = "pending_email"  # Добавляем для совместимости с базой данных
+    
+    @classmethod
+    def _missing_(cls, value):
+        """Обработка отсутствующих значений"""
+        if value == "pending_email":
+            return cls.PENDING_EMAIL
+        return super()._missing_(value)
 
 
 class CompanySize(str, Enum):
@@ -192,7 +200,7 @@ class CompanyResponse(BaseModel):
     phone: Optional[str] = None
     website: Optional[str] = None
     status: CompanyStatus
-    verification_status: Optional[VerificationStatus] = None
+    verification_status: Optional[Union[VerificationStatus, str]] = None  # Изменено для совместимости
     is_email_verified: bool
     description: Optional[str] = None
     industry: Optional[str] = None
@@ -209,6 +217,24 @@ class CompanyResponse(BaseModel):
     
     class Config:
         from_attributes = True
+    
+    @field_validator('verification_status', mode='before')
+    @classmethod
+    def normalize_verification_status(cls, v):
+        """Нормализует статус верификации"""
+        if v is None:
+            return None
+        # Если это строка, преобразуем в нужный формат
+        if isinstance(v, str):
+            if v == "pending_email":
+                return "pending"
+            return v
+        # Если это enum, преобразуем в значение
+        if hasattr(v, 'value'):
+            if v.value == "pending_email":
+                return "pending"
+            return v.value
+        return v
 
 
 class CompanyListResponse(BaseModel):

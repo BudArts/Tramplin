@@ -17,10 +17,11 @@ interface UserData {
 interface SettingsPageContext {
   user: UserData;
   refreshStats: () => void;
+  refreshUser: () => void;
 }
 
 const SettingsPage = () => {
-  const { user, refreshStats } = useOutletContext<SettingsPageContext>();
+  const { user, refreshStats, refreshUser } = useOutletContext<SettingsPageContext>();
   const { loadUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -58,13 +59,15 @@ const SettingsPage = () => {
       if (response.ok) {
         setMessage({ type: 'success', text: 'Настройки приватности сохранены' });
         refreshStats();
+        refreshUser();
         await loadUser();
       } else {
-        setMessage({ type: 'success', text: 'Настройки приватности сохранены (демо-режим)' });
+        const error = await response.json();
+        setMessage({ type: 'error', text: error.detail || 'Ошибка при сохранении настроек' });
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      setMessage({ type: 'error', text: 'Ошибка при сохранении настроек' });
+      setMessage({ type: 'error', text: 'Ошибка сети' });
     } finally {
       setLoading(false);
     }

@@ -1539,6 +1539,11 @@ body::after {
   width: auto;
   object-fit: contain;
 }
+.footer__logo-img2 {
+  height: 100px;
+  width: auto;
+  object-fit: contain;
+}
 
 .footer__logo-text {
   font-size: 1.5rem;
@@ -3725,4 +3730,3 @@ body::after {
   transform: translateY(-2px);
   box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
 }
-

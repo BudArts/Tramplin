@@ -89,10 +89,10 @@ async def create_application(
     # Уведомление работодателю
     notification = Notification(
         user_id=opportunity.company.owner_id,
-        type=NotificationType.NEW_APPLICATION,
+        type=NotificationType.APPLICATION_RECEIVED.value,  # 👈 добавьте .value
         title="Новый отклик",
-        message=f"{user.display_name} откликнулся на «{opportunity.title}»",
-        link=f"/employer/opportunities/{opportunity.id}/responses",
+        message=f"{user.display_name or 'Пользователь'} откликнулся на «{opportunity.title}»",
+        data={"opportunity_id": opportunity.id},
     )
     db.add(notification)
 

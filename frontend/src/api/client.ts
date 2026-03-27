@@ -1,3 +1,4 @@
+// frontend/src/api/client.ts
 const API_BASE_URL = '';
 
 interface ApiResponse<T> {
@@ -16,11 +17,24 @@ class ApiClient {
     clearTokens() {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
         console.log('clearTokens - tokens cleared');
     }
 
     isAuthenticated(): boolean {
         return !!localStorage.getItem('access_token');
+    }
+
+    getUser(): any {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch {
+                return null;
+            }
+        }
+        return null;
     }
 
     private async request<T>(
@@ -216,6 +230,7 @@ export const api = {
         me: () => apiClient.get('/users/me'),
         updateMe: (data: any) => apiClient.patch('/users/me', data),
         getStudents: (params?: any) => apiClient.get('/users/students', params),
+        getUniversities: (params?: any) => apiClient.get('/users/universities', params),
     },
 
     // Favorites
@@ -226,6 +241,7 @@ export const api = {
         getCompanies: () => apiClient.get('/api/favorites/companies'),
         addCompany: (companyId: number) => apiClient.post(`/api/favorites/company/${companyId}`),
         removeCompany: (companyId: number) => apiClient.delete(`/api/favorites/company/${companyId}`),
+        getCompanyIds: () => apiClient.get('/api/favorites/companies/ids'),
     },
 
     // Applications
@@ -236,6 +252,8 @@ export const api = {
         withdraw: (applicationId: number) => apiClient.delete(`/api/applications/${applicationId}`),
         updateStatus: (applicationId: number, data: any) =>
             apiClient.patch(`/api/applications/${applicationId}/status`, data),
+        getForOpportunity: (opportunityId: number, params?: { status?: string }) =>
+            apiClient.get(`/api/applications/opportunity/${opportunityId}`, params),
     },
 
     // Contacts
@@ -254,15 +272,15 @@ export const api = {
     // Chat
     chat: {
         getConversations: () => apiClient.get('/api/chat/conversations'),
-        getMessages: (otherUserId: number, page?: number, per_page?: number) =>
-            apiClient.get(`/api/chat/with/${otherUserId}`, { page, per_page }),
+        getMessages: (otherUserId: number, params?: { page?: number; per_page?: number }) =>
+            apiClient.get(`/api/chat/with/${otherUserId}`, params),
         sendMessage: (data: any) => apiClient.post('/api/chat', data),
         getUnreadCount: () => apiClient.get('/api/chat/unread'),
     },
 
     // Notifications
     notifications: {
-        get: () => apiClient.get('/api/notifications'),
+        get: (params?: { page?: number; per_page?: number }) => apiClient.get('/api/notifications', params),
         markAsRead: (notificationId: number) => apiClient.patch(`/api/notifications/${notificationId}/read`),
         markAllAsRead: () => apiClient.patch('/api/notifications/read-all'),
         getUnreadCount: () => apiClient.get('/api/notifications/unread-count'),
@@ -273,6 +291,44 @@ export const api = {
         list: (params?: any) => apiClient.get('/api/opportunities', params),
         getMapPoints: (params?: any) => apiClient.get('/api/opportunities/map', params),
         getById: (opportunityId: number) => apiClient.get(`/api/opportunities/${opportunityId}`),
+        incrementView: (opportunityId: number) => apiClient.post(`/api/opportunities/${opportunityId}/view`),
+        getMy: (params?: { status?: string }) => apiClient.get('/api/opportunities/my', params),
+        update: (opportunityId: number, data: any) => apiClient.put(`/api/opportunities/${opportunityId}`, data),
+        delete: (opportunityId: number) => apiClient.delete(`/api/opportunities/${opportunityId}`),
+        updateStatus: (opportunityId: number, data: any) =>
+            apiClient.patch(`/api/opportunities/${opportunityId}/status`, data),
+    },
+
+    // Companies
+    companies: {
+        list: (params?: { skip?: number; limit?: number; industry?: string }) =>
+            apiClient.get('/companies', params),
+        getById: (companyId: number) => apiClient.get(`/companies/${companyId}`),
+        getPending: (params?: { skip?: number; limit?: number }) =>
+            apiClient.get('/companies/moderation/pending', params),
+    },
+
+    // Reviews
+    reviews: {
+        getForCompany: (companyId: number, params?: { page?: number; per_page?: number; sort_by?: string }) =>
+            apiClient.get(`/api/reviews/companies/${companyId}`, params),
+        getStats: (companyId: number) => apiClient.get(`/api/reviews/companies/${companyId}/stats`),
+        create: (companyId: number, data: any) => apiClient.post(`/api/reviews/companies/${companyId}`, data),
+        update: (reviewId: number, data: any) => apiClient.put(`/api/reviews/${reviewId}`, data),
+        delete: (reviewId: number) => apiClient.delete(`/api/reviews/${reviewId}`),
+        addResponse: (reviewId: number, data: any) => apiClient.post(`/api/reviews/${reviewId}/response`, data),
+        markHelpful: (reviewId: number, isHelpful: boolean) =>
+            apiClient.post(`/api/reviews/${reviewId}/helpful?is_helpful=${isHelpful}`),
+    },
+
+    // Tags
+    tags: {
+        list: (params?: { category?: string; approved_only?: boolean }) =>
+            apiClient.get('/api/tags', params),
+        popular: (params?: { limit?: number }) => apiClient.get('/api/tags/popular', params),
+        suggest: (query: string, limit?: number) =>
+            apiClient.get('/api/tags/suggest', { q: query, limit }),
+        propose: (data: { name: string; category?: string }) => apiClient.post('/api/tags', data),
     },
 
     // Uploads

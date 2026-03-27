@@ -53,6 +53,8 @@ async def list_conversations(
             conversations[other_id] = {
                 "user": UserShort(
                     id=other_user.id,
+                    first_name=other_user.first_name,  # ← Добавлено
+                    last_name=other_user.last_name,    # ← Добавлено
                     display_name=other_user.display_name,
                     role=other_user.role,
                     avatar_url=other_user.avatar_url,
@@ -108,12 +110,20 @@ async def get_messages(
         items.append(ChatMessageResponse(
             id=msg.id,
             sender=UserShort(
-                id=msg.sender.id, display_name=msg.sender.display_name,
-                role=msg.sender.role, avatar_url=msg.sender.avatar_url,
+                id=msg.sender.id,
+                first_name=msg.sender.first_name,  # ← Добавлено
+                last_name=msg.sender.last_name,    # ← Добавлено
+                display_name=msg.sender.display_name,
+                role=msg.sender.role,
+                avatar_url=msg.sender.avatar_url,
             ),
             receiver=UserShort(
-                id=msg.receiver.id, display_name=msg.receiver.display_name,
-                role=msg.receiver.role, avatar_url=msg.receiver.avatar_url,
+                id=msg.receiver.id,
+                first_name=msg.receiver.first_name,  # ← Добавлено
+                last_name=msg.receiver.last_name,    # ← Добавлено
+                display_name=msg.receiver.display_name,
+                role=msg.receiver.role,
+                avatar_url=msg.receiver.avatar_url,
             ),
             opportunity_id=msg.opportunity_id,
             message=msg.message,
@@ -122,7 +132,6 @@ async def get_messages(
         ))
 
     return items
-
 
 @router.post(
     "",
@@ -144,7 +153,7 @@ async def send_message(
 
     # Проверяем что получатель существует
     receiver_result = await db.execute(
-        select(User).where(User.id == data.receiver_id, User.is_active == True)
+        select(User).where(User.id == data.receiver_id)
     )
     receiver = receiver_result.scalar_one_or_none()
 
@@ -154,43 +163,65 @@ async def send_message(
             detail="Пользователь не найден",
         )
 
+    # Преобразуем opportunity_id: 0 в None
+    opportunity_id = data.opportunity_id if data.opportunity_id and data.opportunity_id > 0 else None
+    
     msg = ChatMessage(
         sender_id=user.id,
-        receiver_id=data.receiver_id,
-        opportunity_id=data.opportunity_id,
+        receiver_id=receiver.id,
+        opportunity_id=opportunity_id,
         message=data.message.strip(),
     )
     db.add(msg)
 
     # Уведомление
     notification = Notification(
-        user_id=data.receiver_id,
-        type=NotificationType.SYSTEM,
+        user_id=receiver.id,
+        type="new_message",
         title="Новое сообщение",
-        message=f"{user.display_name}: {data.message[:80]}",
-        link=f"/chat/{user.id}",
+        message=f"{user.display_name or f'{user.first_name} {user.last_name}'}: {data.message[:80]}",
+        data={"link": f"/chat/{user.id}"}
     )
     db.add(notification)
 
     await db.commit()
-    await db.refresh(msg)
-
+    
+    # Обновляем сообщение с загрузкой связанных пользователей
+    # Важно: refresh не загружает relationships автоматически
+    # Поэтому нужно сделать отдельный запрос с selectinload
+    result = await db.execute(
+        select(ChatMessage)
+        .options(
+            selectinload(ChatMessage.sender),
+            selectinload(ChatMessage.receiver)
+        )
+        .where(ChatMessage.id == msg.id)
+    )
+    msg = result.scalar_one()
+    
     return ChatMessageResponse(
         id=msg.id,
         sender=UserShort(
-            id=user.id, display_name=user.display_name,
-            role=user.role, avatar_url=user.avatar_url,
+            id=msg.sender.id,
+            first_name=msg.sender.first_name,
+            last_name=msg.sender.last_name,
+            display_name=msg.sender.display_name,
+            role=msg.sender.role,
+            avatar_url=msg.sender.avatar_url,
         ),
         receiver=UserShort(
-            id=receiver.id, display_name=receiver.display_name,
-            role=receiver.role, avatar_url=receiver.avatar_url,
+            id=msg.receiver.id,
+            first_name=msg.receiver.first_name,
+            last_name=msg.receiver.last_name,
+            display_name=msg.receiver.display_name,
+            role=msg.receiver.role,
+            avatar_url=msg.receiver.avatar_url,
         ),
         opportunity_id=msg.opportunity_id,
         message=msg.message,
-        is_read=False,
+        is_read=msg.is_read,
         created_at=msg.created_at,
     )
-
 
 @router.get(
     "/unread",

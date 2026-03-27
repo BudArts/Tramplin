@@ -1,17 +1,16 @@
+# backend/app/routers/curator.py
+
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from typing import Optional
-from app.schemas.opportunity import OpportunityResponse, OpportunityUpdate
-from app.schemas.company import CompanyUpdate
-from app.schemas.user import ApplicantProfileUpdate
-from app.models.tag import Tag
+
 from app.database import get_db
-from app.dependencies import require_role
-from app.models.user import User, UserRole, ApplicantProfile
-from app.models.company import Company, VerificationStatus, TrustLevel
+from app.dependencies import require_role, get_current_curator
+from app.models.user import User, UserRole
+from app.models.company import Company, VerificationStatus, TrustLevel, CompanyStatus
 from app.models.opportunity import (
     Opportunity, OpportunityStatus, ModerationStatus,
 )
@@ -25,75 +24,84 @@ from app.schemas.curator import (
     CuratorCreate,
     PlatformStats,
 )
-from app.schemas.company import CompanyDetailResponse
-from app.schemas.opportunity import OpportunityResponse
-from app.schemas.user import UserResponse
+from app.schemas.company import CompanyDetailResponse, CompanyUpdate
+from app.schemas.opportunity import OpportunityResponse, OpportunityUpdate
+from app.schemas.user import UserResponse, ApplicantProfileUpdate
 from app.schemas.tag import TagResponse
 from app.schemas.common import MessageResponse
 from app.utils.security import hash_password
 
 router = APIRouter(prefix="/api/curator", tags=["Куратор / Модерация"])
 
-# Допустимые роли для куратора
 CURATOR_ROLES = (UserRole.CURATOR, UserRole.ADMIN)
-
 
 # === Дашборд ===
 
-@router.get(
-    "/stats",
-    response_model=PlatformStats,
-    summary="Статистика платформы",
-)
+@router.get("/stats", response_model=PlatformStats)
 async def platform_stats(
-    user: User = Depends(require_role(*CURATOR_ROLES)),
-    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_curator),
+    db: AsyncSession = Depends(get_db)
 ):
-    """Общая статистика платформы для дашборда куратора."""
-    total_users = await db.scalar(select(func.count(User.id))) or 0
+    """Получение статистики платформы для куратора"""
+    
+    # Подсчет пользователей по ролям
+    total_users = await db.scalar(select(func.count()).select_from(User))
+    
+    # Студенты/соискатели
     total_applicants = await db.scalar(
-        select(func.count(User.id)).where(User.role == UserRole.APPLICANT)
-    ) or 0
+        select(func.count()).select_from(User).where(
+            User.role.in_([UserRole.STUDENT, UserRole.APPLICANT])
+        )
+    )
+    
+    # Компании/работодатели
     total_employers = await db.scalar(
-        select(func.count(User.id)).where(User.role == UserRole.EMPLOYER)
-    ) or 0
-    total_opportunities = await db.scalar(
-        select(func.count(Opportunity.id))
-    ) or 0
+        select(func.count()).select_from(User).where(
+            User.role.in_([UserRole.COMPANY, UserRole.EMPLOYER])
+        )
+    )
+    
+    # Подсчет возможностей
+    total_opportunities = await db.scalar(select(func.count()).select_from(Opportunity))
+    
     active_opportunities = await db.scalar(
-        select(func.count(Opportunity.id)).where(
+        select(func.count()).select_from(Opportunity).where(
             Opportunity.status == OpportunityStatus.ACTIVE
         )
-    ) or 0
-    total_applications = await db.scalar(
-        select(func.count(Application.id))
-    ) or 0
+    )
+    
+    # Подсчет заявок
+    total_applications = await db.scalar(select(func.count()).select_from(Application))
+    
+    # Подсчет ожидающих верификации (исправлено)
     pending_verifications = await db.scalar(
-        select(func.count(Company.id)).where(
-            Company.verification_status.in_([
-                VerificationStatus.PENDING,
-                VerificationStatus.INN_VERIFIED,
-                VerificationStatus.EMAIL_CONFIRMED,
-            ])
+        select(func.count()).select_from(Company).where(
+            Company.status == CompanyStatus.PENDING_REVIEW
         )
-    ) or 0
+    )
+    
+    # Подсчет ожидающих модерации
     pending_moderations = await db.scalar(
-        select(func.count(Opportunity.id)).where(
+        select(func.count()).select_from(Opportunity).where(
             Opportunity.moderation_status == ModerationStatus.PENDING
         )
-    ) or 0
-    total_tags = await db.scalar(select(func.count(Tag.id))) or 0
-
+    )
+    
+    # Подсчет всех тегов
+    total_tags = await db.scalar(
+        select(func.count()).select_from(Tag).where(Tag.is_approved == True)
+    )
+    
     return PlatformStats(
-        total_users=total_users,
-        total_applicants=total_applicants,
-        total_employers=total_employers,
-        total_opportunities=total_opportunities,
-        active_opportunities=active_opportunities,
-        total_applications=total_applications,
-        pending_verifications=pending_verifications,
-        pending_moderations=pending_moderations,
-        total_tags=total_tags,
+        total_users=total_users or 0,
+        total_applicants=total_applicants or 0,
+        total_employers=total_employers or 0,
+        total_opportunities=total_opportunities or 0,
+        active_opportunities=active_opportunities or 0,
+        total_applications=total_applications or 0,
+        pending_verifications=pending_verifications or 0,
+        pending_moderations=pending_moderations or 0,
+        total_tags=total_tags or 0
     )
 
 
@@ -109,14 +117,13 @@ async def pending_verifications(
     db: AsyncSession = Depends(get_db),
 ):
     """Компании, ожидающие верификации."""
+    # Используем только существующие статусы
     result = await db.execute(
         select(Company)
         .where(
-            Company.verification_status.in_([
-                VerificationStatus.PENDING,
-                VerificationStatus.INN_VERIFIED,
-                VerificationStatus.EMAIL_CONFIRMED,
-            ])
+            # Компании со статусом PENDING_REVIEW или verification_status = PENDING
+            (Company.status == CompanyStatus.PENDING_REVIEW) |
+            (Company.verification_status == VerificationStatus.PENDING)
         )
         .order_by(Company.created_at.asc())
     )
@@ -139,15 +146,28 @@ async def all_companies(
     query = select(Company)
 
     if status_filter:
-        statuses = [
-            VerificationStatus(s.strip())
-            for s in status_filter.split(",")
-            if s.strip()
-        ]
-        query = query.where(Company.verification_status.in_(statuses))
+        try:
+            # Проверяем статусы для фильтрации
+            for s in status_filter.split(","):
+                s = s.strip()
+                # Проверяем в VerificationStatus
+                if s in [v.value for v in VerificationStatus]:
+                    query = query.where(Company.verification_status == VerificationStatus(s))
+                # Проверяем в CompanyStatus
+                elif s in [v.value for v in CompanyStatus]:
+                    query = query.where(Company.status == CompanyStatus(s))
+        except ValueError:
+            pass
 
     if search:
-        query = query.where(Company.name.ilike(f"%{search}%"))
+        query = query.where(
+            or_(
+                Company.full_name.ilike(f"%{search}%"),
+                Company.short_name.ilike(f"%{search}%"),
+                Company.brand_name.ilike(f"%{search}%"),
+                Company.inn.ilike(f"%{search}%")
+            )
+        )
 
     query = query.order_by(Company.created_at.desc())
 
@@ -179,7 +199,6 @@ async def verify_company(
             detail="Компания не найдена",
         )
 
-    # Проверяем допустимые решения
     allowed = {VerificationStatus.VERIFIED, VerificationStatus.REJECTED}
     if data.status not in allowed:
         raise HTTPException(
@@ -189,30 +208,34 @@ async def verify_company(
 
     old_status = company.verification_status
     company.verification_status = data.status
-    company.verification_comment = data.comment
+    company.rejection_reason = data.comment
     company.verified_by = user.id
 
     if data.status == VerificationStatus.VERIFIED:
         company.verified_at = datetime.now(timezone.utc)
+        company.status = CompanyStatus.ACTIVE
 
-    # Уведомление работодателю
     status_text = "подтверждена ✅" if data.status == VerificationStatus.VERIFIED else "отклонена ❌"
-    notification = Notification(
-        user_id=company.owner_id,
-        type=NotificationType.VERIFICATION_UPDATE,
-        title="Статус верификации",
-        message=f"Ваша компания «{company.name}» {status_text}."
-                + (f" Комментарий: {data.comment}" if data.comment else ""),
-        link="/employer/company",
-    )
-    db.add(notification)
+    
+    if company.owner_id:
+        # Используем COMPANY_VERIFIED или COMPANY_REJECTED вместо VERIFICATION_UPDATE
+        notification_type = NotificationType.COMPANY_VERIFIED.value if data.status == VerificationStatus.VERIFIED else NotificationType.COMPANY_REJECTED.value
+        
+        notification = Notification(
+            user_id=company.owner_id,
+            type=notification_type,
+            title="Статус верификации" if data.status == VerificationStatus.VERIFIED else "Компания отклонена",
+            message=f"Ваша компания «{company.full_name}» {status_text}."
+                    + (f" Комментарий: {data.comment}" if data.comment else ""),
+            data={"company_id": company_id, "action": "verification_result"},
+        )
+        db.add(notification)
 
     await db.commit()
 
     return MessageResponse(
-        message=f"Компания {company.name}: {old_status.value} → {data.status.value}"
+        message=f"Компания {company.full_name}: {old_status.value} → {data.status.value}"
     )
-
 
 # === Модерация возможностей ===
 
@@ -237,7 +260,39 @@ async def pending_moderations(
     )
     opportunities = result.scalars().unique().all()
     return opportunities
-
+@router.get(
+    "/opportunities",
+    response_model=list[OpportunityResponse],
+    summary="Все возможности с фильтрацией",
+)
+async def get_opportunities(
+    moderation_status: Optional[str] = Query(None),
+    company_id: Optional[int] = Query(None),
+    per_page: int = Query(100, ge=1, le=200),
+    user: User = Depends(require_role(*CURATOR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Получение возможностей с фильтрацией по статусу модерации."""
+    query = select(Opportunity).options(
+        selectinload(Opportunity.tags),
+        selectinload(Opportunity.company),
+    )
+    
+    if moderation_status:
+        try:
+            status = ModerationStatus(moderation_status)
+            query = query.where(Opportunity.moderation_status == status)
+        except ValueError:
+            pass
+    
+    if company_id:
+        query = query.where(Opportunity.company_id == company_id)
+    
+    query = query.order_by(Opportunity.created_at.desc()).limit(per_page)
+    
+    result = await db.execute(query)
+    opportunities = result.scalars().unique().all()
+    return opportunities
 
 @router.patch(
     "/opportunities/{opportunity_id}/approve",
@@ -268,25 +323,22 @@ async def approve_opportunity(
     opportunity.moderated_by = user.id
     opportunity.published_at = datetime.now(timezone.utc)
 
-    # Увеличиваем счётчик одобренных карточек компании
     if opportunity.company:
         opportunity.company.approved_cards_count += 1
 
-        # Обновляем trust level
         count = opportunity.company.approved_cards_count
         if count >= 20:
-            opportunity.company.trust_level = TrustLevel.PREMIUM
+            opportunity.company.trust_level = TrustLevel.VERIFIED
         elif count >= 5:
             opportunity.company.trust_level = TrustLevel.TRUSTED
 
-    # Уведомление работодателю
-    if opportunity.company:
+    if opportunity.company and opportunity.company.owner_id:
         notification = Notification(
             user_id=opportunity.company.owner_id,
             type=NotificationType.MODERATION_UPDATE,
             title="Возможность одобрена",
             message=f"Ваша возможность «{opportunity.title}» одобрена и опубликована ✅",
-            link=f"/employer/opportunities",
+            link="/company/opportunities",
         )
         db.add(notification)
 
@@ -325,15 +377,14 @@ async def reject_opportunity(
     opportunity.moderated_by = user.id
     opportunity.moderation_comment = data.comment
 
-    # Уведомление
-    if opportunity.company:
+    if opportunity.company and opportunity.company.owner_id:
         notification = Notification(
             user_id=opportunity.company.owner_id,
             type=NotificationType.MODERATION_UPDATE,
             title="Возможность отклонена",
             message=f"Ваша возможность «{opportunity.title}» отклонена ❌."
                     + (f" Причина: {data.comment}" if data.comment else ""),
-            link=f"/employer/opportunities",
+            link="/company/opportunities",
         )
         db.add(notification)
 
@@ -353,7 +404,7 @@ async def request_changes(
     user: User = Depends(require_role(*CURATOR_ROLES)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Запросить изменения в возможности — работодатель должен исправить и отправить повторно."""
+    """Запросить изменения в возможности."""
     result = await db.execute(
         select(Opportunity)
         .options(selectinload(Opportunity.company))
@@ -372,15 +423,14 @@ async def request_changes(
     opportunity.moderated_by = user.id
     opportunity.moderation_comment = data.comment
 
-    # Уведомление
-    if opportunity.company:
+    if opportunity.company and opportunity.company.owner_id:
         notification = Notification(
             user_id=opportunity.company.owner_id,
             type=NotificationType.MODERATION_UPDATE,
             title="Требуются изменения",
             message=f"В возможности «{opportunity.title}» требуются изменения."
                     + (f" Комментарий: {data.comment}" if data.comment else ""),
-            link=f"/employer/opportunities",
+            link="/company/opportunities",
         )
         db.add(notification)
 
@@ -409,17 +459,28 @@ async def list_users(
     query = select(User)
 
     if role:
-        roles = [UserRole(r.strip()) for r in role.split(",") if r.strip()]
-        query = query.where(User.role.in_(roles))
+        try:
+            roles = [UserRole(r.strip()) for r in role.split(",") if r.strip()]
+            if roles:
+                query = query.where(User.role.in_(roles))
+        except ValueError:
+            pass
 
     if search:
         query = query.where(
-            User.display_name.ilike(f"%{search}%")
-            | User.email.ilike(f"%{search}%")
+            or_(
+                User.display_name.ilike(f"%{search}%"),
+                User.email.ilike(f"%{search}%"),
+                User.first_name.ilike(f"%{search}%"),
+                User.last_name.ilike(f"%{search}%")
+            )
         )
 
     if is_active is not None:
-        query = query.where(User.is_active == is_active)
+        if is_active:
+            query = query.where(User.status == "active")
+        else:
+            query = query.where(User.status != "active")
 
     query = query.order_by(User.created_at.desc())
     query = query.offset((page - 1) * per_page).limit(per_page)
@@ -452,21 +513,19 @@ async def update_user_status(
             detail="Пользователь не найден",
         )
 
-    # Нельзя деактивировать админа
     if target.role == UserRole.ADMIN and not data.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Нельзя деактивировать администратора",
         )
 
-    # Нельзя деактивировать себя
     if target.id == user.id and not data.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя деактивировать свой аккаунт",
         )
 
-    target.is_active = data.is_active
+    target.status = "active" if data.is_active else "suspended"
     await db.commit()
 
     action = "активирован" if data.is_active else "деактивирован"
@@ -602,7 +661,6 @@ async def create_curator(
     """
     Создание нового куратора. Доступно только администратору.
     """
-    # Проверяем уникальность email
     existing = await db.execute(
         select(User).where(User.email == data.email.lower().strip())
     )
@@ -614,15 +672,20 @@ async def create_curator(
 
     curator = User(
         email=data.email.lower().strip(),
-        password_hash=hash_password(data.password),
+        hashed_password=hash_password(data.password),
         display_name=data.display_name.strip(),
+        first_name=data.display_name.strip(),
+        last_name="",
         role=UserRole.CURATOR,
+        status="active",
+        is_email_verified=True,
     )
     db.add(curator)
     await db.commit()
     await db.refresh(curator)
 
     return curator
+
 
 # === Редактирование карточек возможностей куратором ===
 
@@ -699,7 +762,8 @@ async def curator_edit_company(
 
     update_fields = data.model_dump(exclude_unset=True)
     for field, value in update_fields.items():
-        setattr(company, field, value)
+        if value is not None:
+            setattr(company, field, value)
 
     await db.commit()
     await db.refresh(company)
@@ -720,22 +784,72 @@ async def curator_edit_applicant(
     db: AsyncSession = Depends(get_db),
 ):
     """Куратор может редактировать профиль любого соискателя."""
-    from app.models.user import ApplicantProfile
-
     result = await db.execute(
-        select(ApplicantProfile).where(ApplicantProfile.user_id == user_id)
+        select(User).where(User.id == user_id)
     )
-    profile = result.scalar_one_or_none()
+    target_user = result.scalar_one_or_none()
 
-    if not profile:
+    if not target_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Профиль соискателя не найден",
+            detail="Пользователь не найден",
         )
 
+    # Обновляем поля профиля
     update_fields = data.model_dump(exclude_unset=True, exclude={"skill_ids"})
     for field, value in update_fields.items():
-        setattr(profile, field, value)
+        if value is not None:
+            setattr(target_user, field, value)
 
     await db.commit()
     return MessageResponse(message="Профиль обновлён")
+
+@router.post(
+    "/companies/{company_id}/request-info",
+    response_model=MessageResponse,
+    summary="Запросить дополнительную информацию",
+)
+async def request_additional_info(
+    company_id: int,
+    data: dict,  # { "message": "текст запроса" }
+    user: User = Depends(require_role(*CURATOR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Куратор запрашивает дополнительную информацию у компании."""
+    result = await db.execute(
+        select(Company).where(Company.id == company_id)
+    )
+    company = result.scalar_one_or_none()
+
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Компания не найдена",
+        )
+
+    if not company.owner_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="У компании нет владельца",
+        )
+
+    message = data.get("message", "")
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Сообщение не может быть пустым",
+        )
+
+    # Создаем уведомление для владельца компании (без поля link)
+    notification = Notification(
+        user_id=company.owner_id,
+        type=NotificationType.SYSTEM.value,  # Используем строковое значение
+        title="Запрос дополнительной информации",
+        message=f"Куратор запросил дополнительную информацию по компании «{company.full_name}».\n\n{message}",
+        data={"company_id": company_id, "action": "request_info"},
+    )
+    db.add(notification)
+
+    await db.commit()
+
+    return MessageResponse(message="Запрос на дополнительную информацию отправлен")

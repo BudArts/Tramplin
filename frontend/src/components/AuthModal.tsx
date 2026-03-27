@@ -36,7 +36,7 @@ interface RegisterFormData {
 
 const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) => {
   const navigate = useNavigate();
-  const { login, register, loadUser, isAuthenticated } = useAuth();
+  const { login, register, loadUser, isAuthenticated, user } = useAuth();
   const [mode, setMode] = useState<FormMode>(defaultMode);
   const [loginData, setLoginData] = useState<LoginFormData>({
     email: '',
@@ -82,14 +82,30 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
     }
   }, [defaultMode, isOpen]);
 
+  // Обновленная логика перенаправления после входа
   useEffect(() => {
-    if (isAuthenticated && isOpen) {
+    if (isAuthenticated && user && isOpen) {
       setTimeout(() => {
         onClose();
-        navigate('/student/profile');
-      }, 1500);
+        
+        // Перенаправление в зависимости от роли пользователя
+        switch (user.role) {
+          case 'student':
+            navigate('/student');
+            break;
+          case 'company':
+            navigate('/company');
+            break;
+          case 'curator':
+          case 'admin':
+            navigate('/curator');
+            break;
+          default:
+            navigate('/');
+        }
+      }, 500);
     }
-  }, [isAuthenticated, isOpen, onClose, navigate]);
+  }, [isAuthenticated, user, isOpen, onClose, navigate]);
 
   useEffect(() => {
     setErrors({});
@@ -158,8 +174,6 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
     return Object.keys(newErrors).length === 0;
   };
 
-  // frontend/src/components/AuthModal.tsx - замените handleLogin и handleRegister
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateLogin()) return;
@@ -174,7 +188,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
         setErrors({ form: result.error });
       } else {
         setSuccessMessage('Вход выполнен успешно!');
-        // Редирект произойдет в useEffect, который следит за isAuthenticated
+        // Редирект произойдет в useEffect, который следит за isAuthenticated и user
       }
     } catch (error: any) {
       setErrors({ form: error.message || 'Ошибка входа' });

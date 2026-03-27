@@ -1,14 +1,15 @@
 // frontend/src/pages/studentDashboard/OpportunitiesPage.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, MapPin, Briefcase, Eye, Filter, X, 
-  ChevronRight, Heart, Star, Clock 
+  ChevronRight, Heart, Star, Clock, Grid3x3, Map, List,
+  Loader2, Building2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import OpportunityDetailModal from '../../components/OpportunityDetailModal';
-import InteractiveMap from '../../components/InteractiveMap';
+import InteractiveMap, { InteractiveMapRef } from '../../components/InteractiveMap';
 
 interface Opportunity {
   id: number;
@@ -19,8 +20,15 @@ interface Opportunity {
   salary_min?: number;
   salary_max?: number;
   city: string;
-  company_name?: string;
-  company_logo?: string;
+  company: {
+    id: number;
+    name: string;
+    logo_url?: string | null;
+    inn?: string;
+    industry?: string;
+    short_name?: string | null;
+    brand_name?: string | null;
+  } | null;
   tags: Array<{ id: number; name: string }>;
   views_count: number;
   created_at: string;
@@ -31,6 +39,7 @@ interface Opportunity {
 
 const OpportunitiesPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
@@ -41,8 +50,9 @@ const OpportunitiesPage = () => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedFormat, setSelectedFormat] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [applying, setApplying] = useState(false);
+  const mapRef = useRef<InteractiveMapRef>(null);
 
   useEffect(() => {
     fetchOpportunities();
@@ -53,10 +63,24 @@ const OpportunitiesPage = () => {
     filterOpportunities();
   }, [opportunities, searchQuery, selectedType, selectedFormat]);
 
+  // Эффект для обработки открытия вакансии из рекомендации
+  useEffect(() => {
+    const openOpportunityId = location.state?.openOpportunityId;
+    if (openOpportunityId && opportunities.length > 0) {
+      const opportunity = opportunities.find(opp => opp.id === openOpportunityId);
+      if (opportunity) {
+        setSelectedOpportunity(opportunity);
+        setModalOpen(true);
+        // Очищаем state, чтобы не открывалось повторно
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [opportunities, location.state]);
+
   const fetchOpportunities = async () => {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await fetch('/api/opportunities?sort=published_at&order=desc&per_page=50', {
+      const response = await fetch('/api/opportunities?sort=published_at&order=desc&per_page=100', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (response.ok) {
@@ -123,7 +147,7 @@ const OpportunitiesPage = () => {
     if (searchQuery) {
       filtered = filtered.filter(opp =>
         opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        opp.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        opp.company?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
@@ -138,29 +162,43 @@ const OpportunitiesPage = () => {
     setFilteredOpportunities(filtered);
   };
 
-  const handleOpportunityClick = (opportunity: Opportunity) => {
+  const handleOpportunityClick = async (opportunity: Opportunity) => {
     setSelectedOpportunity(opportunity);
     setModalOpen(true);
-    incrementViewCount(opportunity.id);
+    await incrementViewCount(opportunity.id);
   };
 
   const incrementViewCount = async (opportunityId: number) => {
     const token = localStorage.getItem('access_token');
     try {
-      await fetch(`/api/opportunities/${opportunityId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ views_count: (selectedOpportunity?.views_count || 0) + 1 }),
+      const response = await fetch(`/api/opportunities/${opportunityId}/view`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
       });
+      
+      if (response.ok) {
+        setOpportunities(prev => 
+          prev.map(opp => 
+            opp.id === opportunityId 
+              ? { ...opp, views_count: (opp.views_count || 0) + 1 }
+              : opp
+          )
+        );
+      }
     } catch (error) {
       console.error('Error incrementing view count:', error);
     }
   };
 
+  const handleShowOnMap = (opportunity: Opportunity) => {
+    if (opportunity.latitude && opportunity.longitude && mapRef.current) {
+      mapRef.current.flyTo([opportunity.latitude, opportunity.longitude], 14);
+      setModalOpen(false);
+    }
+  };
+
   const handleApply = async (opportunityId: number) => {
+    setApplying(true);
     const token = localStorage.getItem('access_token');
     try {
       const response = await fetch('/api/applications', {
@@ -182,12 +220,21 @@ const OpportunitiesPage = () => {
     } catch (error) {
       console.error('Error applying:', error);
       alert('Ошибка сети');
+    } finally {
+      setApplying(false);
     }
   };
 
   const handleRecommend = (opportunityId: number) => {
     setModalOpen(false);
-    navigate(`/student/contacts?recommend=${opportunityId}`);
+    // Рекомендовать вакансию другу (выбор друга)
+    navigate(`/student/recommend-friend?opportunityId=${opportunityId}`);
+  };
+
+  const handleRecommendFriend = (opportunityId: number) => {
+    setModalOpen(false);
+    // Рекомендовать друга на вакансию (выбор друга)
+    navigate(`/student/recommend/${opportunityId}`);
   };
 
   const clearFilters = () => {
@@ -273,14 +320,6 @@ const OpportunitiesPage = () => {
           <Filter size={20} />
           <span>Фильтры</span>
         </button>
-        <div className="opportunities-page__view-toggle">
-          <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
-            <Briefcase size={18} />
-          </button>
-          <button className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')}>
-            <MapPin size={18} />
-          </button>
-        </div>
       </div>
 
       {showFilters && (
@@ -310,102 +349,104 @@ const OpportunitiesPage = () => {
         </motion.div>
       )}
 
-      {viewMode === 'map' ? (
-        <div className="opportunities-page__map">
-          <InteractiveMap 
-            opportunities={filteredOpportunities} 
-            onMarkerClick={handleOpportunityClick}
-          />
+      {/* Карта сверху */}
+      <div className="opportunities-page__map-container">
+        <InteractiveMap 
+          ref={mapRef}
+          opportunities={filteredOpportunities} 
+          onMarkerClick={handleOpportunityClick}
+        />
+      </div>
+
+      {/* Список возможностей снизу */}
+      <div className="opportunities-page__list-container">
+        <div className="opportunities-page__list-header">
+          <h3>Все возможности ({filteredOpportunities.length})</h3>
         </div>
-      ) : (
-        <div className="opportunities-page__grid">
+        <div className="opportunities-page__list">
           {filteredOpportunities.length === 0 ? (
-            <div className="opportunities-page__empty">
+            <div className="opportunities-page__empty-list">
               <div className="opportunities-page__empty-icon">🔍</div>
               <h3>Ничего не найдено</h3>
-              <p>Попробуйте изменить параметры поиска или сбросить фильтры</p>
-              <button onClick={clearFilters} className="opportunities-page__empty-btn">
-                Сбросить фильтры
-              </button>
+              <p>Попробуйте изменить параметры поиска</p>
             </div>
           ) : (
             filteredOpportunities.map((opp, index) => (
               <motion.div
                 key={opp.id}
-                className="opportunities-page__card"
+                className={`opportunities-page__list-card ${selectedOpportunity?.id === opp.id ? 'active' : ''}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03 }}
+                transition={{ delay: index * 0.02 }}
                 onClick={() => handleOpportunityClick(opp)}
               >
                 <button
                   className={`opportunities-page__favorite-btn ${favorites.has(opp.id) ? 'active' : ''}`}
                   onClick={(e) => toggleFavorite(opp.id, e)}
                 >
-                  <Heart size={16} fill={favorites.has(opp.id) ? '#ff3366' : 'none'} />
+                  <Heart size={14} fill={favorites.has(opp.id) ? '#ff3366' : 'none'} />
                 </button>
                 
-                <div className="opportunities-page__card-header">
-                  <div className="opportunities-page__card-badges">
-                    <span className={`opportunities-page__type-badge opportunities-page__type-badge--${opp.type}`}>
-                      {getTypeLabel(opp.type)}
-                    </span>
-                    <span className="opportunities-page__format-badge">
-                      {getFormatLabel(opp.work_format)}
-                    </span>
-                  </div>
+                <div className="opportunities-page__list-card-badges">
+                  <span className={`opportunities-page__type-badge opportunities-page__type-badge--${opp.type}`}>
+                    {getTypeLabel(opp.type)}
+                  </span>
+                  <span className="opportunities-page__format-badge">
+                    {getFormatLabel(opp.work_format)}
+                  </span>
                 </div>
-                <h3 className="opportunities-page__card-title">{opp.title}</h3>
-                <div className="opportunities-page__card-company">
-                  {opp.company_logo ? (
-                    <img src={opp.company_logo} alt={opp.company_name} />
+                <h4 className="opportunities-page__list-card-title">{opp.title}</h4>
+                <div className="opportunities-page__list-card-company">
+                  {opp.company?.logo_url ? (
+                    <img src={opp.company.logo_url} alt={opp.company.name} />
                   ) : (
-                    <div className="opportunities-page__card-company-placeholder">
-                      {opp.company_name?.[0] || '?'}
+                    <div className="opportunities-page__list-card-company-placeholder">
+                      <Building2 size={12} />
                     </div>
                   )}
-                  <span>{opp.company_name}</span>
+                  <span>{opp.company?.name || 'Компания не указана'}</span>
                 </div>
-                <div className="opportunities-page__card-meta">
-                  <div className="opportunities-page__card-meta-item">
-                    <MapPin size={14} />
+                <div className="opportunities-page__list-card-meta">
+                  <div className="opportunities-page__list-card-meta-item">
+                    <MapPin size={12} />
                     <span>{opp.city}</span>
                   </div>
                   {formatSalary(opp.salary_min, opp.salary_max) && (
-                    <div className="opportunities-page__card-meta-item opportunities-page__card-salary">
+                    <div className="opportunities-page__list-card-meta-item opportunities-page__list-card-salary">
                       {formatSalary(opp.salary_min, opp.salary_max)}
                     </div>
                   )}
-                  <div className="opportunities-page__card-meta-item">
-                    <Eye size={14} />
+                  <div className="opportunities-page__list-card-meta-item">
+                    <Eye size={12} />
                     <span>{opp.views_count || 0}</span>
                   </div>
                 </div>
-                <div className="opportunities-page__card-tags">
-                  {opp.tags?.slice(0, 3).map(tag => (
-                    <span key={tag.id} className="opportunities-page__card-tag">{tag.name}</span>
-                  ))}
-                </div>
-                <div className="opportunities-page__card-footer">
-                  <button className="opportunities-page__card-details">
-                    Подробнее <ChevronRight size={14} />
-                  </button>
-                </div>
+                {opp.tags && opp.tags.length > 0 && (
+                  <div className="opportunities-page__list-card-tags">
+                    {opp.tags.slice(0, 3).map(tag => (
+                      <span key={tag.id} className="opportunities-page__list-card-tag">{tag.name}</span>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             ))
           )}
         </div>
-      )}
+      </div>
 
+      {/* Detail Modal */}
       {selectedOpportunity && (
         <OpportunityDetailModal
           opportunity={selectedOpportunity}
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
-          onApply={handleApply}
+          onShowOnMap={() => handleShowOnMap(selectedOpportunity)}
+          onApply={() => handleApply(selectedOpportunity.id)}
           onRecommend={() => handleRecommend(selectedOpportunity.id)}
+          onRecommendFriend={() => handleRecommendFriend(selectedOpportunity.id)}
           isFavorite={favorites.has(selectedOpportunity.id)}
           onToggleFavorite={(e) => toggleFavorite(selectedOpportunity.id, e)}
+          applying={applying}
         />
       )}
     </div>

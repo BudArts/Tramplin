@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
+from sqlalchemy.orm import selectinload
 
 
 class UserRole(str, enum.Enum):

@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "Трамплин",
-        "description": "\n## Трамплин API\n\nПлатформа для стажировок и карьеры студентов.\n\n### Возможности:\n- Регистрация студентов и компаний\n- Подтверждение email\n- Проверка компаний через ФНС API\n- Публикация вакансий и стажировок\n- Отклики на вакансии\n- Чат между соискателями и компаниями\n    ",
+        "description": "\n    \n## Трамплин API\n\nПлатформа для стажировок и карьеры студентов.\n\n### Возможности:\n- Регистрация студентов и компаний\n- Подтверждение email\n- Проверка компаний через ФНС API\n- Публикация вакансий и стажировок\n- Отклики на вакансии\n- Чат между соискателями и компаниями\n    ",
         "version": "1.0.0"
     },
     "paths": {
@@ -1287,6 +1287,52 @@
             }
         },
         "/companies/{company_id}": {
+            "delete": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Удалить компанию",
+                "description": "Удаление компании (только для администраторов и кураторов).",
+                "operationId": "delete_company_companies__company_id__delete",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "company_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Company Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/app__schemas__auth__MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "get": {
                 "tags": [
                     "Companies"
@@ -1433,6 +1479,54 @@
                 }
             }
         },
+        "/companies/top-rated/": {
+            "get": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Топ компаний по рейтингу",
+                "description": "Получение топ-компаний по рейтингу.",
+                "operationId": "get_top_rated_companies_companies_top_rated__get",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 3,
+                            "title": "Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CompanyResponse"
+                                    },
+                                    "title": "Response Get Top Rated Companies Companies Top Rated  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/companies/{company_id}/reject": {
             "post": {
                 "tags": [
@@ -1554,11 +1648,6 @@
                 "summary": "Get Company Reviews",
                 "description": "Получить отзывы компании",
                 "operationId": "get_company_reviews_api_reviews_companies__company_id__get",
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ],
                 "parameters": [
                     {
                         "name": "company_id",
@@ -3860,6 +3949,54 @@
                 ]
             }
         },
+        "/api/contacts/recommendations/{recommendation_id}/read": {
+            "post": {
+                "tags": [
+                    "Контакты"
+                ],
+                "summary": "Отметить рекомендацию как прочитанную",
+                "description": "Отметить рекомендацию как прочитанную.",
+                "operationId": "mark_recommendation_read_api_contacts_recommendations__recommendation_id__read_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "recommendation_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Recommendation Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/app__schemas__common__MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/chat/conversations": {
             "get": {
                 "tags": [
@@ -5829,6 +5966,18 @@
                             }
                         ],
                         "title": "Logo Url"
+                    },
+                    "rating": {
+                        "type": "number",
+                        "title": "Rating",
+                        "description": "Средний рейтинг компании",
+                        "default": 0.0
+                    },
+                    "reviews_count": {
+                        "type": "integer",
+                        "title": "Reviews Count",
+                        "description": "Количество отзывов",
+                        "default": 0
                     }
                 },
                 "type": "object",
@@ -6212,6 +6361,18 @@
                             }
                         ],
                         "title": "Created At"
+                    },
+                    "rating": {
+                        "type": "number",
+                        "title": "Rating",
+                        "description": "Средний рейтинг компании",
+                        "default": 0.0
+                    },
+                    "reviews_count": {
+                        "type": "integer",
+                        "title": "Reviews Count",
+                        "description": "Количество отзывов",
+                        "default": 0
                     }
                 },
                 "type": "object",
@@ -6869,6 +7030,10 @@
                 "enum": [
                     "system",
                     "welcome",
+                    "contact_request",
+                    "contact_accepted",
+                    "contact_rejected",
+                    "recommendation",
                     "company_verified",
                     "company_rejected",
                     "company_status_changed",
@@ -8755,17 +8920,26 @@
                         "type": "integer",
                         "title": "Id"
                     },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "title": "Email"
-                    },
                     "first_name": {
-                        "type": "string",
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
                         "title": "First Name"
                     },
                     "last_name": {
-                        "type": "string",
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
                         "title": "Last Name"
                     },
                     "display_name": {
@@ -8789,14 +8963,22 @@
                             }
                         ],
                         "title": "Avatar Url"
+                    },
+                    "role": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Role"
                     }
                 },
                 "type": "object",
                 "required": [
-                    "id",
-                    "email",
-                    "first_name",
-                    "last_name"
+                    "id"
                 ],
                 "title": "UserShort",
                 "description": "Краткая информация о пользователе"
@@ -8965,6 +9147,17 @@
                             }
                         ],
                         "title": "Telegram"
+                    },
+                    "avatar_url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Avatar Url"
                     }
                 },
                 "type": "object",

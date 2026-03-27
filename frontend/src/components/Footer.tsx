@@ -43,6 +43,19 @@ const Footer = () => {
                     }
                   }}
                 />
+                <img 
+                  src="/codeins.png" 
+                  alt="Трамплин" 
+                  className="footer__logo-img2"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<span class="footer__logo-text">КодИнсайд</span>';
+                    }
+                  }}
+                />
               </div>
               <p className="footer__brand-desc">
                 Карьерная платформа нового поколения. Объединяем талантливых студентов

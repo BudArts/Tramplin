@@ -11,7 +11,7 @@ from app.schemas.user import (
     UserUpdate
 )
 from app.schemas.common import PaginatedResponse
-from app.dependencies import get_current_user, require_roles
+from app.dependencies import get_current_user, require_roles, get_current_user_optional
 from app.models.user import User, UserRole, UserStatus
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -101,7 +101,7 @@ async def get_users(
     status: Optional[UserStatus] = None,
     search: Optional[str] = None,
     is_verified: Optional[bool] = None,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.CURATOR])),
+    user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -149,7 +149,7 @@ async def get_students(
     Доступно компаниям для поиска кандидатов.
     """
     # Проверяем права (компании, кураторы, админы)
-    if current_user.role == UserRole.STUDENT:
+    if current_user.role != UserRole.STUDENT and current_user.role != UserRole.CURATOR and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Студенты не имеют доступа к списку других студентов"
@@ -237,11 +237,7 @@ async def get_user(
     
     # Проверка прав доступа
     if current_user.role == UserRole.STUDENT:
-        if current_user.id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Нет доступа к этому профилю"
-            )
+        return UserResponse.model_validate(user)
     elif current_user.role == UserRole.COMPANY:
         # Компании видят только активных студентов
         if user.role != UserRole.STUDENT or user.status != UserStatus.ACTIVE:

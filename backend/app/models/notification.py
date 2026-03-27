@@ -5,7 +5,7 @@ import enum
 from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, ForeignKey,
-    DateTime, Enum, JSON
+    DateTime, JSON
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -13,11 +13,19 @@ from sqlalchemy.sql import func
 from app.database import Base
 
 
-class NotificationType(str, enum.Enum):
+class NotificationType(enum.Enum):  # ← УБРАЛИ str
     """Типы уведомлений"""
     # Системные
     SYSTEM = "system"
     WELCOME = "welcome"
+    
+    # Контакты
+    CONTACT_REQUEST = "contact_request"
+    CONTACT_ACCEPTED = "contact_accepted"
+    CONTACT_REJECTED = "contact_rejected"
+    
+    # Рекомендации
+    RECOMMENDATION = "recommendation"
     
     # Компания
     COMPANY_VERIFIED = "company_verified"
@@ -48,7 +56,6 @@ class NotificationType(str, enum.Enum):
     # Сообщения
     NEW_MESSAGE = "new_message"
 
-
 class Notification(Base):
     """Уведомление пользователя"""
     __tablename__ = "notifications"
@@ -58,8 +65,8 @@ class Notification(Base):
     # Получатель
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     
-    # Тип и содержимое
-    type = Column(Enum(NotificationType), nullable=False, index=True)
+    # Тип и содержимое - используем String вместо Enum
+    type = Column(String(50), nullable=False, index=True)
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=True)
     

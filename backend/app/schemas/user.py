@@ -88,11 +88,11 @@ class UserUpdate(BaseModel):
 class UserShort(BaseModel):
     """Краткая информация о пользователе"""
     id: int
-    email: EmailStr
-    first_name: str
-    last_name: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
+    role: Optional[str] = None
 
     class Config:
         from_attributes = True

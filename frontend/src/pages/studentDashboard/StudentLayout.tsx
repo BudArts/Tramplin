@@ -1,5 +1,5 @@
 // frontend/src/pages/studentDashboard/StudentLayout.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import {
   Home,
@@ -27,10 +27,23 @@ interface Stats {
   notifications: number;
 }
 
+interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  data?: { link?: string };
+  is_read: boolean;
+  created_at: string;
+}
+
 const StudentLayout = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading, updateUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const [stats, setStats] = useState<Stats>({
     applications: 0,
     favorites: 0,
@@ -48,11 +61,94 @@ const StudentLayout = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      fetchStats();
-      fetchUnreadCount();
-      fetchNotificationsCount();
+      fetchAllStats();
+      fetchNotifications();
+      
+      // Обновляем каждые 30 секунд
+      const interval = setInterval(() => {
+        fetchAllStats();
+        fetchNotifications();
+      }, 30000);
+      
+      // Слушаем события обновления
+      const handleAllStatsUpdate = () => {
+        console.log('🔄 Updating all stats...');
+        fetchAllStats();
+        fetchNotifications();
+      };
+      
+      const handleMessagesUpdate = () => {
+        console.log('💬 Updating unread messages...');
+        fetchUnreadCount();
+      };
+      
+      const handleNotificationsUpdate = () => {
+        console.log('🔔 Updating notifications...');
+        fetchNotifications();
+        fetchNotificationsCount();
+      };
+      
+      window.addEventListener('viewedRecommendationsUpdated', handleAllStatsUpdate);
+      window.addEventListener('viewedOpportunitiesUpdated', handleAllStatsUpdate);
+      window.addEventListener('unreadMessagesUpdated', handleMessagesUpdate);
+      window.addEventListener('notificationsUpdated', handleNotificationsUpdate);
+      window.addEventListener('recommendationsUpdated', handleAllStatsUpdate);
+      window.addEventListener('contactsUpdated', handleAllStatsUpdate);
+      window.addEventListener('applicationsUpdated', handleAllStatsUpdate);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('viewedRecommendationsUpdated', handleAllStatsUpdate);
+        window.removeEventListener('viewedOpportunitiesUpdated', handleAllStatsUpdate);
+        window.removeEventListener('unreadMessagesUpdated', handleMessagesUpdate);
+        window.removeEventListener('notificationsUpdated', handleNotificationsUpdate);
+        window.removeEventListener('recommendationsUpdated', handleAllStatsUpdate);
+        window.removeEventListener('contactsUpdated', handleAllStatsUpdate);
+        window.removeEventListener('applicationsUpdated', handleAllStatsUpdate);
+      };
     }
   }, [isAuthenticated, user]);
+
+  // Закрытие меню при клике вне области
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+
+  const fetchNotifications = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+    try {
+      const response = await fetch('/api/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.items || []);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const fetchAllStats = async () => {
+    await Promise.all([
+      fetchStats(),
+      fetchUnreadCount(),
+      fetchNotificationsCount()
+    ]);
+  };
 
   const fetchStats = async () => {
     const token = localStorage.getItem('access_token');
@@ -80,8 +176,12 @@ const StudentLayout = () => {
       }
       if (recRes.ok) {
         const recData = await recRes.json();
-        const unreadRecs = recData.filter((r: any) => !r.is_read).length;
-        setStats(prev => ({ ...prev, recommendations: unreadRecs }));
+        
+        const viewed = localStorage.getItem('viewed_recommendations');
+        const viewedIds = viewed ? new Set(JSON.parse(viewed)) : new Set();
+        
+        const unreadRecs = recData.filter((r: any) => !viewedIds.has(r.id) && !r.is_read);
+        setStats(prev => ({ ...prev, recommendations: unreadRecs.length }));
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -98,7 +198,8 @@ const StudentLayout = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setStats(prev => ({ ...prev, unreadMessages: data.unread_count || 0 }));
+        const count = data.unread_count || 0;
+        setStats(prev => ({ ...prev, unreadMessages: count }));
       }
     } catch (error) {
       console.error('Error fetching unread count:', error);
@@ -115,10 +216,89 @@ const StudentLayout = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setStats(prev => ({ ...prev, notifications: data.unread_count || 0 }));
+        const count = data.unread_count ?? data.count ?? 0;
+        console.log('🔔 Notifications count:', count);
+        setStats(prev => ({ ...prev, notifications: count }));
       }
     } catch (error) {
       console.error('Error fetching notifications count:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: number) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+        );
+        setStats(prev => ({ ...prev, notifications: Math.max(0, prev.notifications - 1) }));
+        window.dispatchEvent(new Event('notificationsUpdated'));
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+    
+    try {
+      const response = await fetch('/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(n => ({ ...n, is_read: true }))
+        );
+        setStats(prev => ({ ...prev, notifications: 0 }));
+        window.dispatchEvent(new Event('notificationsUpdated'));
+        console.log('✅ All notifications marked as read');
+      } else {
+        const error = await response.json().catch(() => null);
+        console.error('Failed to mark all as read:', error);
+        alert(error?.detail || 'Не удалось отметить все уведомления как прочитанные');
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      alert('Ошибка сети. Попробуйте позже.');
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.is_read) {
+      markNotificationAsRead(notification.id);
+    }
+    if (notification.data?.link) {
+      navigate(notification.data.link);
+    }
+    setShowNotifications(false);
+  };
+
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+    try {
+      const response = await fetch('/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        if (updateUser) {
+          updateUser(userData);
+        }
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
     }
   };
 
@@ -151,8 +331,11 @@ const StudentLayout = () => {
     { to: '/student/favorites', icon: Heart, label: 'Избранное', badge: stats.favorites },
     { to: '/student/applications', icon: Briefcase, label: 'Мои отклики', badge: stats.applications },
     { to: '/student/contacts', icon: Users, label: 'Контакты', badge: stats.contacts },
+    { to: '/student/chat', icon: MessageCircle, label: 'Сообщения', badge: stats.unreadMessages },
     { to: '/student/settings', icon: Settings, label: 'Настройки' },
   ];
+
+  const unreadNotifications = notifications.filter(n => !n.is_read).length;
 
   return (
     <div className="student-dashboard">
@@ -164,16 +347,59 @@ const StudentLayout = () => {
         <div className="container student-dashboard__header-inner">
           <div className="student-dashboard__logo" onClick={() => navigate('/student')}>
             <img src="/logo.png" alt="Трамплин" className="student-dashboard__logo-img" />
-            <span className="student-dashboard__logo-text">Трамплин</span>
           </div>
           <div className="student-dashboard__header-actions">
-            <button className="student-dashboard__notif-btn">
-              <Bell size={20} />
-              {stats.notifications > 0 && (
-                <span className="student-dashboard__badge">{stats.notifications}</span>
+            {/* Уведомления с выпадающим меню */}
+            <div className="student-dashboard__notifications-wrapper" ref={notificationsRef}>
+              <button 
+                className="student-dashboard__notif-btn"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                <Bell size={20} />
+                {unreadNotifications > 0 && (
+                  <span className="student-dashboard__badge">{unreadNotifications}</span>
+                )}
+              </button>
+              
+              {showNotifications && (
+                <div className="student-dashboard__notifications-dropdown">
+                  <div className="student-dashboard__notifications-header">
+                    <h4>Уведомления</h4>
+                    {unreadNotifications > 0 && (
+                      <button 
+                        onClick={markAllNotificationsAsRead} 
+                        className="student-dashboard__notifications-read-all"
+                      >
+                        Прочитать все
+                      </button>
+                    )}
+                  </div>
+                  <div className="student-dashboard__notifications-list">
+                    {notifications.length === 0 ? (
+                      <p className="student-dashboard__notifications-empty">Нет уведомлений</p>
+                    ) : (
+                      notifications.map(notification => (
+                        <div
+                          key={notification.id}
+                          className={`student-dashboard__notification-item ${!notification.is_read ? 'unread' : ''}`}
+                          onClick={() => handleNotificationClick(notification)}
+                        >
+                          <div className="student-dashboard__notification-content">
+                            <div className="student-dashboard__notification-title">{notification.title}</div>
+                            <div className="student-dashboard__notification-message">{notification.message}</div>
+                            <div className="student-dashboard__notification-date">
+                              {new Date(notification.created_at).toLocaleDateString('ru-RU')}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               )}
-            </button>
-            <button className="student-dashboard__chat-btn">
+            </div>
+
+            <button className="student-dashboard__chat-btn" onClick={() => navigate('/student/chat')}>
               <MessageCircle size={20} />
               {stats.unreadMessages > 0 && (
                 <span className="student-dashboard__badge">{stats.unreadMessages}</span>
@@ -247,11 +473,11 @@ const StudentLayout = () => {
             <div className="student-dashboard__recommendations-banner">
               <MessageCircle size={16} />
               <span>
-                У вас {stats.recommendations} новая 
-                {stats.recommendations === 1 ? 'я рекомендация' : 
+                У вас {stats.recommendations} новая
+                {stats.recommendations === 1 ? 'я рекомендация' :
                   stats.recommendations < 5 ? ' рекомендации' : ' рекомендаций'}
               </span>
-              <button onClick={() => navigate('/student/contacts')}>
+              <button onClick={() => navigate('/student/contacts', { state: { tab: 'recommendations' } })}>
                 Посмотреть
               </button>
             </div>
@@ -259,11 +485,13 @@ const StudentLayout = () => {
         </aside>
 
         <main className="student-dashboard__main">
-          <Outlet context={{ 
-            user, 
-            refreshStats: fetchStats, 
+          <Outlet context={{
+            user,
+            refreshStats: fetchAllStats,
+            refreshUser: fetchUserProfile,
             refreshUnread: fetchUnreadCount,
-            stats 
+            refreshNotifications: fetchNotifications,
+            stats
           }} />
         </main>
       </div>

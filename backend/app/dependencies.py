@@ -58,6 +58,23 @@ async def get_current_user(
     return user
 
 
+async def get_current_curator(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """Получение текущего куратора (только с ролью CURATOR или ADMIN)"""
+    user = await get_current_user(credentials, db)
+    
+    # Проверяем, что пользователь куратор или админ
+    if user.role not in [UserRole.CURATOR, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ только для кураторов и администраторов"
+        )
+    
+    return user
+
+
 async def get_current_user_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(
         HTTPBearer(auto_error=False)

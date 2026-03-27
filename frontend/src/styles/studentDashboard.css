@@ -1792,47 +1792,154 @@
   transition: all var(--transition);
 }
 
-/* Settings Page */
+/* frontend/src/styles/studentDashboard.css - добавить/обновить */
+
+/* Settings Page - белый текст */
 .student-settings {
-  width: 100%;
-}
-
-.student-settings__header {
-  margin-bottom: 32px;
-}
-
-.student-settings__title-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.student-settings__title-wrapper svg {
-  color: var(--hyper-pink);
+  color: #fff;
 }
 
 .student-settings__header h1 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #fff, #ff3366);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .student-settings__header p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.student-settings__section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.student-settings__section-header h2 {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.student-settings__section-desc {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  margin-top: 4px;
+  margin-bottom: 20px;
+}
+
+.student-settings__option {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.student-settings__option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.student-settings__option.selected {
+  background: linear-gradient(135deg, rgba(255, 51, 102, 0.15), rgba(204, 51, 255, 0.15));
+  border-color: #ff3366;
+}
+
+.student-settings__option-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff3366;
+}
+
+.student-settings__option-content {
+  flex: 1;
+}
+
+.student-settings__option-label {
+  color: #fff;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.student-settings__option-desc {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.student-settings__option-check {
+  color: #33ff66;
+}
+
+.student-settings__actions {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.student-settings__save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.student-settings__save-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 51, 102, 0.3);
+}
+
+.student-settings__save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.student-settings__info {
+  margin-top: 32px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+
+.student-settings__info svg {
+  color: #ffcc33;
+  flex-shrink: 0;
 }
 
 .student-settings__message {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 12px 16px;
   border-radius: 12px;
   margin-bottom: 24px;
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
 }
 
 .student-settings__message--success {
@@ -1845,145 +1952,6 @@
   background: rgba(255, 51, 102, 0.1);
   border: 1px solid rgba(255, 51, 102, 0.3);
   color: #ff3366;
-}
-
-.student-settings__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
-}
-
-.student-settings__section {
-  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 24px;
-}
-
-.student-settings__section-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.student-settings__section-header svg {
-  color: var(--hyper-pink);
-}
-
-.student-settings__section-header h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.student-settings__section-desc {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-bottom: 24px;
-}
-
-.student-settings__options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.student-settings__option {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all var(--transition);
-  text-align: left;
-  width: 100%;
-}
-
-.student-settings__option:hover {
-  border-color: rgba(255, 51, 102, 0.3);
-  background: rgba(255, 51, 102, 0.05);
-}
-
-.student-settings__option.selected {
-  border-color: var(--hyper-pink);
-  background: rgba(255, 51, 102, 0.1);
-}
-
-.student-settings__option-icon {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 51, 102, 0.1);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--hyper-pink);
-}
-
-.student-settings__option-content {
-  flex: 1;
-}
-
-.student-settings__option-label {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.student-settings__option-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.student-settings__option-check {
-  color: var(--hyper-pink);
-}
-
-.student-settings__actions {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.student-settings__save-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 32px;
-  background: var(--gradient-primary);
-  border: none;
-  border-radius: 40px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.student-settings__save-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 0 25px rgba(255, 51, 102, 0.4);
-}
-
-.student-settings__save-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.student-settings__info {
-  margin-top: 24px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 16px;
-  color: var(--text-muted);
-  font-size: 0.8rem;
 }
 
 /* Recommendation Page */
@@ -4185,4 +4153,2664 @@
 .opportunities-page__empty-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+}
+
+/* frontend/src/styles/studentDashboard.css - добавить в конец файла */
+
+/* Chat Page Styles */
+.chat-page {
+  height: calc(100vh - 80px);
+  padding: 0;
+}
+
+.chat-page__container {
+  display: flex;
+  height: 100%;
+  background: rgba(15, 20, 30, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-page__sidebar {
+  width: 320px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.chat-page__sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-page__sidebar-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.chat-page__sidebar-header p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.chat-page__conversations {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chat-page__conversation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chat-page__conversation:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.chat-page__conversation.active {
+  background: linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(204, 51, 255, 0.2));
+  border-left: 3px solid #ff3366;
+}
+
+.chat-page__conversation-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.chat-page__conversation-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-page__conversation-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+  color: #fff;
+}
+
+.chat-page__conversation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-page__conversation-name {
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.chat-page__conversation-last-message {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-page__conversation-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.chat-page__conversation-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chat-page__unread-badge {
+  background: #ff3366;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.chat-page__empty-conversations {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.chat-page__empty-conversations svg {
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 16px;
+}
+
+.chat-page__empty-conversations p {
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 16px;
+}
+
+.chat-page__empty-conversations button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border: none;
+  border-radius: 20px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-page__empty-conversations button:hover {
+  transform: scale(1.05);
+}
+
+.chat-page__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-page__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-page__back-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.chat-page__back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-page__header-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.chat-page__header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-page__header-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+  color: #fff;
+}
+
+.chat-page__header-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.chat-page__header-info p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.chat-page__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-page__loading-messages,
+.chat-page__empty-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.chat-page__empty-messages svg {
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 16px;
+}
+
+.chat-page__empty-messages p {
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.chat-page__empty-messages span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.chat-page__message {
+  display: flex;
+  width: 100%;
+}
+
+.chat-page__message.sent {
+  justify-content: flex-end;
+}
+
+.chat-page__message.received {
+  justify-content: flex-start;
+}
+
+.chat-page__message-bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  position: relative;
+}
+
+.chat-page__message.sent .chat-page__message-bubble {
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  color: #fff;
+}
+
+.chat-page__message.received .chat-page__message-bubble {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.chat-page__message-text {
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.chat-page__message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.chat-page__message-time {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.chat-page__message-status {
+  display: inline-flex;
+  align-items: center;
+}
+
+.chat-page__input-area {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-page__input-area textarea {
+  flex: 1;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  color: #fff;
+  font-size: 14px;
+  resize: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.chat-page__input-area textarea:focus {
+  outline: none;
+  border-color: #ff3366;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-page__input-area textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chat-page__input-area button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-page__input-area button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.chat-page__input-area button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-page__input-area button.sending {
+  opacity: 0.7;
+}
+
+.chat-page__no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.chat-page__no-selection svg {
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 24px;
+}
+
+.chat-page__no-selection h3 {
+  font-size: 20px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.chat-page__no-selection p {
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 24px;
+  max-width: 300px;
+}
+
+.chat-page__no-selection button {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border: none;
+  border-radius: 24px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-page__no-selection button:hover {
+  transform: scale(1.05);
+}
+
+.chat-page__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .chat-page__container {
+    flex-direction: column;
+  }
+  
+  .chat-page__sidebar {
+    width: 100%;
+    max-height: 300px;
+  }
+  
+  .chat-page__back-btn {
+    display: flex;
+  }
+}
+
+/* frontend/src/styles/studentDashboard.css - добавить в конец */
+
+/* Split Layout for Opportunities Page */
+.opportunities-page__split-layout {
+  display: flex;
+  height: calc(100vh - 280px);
+  min-height: 500px;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.opportunities-page__list-sidebar {
+  width: 380px;
+  background: rgba(15, 20, 30, 0.8);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.opportunities-page__list-sidebar.closed {
+  width: 0;
+}
+
+.opportunities-page__list-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.opportunities-page__list-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.opportunities-page__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.opportunities-page__list-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.opportunities-page__list-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.opportunities-page__list-card.active {
+  background: linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(204, 51, 255, 0.2));
+  border-left: 3px solid #ff3366;
+}
+
+.opportunities-page__favorite-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.opportunities-page__favorite-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.opportunities-page__favorite-btn.active {
+  color: #ff3366;
+}
+
+.opportunities-page__list-card-badges {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.opportunities-page__type-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.opportunities-page__type-badge--internship {
+  background: rgba(51, 255, 102, 0.2);
+  color: #33ff66;
+}
+
+.opportunities-page__type-badge--vacancy {
+  background: rgba(51, 204, 255, 0.2);
+  color: #33ccff;
+}
+
+.opportunities-page__type-badge--mentorship {
+  background: rgba(255, 204, 51, 0.2);
+  color: #ffcc33;
+}
+
+.opportunities-page__type-badge--event {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+.opportunities-page__format-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.opportunities-page__list-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.opportunities-page__list-card-company {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.opportunities-page__list-card-company img {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.opportunities-page__list-card-company-placeholder {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.opportunities-page__list-card-company span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.opportunities-page__list-card-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.opportunities-page__list-card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.opportunities-page__list-card-salary {
+  color: #33ff66;
+}
+
+.opportunities-page__map-area {
+  flex: 1;
+  position: relative;
+}
+
+.opportunities-page__empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.opportunities-page__empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.opportunities-page__empty-list h3 {
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.opportunities-page__empty-list p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.opportunities-page__sidebar-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.opportunities-page__sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.opportunities-page__sidebar-toggle.active {
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border-color: transparent;
+}
+
+/* Modal styles for map button and recommend menu */
+.opportunity-modal__actions-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.opportunity-modal__favorite-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.opportunity-modal__favorite-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.opportunity-modal__favorite-btn.active {
+  color: #ff3366;
+}
+
+.opportunity-modal__map-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(51, 204, 255, 0.2);
+  border: 1px solid rgba(51, 204, 255, 0.3);
+  border-radius: 20px;
+  color: #33ccff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.opportunity-modal__map-btn:hover {
+  background: rgba(51, 204, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.opportunity-modal__recommend-group {
+  position: relative;
+}
+
+.opportunity-modal__recommend-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(255, 204, 51, 0.2);
+  border: 1px solid rgba(255, 204, 51, 0.3);
+  border-radius: 12px;
+  color: #ffcc33;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.opportunity-modal__recommend-btn:hover {
+  background: rgba(255, 204, 51, 0.3);
+  transform: translateY(-2px);
+}
+
+.opportunity-modal__recommend-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 8px;
+  background: rgba(15, 20, 30, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 240px;
+}
+
+.opportunity-modal__recommend-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.opportunity-modal__recommend-menu button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.opportunity-modal__recommend-menu button:first-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Applications page withdraw button */
+.student-applications__withdraw-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 51, 102, 0.2);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: 8px;
+  color: #ff3366;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.student-applications__withdraw-btn:hover:not(:disabled) {
+  background: rgba(255, 51, 102, 0.3);
+  transform: translateY(-2px);
+}
+
+.student-applications__withdraw-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* frontend/src/styles/studentDashboard.css - добавить */
+
+/* Opportunities Page - карта сверху, список снизу */
+.opportunities-page__map-container {
+  height: 450px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.opportunities-page__list-container {
+  background: rgba(15, 20, 30, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.opportunities-page__list-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.opportunities-page__list-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.opportunities-page__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.opportunities-page__list-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.opportunities-page__list-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-4px);
+  border-color: rgba(255, 51, 102, 0.3);
+}
+
+.opportunities-page__list-card.active {
+  background: linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(204, 51, 255, 0.2));
+  border-color: #ff3366;
+}
+
+.opportunities-page__favorite-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 1;
+}
+
+.opportunities-page__favorite-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.opportunities-page__favorite-btn.active {
+  color: #ff3366;
+}
+
+.opportunities-page__list-card-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.opportunities-page__type-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.opportunities-page__type-badge--internship {
+  background: rgba(51, 255, 102, 0.2);
+  color: #33ff66;
+}
+
+.opportunities-page__type-badge--vacancy {
+  background: rgba(51, 204, 255, 0.2);
+  color: #33ccff;
+}
+
+.opportunities-page__type-badge--mentorship {
+  background: rgba(255, 204, 51, 0.2);
+  color: #ffcc33;
+}
+
+.opportunities-page__type-badge--event {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+.opportunities-page__format-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.opportunities-page__list-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.opportunities-page__list-card-company {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.opportunities-page__list-card-company img {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.opportunities-page__list-card-company-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.opportunities-page__list-card-company span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.opportunities-page__list-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.opportunities-page__list-card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.opportunities-page__list-card-salary {
+  color: #33ff66;
+}
+
+.opportunities-page__list-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.opportunities-page__list-card-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.opportunities-page__empty-list {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.opportunities-page__empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.opportunities-page__empty-list h3 {
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.opportunities-page__empty-list p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+  .opportunities-page__map-container {
+    height: 350px;
+  }
+  
+  .opportunities-page__list {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+}
+
+/* frontend/src/styles/studentDashboard.css - добавить/исправить */
+
+/* Opportunities Page - карта сверху, список снизу */
+.opportunities-page__map-container {
+  height: 450px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  width: 100%;
+}
+
+.opportunities-page__map-container .map-section {
+  height: 100%;
+  width: 100%;
+}
+
+.opportunities-page__map-container .map-section__map-wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+.opportunities-page__list-container {
+  background: rgba(15, 20, 30, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.opportunities-page__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* Исправление для карточки компании */
+.opportunities-page__list-card-company {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  min-height: 32px;
+}
+
+.opportunities-page__list-card-company-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.opportunities-page__list-card-company-placeholder svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
+.opportunities-page__list-card-company span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .opportunities-page__map-container {
+    height: 350px;
+  }
+  
+  .opportunities-page__list {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+}
+
+/* frontend/src/styles/global.css */
+
+.map-section__map-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  background: #1a1a2e;
+  overflow: hidden;
+}
+
+.map-section__map {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+/* Убираем мигание при загрузке */
+.leaflet-container {
+  background: #1a1a2e !important;
+}
+
+/* Исправляем проблему с отображением тайлов */
+.leaflet-tile-container img {
+  width: auto;
+  height: auto;
+}
+
+/* frontend/src/styles/studentDashboard.css */
+
+/* Reviews Section */
+.company-modal__reviews {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.company-modal__reviews-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.company-modal__reviews-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.company-modal__reviews-sort select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* Rating Stats */
+.company-modal__rating-stats {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.company-modal__rating-stats-average {
+  text-align: center;
+  min-width: 120px;
+}
+
+.company-modal__rating-stats-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffcc33;
+  line-height: 1;
+}
+
+.company-modal__rating-stats-stars {
+  margin: 8px 0;
+}
+
+.company-modal__rating-stats-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.company-modal__rating-stats-distribution {
+  flex: 1;
+  min-width: 200px;
+}
+
+.company-modal__rating-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.company-modal__rating-stats-bar-label {
+  width: 45px;
+  color: var(--text-secondary);
+}
+
+.company-modal__rating-stats-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.company-modal__rating-stats-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffcc33, #ffaa00);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.company-modal__rating-stats-bar-count {
+  width: 35px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* Review Card */
+.company-modal__review-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all var(--transition);
+}
+
+.company-modal__review-card:hover {
+  border-color: rgba(255, 51, 102, 0.3);
+}
+
+.company-modal__review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.company-modal__review-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.company-modal__review-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.company-modal__review-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.company-modal__review-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+}
+
+.company-modal__review-name {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.company-modal__review-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.company-modal__review-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.company-modal__stars {
+  display: flex;
+  gap: 2px;
+}
+
+.company-modal__review-rating-value {
+  font-size: 0.8rem;
+  color: #ffcc33;
+}
+
+.company-modal__review-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.company-modal__review-text {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.company-modal__review-pros-cons {
+  margin: 12px 0;
+}
+
+.company-modal__review-pros,
+.company-modal__review-cons {
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.company-modal__review-pros {
+  background: rgba(51, 255, 102, 0.05);
+  border-left: 3px solid #33ff66;
+}
+
+.company-modal__review-cons {
+  background: rgba(255, 51, 102, 0.05);
+  border-left: 3px solid #ff3366;
+}
+
+.company-modal__review-pros strong {
+  color: #33ff66;
+}
+
+.company-modal__review-cons strong {
+  color: #ff3366;
+}
+
+.company-modal__review-response {
+  margin: 12px 0;
+  padding: 12px;
+  background: rgba(204, 51, 255, 0.05);
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+}
+
+.company-modal__review-response-icon {
+  color: var(--vibrant-purple);
+}
+
+.company-modal__review-response-content {
+  flex: 1;
+}
+
+.company-modal__review-response-content strong {
+  font-size: 0.8rem;
+  color: var(--vibrant-purple);
+}
+
+.company-modal__review-response-content p {
+  font-size: 0.8rem;
+  margin: 4px 0;
+  color: var(--text-secondary);
+}
+
+.company-modal__review-response-date {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.company-modal__review-helpful {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-top: 12px;
+}
+
+.company-modal__review-helpful:hover,
+.company-modal__review-helpful.active {
+  border-color: #ffcc33;
+  color: #ffcc33;
+}
+
+.company-modal__reviews-loading,
+.company-modal__reviews-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.company-modal__reviews-empty svg {
+  margin-bottom: 16px;
+  color: var(--text-muted);
+}
+
+.company-modal__write-review {
+  margin-top: 20px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  border: none;
+  border-radius: 40px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  width: 100%;
+}
+
+.company-modal__write-review:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+}
+
+.company-modal__load-more {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 40px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.company-modal__load-more:hover:not(:disabled) {
+  border-color: var(--hyper-pink);
+  color: var(--hyper-pink);
+}
+
+.company-modal__load-more:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--hyper-pink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* student-contacts.css */
+
+.student-contacts__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.student-contacts__header-right {
+  position: relative;
+}
+
+.student-contacts__notifications {
+  position: relative;
+}
+
+.student-contacts__notifications-btn {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.student-contacts__notifications-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.student-contacts__notifications-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #ff4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-contacts__notifications-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 320px;
+  max-height: 400px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.student-contacts__notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.student-contacts__notifications-header h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.student-contacts__notifications-read-all {
+  background: none;
+  border: none;
+  color: #4a90e2;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.student-contacts__notifications-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.student-contacts__notification-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.student-contacts__notification-item:hover {
+  background-color: #f9f9f9;
+}
+
+.student-contacts__notification-item.unread {
+  background-color: #f0f7ff;
+}
+
+.student-contacts__notification-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.student-contacts__notification-message {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.student-contacts__notification-date {
+  font-size: 11px;
+  color: #999;
+}
+
+.student-contacts__notifications-empty {
+  text-align: center;
+  padding: 24px;
+  color: #999;
+}
+
+/* frontend/src/styles/studentDashboard.css */
+/* Добавьте в конец файла */
+
+/* ============================================
+   User Profile Page Styles
+   ============================================ */
+
+/* frontend/src/styles/studentDashboard.css */
+/* Добавьте или обновите эти стили */
+
+/* ============================================
+   User Profile Page - стили в едином дизайне
+   ============================================ */
+
+/* frontend/src/styles/studentDashboard.css */
+/* Добавьте в конец файла */
+
+/* ============================================
+   User Profile Page Styles
+   ============================================ */
+
+.user-profile {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+.user-profile__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  background: #f8fafc;
+}
+
+.user-profile__loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #ff3366;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.user-profile__not-found {
+  text-align: center;
+  padding: 80px 20px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.user-profile__not-found h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #334155;
+}
+
+.user-profile__not-found button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.user-profile__not-found button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.3);
+}
+
+.user-profile__header {
+  background: white;
+  padding: 32px 0;
+  border-bottom: 1px solid #eef2f6;
+  margin-bottom: 32px;
+}
+
+.user-profile__header .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.user-profile__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding: 8px 0;
+  transition: color 0.2s;
+}
+
+.user-profile__back:hover {
+  color: #ff3366;
+}
+
+.user-profile__back svg {
+  transition: transform 0.2s;
+}
+
+.user-profile__back:hover svg {
+  transform: translateX(-4px);
+}
+
+.user-profile__header h1 {
+  font-size: 28px;
+  margin: 0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.user-profile__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.user-profile__content {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .user-profile__content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* Avatar Section */
+.user-profile__avatar-section {
+  background: white;
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #eef2f6;
+  position: sticky;
+  top: 100px;
+}
+
+@media (max-width: 768px) {
+  .user-profile__avatar-section {
+    position: static;
+  }
+}
+
+.user-profile__avatar {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.15);
+}
+
+.user-profile__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-profile__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+}
+
+.user-profile__avatar-section h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.user-profile__role {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: inline-block;
+  padding: 4px 12px;
+  background: #f1f5f9;
+  border-radius: 20px;
+}
+
+.user-profile__university {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 14px;
+  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 30px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.user-profile__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.user-profile__message-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.user-profile__message-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.3);
+}
+
+.user-profile__edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  color: #ff3366;
+  border: 1px solid #ff3366;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.user-profile__edit-btn:hover {
+  background: #ff3366;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.15);
+}
+
+/* Info Section */
+.user-profile__info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.user-profile__section {
+  background: white;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #eef2f6;
+  transition: all 0.2s;
+}
+
+.user-profile__section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-profile__section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.user-profile__section-header svg {
+  color: #ff3366;
+}
+
+.user-profile__section-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.user-profile__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.user-profile__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.user-profile__field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-profile__field p {
+  margin: 0;
+  font-size: 15px;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  word-break: break-word;
+}
+
+.user-profile__field p svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.user-profile__bio {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #334155;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.user-profile__links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.user-profile__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f8fafc;
+  color: #334155;
+  text-decoration: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.user-profile__link:hover {
+  background: #ff3366;
+  color: white;
+  border-color: #ff3366;
+  transform: translateY(-2px);
+}
+
+.user-profile__link svg {
+  transition: transform 0.2s;
+}
+
+.user-profile__link:hover svg {
+  transform: scale(1.1);
+}
+
+/* Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* frontend/src/styles/studentDashboard.css - добавить в самый конец */
+
+.user-profile {
+  background: #f8fafc !important;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+.user-profile__header {
+  background: white !important;
+  padding: 32px 0;
+  border-bottom: 1px solid #eef2f6;
+  margin-bottom: 32px;
+}
+
+.user-profile__avatar-section,
+.user-profile__section {
+  background: white !important;
+  border: 1px solid #eef2f6 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* frontend/src/styles/studentDashboard.css - добавить в самый конец */
+
+/* Student Profile Page (User Profile) */
+.student-profile-page {
+  width: 100%;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+
+.student-profile-page__header {
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px 0;
+  margin-bottom: 32px;
+}
+
+.student-profile-page__header .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.student-profile-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding: 8px 0;
+  transition: color var(--transition);
+}
+
+.student-profile-page__back:hover {
+  color: var(--hyper-pink);
+}
+
+.student-profile-page__back svg {
+  transition: transform var(--transition);
+}
+
+.student-profile-page__back:hover svg {
+  transform: translateX(-4px);
+}
+
+.student-profile-page__header h1 {
+  font-size: 28px;
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.student-profile-page__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+
+.student-profile-page__content {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .student-profile-page__content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* Avatar Card - в стиле дашборда */
+.student-profile-page__avatar-card {
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  position: sticky;
+  top: 100px;
+}
+
+@media (max-width: 768px) {
+  .student-profile-page__avatar-card {
+    position: static;
+  }
+}
+
+.student-profile-page__avatar {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.3);
+}
+
+.student-profile-page__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-profile-page__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+}
+
+.student-profile-page__avatar-card h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.student-profile-page__role {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+}
+
+.student-profile-page__university {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 16px;
+  border-radius: 30px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.student-profile-page__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.student-profile-page__message-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.student-profile-page__message-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.3);
+}
+
+.student-profile-page__edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hyper-pink);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.student-profile-page__edit-btn:hover {
+  background: rgba(255, 51, 102, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.15);
+}
+
+/* Info Section - в стиле дашборда */
+.student-profile-page__info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.student-profile-page__section {
+  background: linear-gradient(135deg, rgba(20, 20, 55, 0.8), rgba(10, 10, 31, 0.9));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 28px;
+  transition: all 0.2s;
+}
+
+.student-profile-page__section:hover {
+  border-color: rgba(255, 51, 102, 0.3);
+}
+
+.student-profile-page__section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.student-profile-page__section-header svg {
+  color: var(--hyper-pink);
+}
+
+.student-profile-page__section-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.student-profile-page__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.student-profile-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.student-profile-page__field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.student-profile-page__field p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  word-break: break-word;
+}
+
+.student-profile-page__field p svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.student-profile-page__bio {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.student-profile-page__links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.student-profile-page__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.student-profile-page__link:hover {
+  background: rgba(255, 51, 102, 0.1);
+  color: var(--hyper-pink);
+  border-color: rgba(255, 51, 102, 0.3);
+  transform: translateY(-2px);
+}
+
+.student-profile-page__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  background: var(--bg-primary);
+}
+
+.student-profile-page__loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--hyper-pink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.student-profile-page__not-found {
+  text-align: center;
+  padding: 80px 20px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+
+.student-profile-page__not-found h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.student-profile-page__not-found button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff3366, #cc33ff);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.student-profile-page__not-found button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.3);
+}
+
+
+.chat-page__sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-page__new-chat-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+}
+
+.chat-page__contacts-modal {
+  position: absolute;
+  top: 60px;
+  left: 8px;
+  right: 8px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  z-index: 100;
+  max-height: 300px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-page__contacts-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+
+  h4 {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+}
+
+.chat-page__contacts-list {
+  overflow-y: auto;
+  max-height: 240px;
+}
+
+.chat-page__contacts-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.chat-page__contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--bg-tertiary);
+  }
+}
+
+.chat-page__contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.chat-page__contact-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--accent-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chat-page__contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-page__contact-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.chat-page__contact-university {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Стили для выпадающего меню уведомлений */
+.student-dashboard__notifications-wrapper {
+  position: relative;
+}
+
+.student-dashboard__notifications-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 320px;
+  max-height: 400px;
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.student-dashboard__notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.student-dashboard__notifications-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.student-dashboard__notifications-read-all {
+  background: none;
+  border: none;
+  color: #33ccff;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.student-dashboard__notifications-read-all:hover {
+  background: rgba(51, 204, 255, 0.1);
+}
+
+.student-dashboard__notifications-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.student-dashboard__notification-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
+}
+
+.student-dashboard__notification-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.student-dashboard__notification-item.unread {
+  background: rgba(51, 204, 255, 0.05);
+  border-left: 3px solid #33ccff;
+}
+
+.student-dashboard__notification-item.unread:hover {
+  background: rgba(51, 204, 255, 0.1);
+}
+
+.student-dashboard__notification-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.student-dashboard__notification-message {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.student-dashboard__notification-date {
+  font-size: 10px;
+  color: #666;
+}
+
+.student-dashboard__notifications-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: #666;
+  font-size: 13px;
 }

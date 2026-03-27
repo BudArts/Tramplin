@@ -16,7 +16,10 @@ import {
   Globe,
   Calendar,
   Heart,
-  Eye
+  Eye,
+  ThumbsUp,
+  MessageSquare,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -40,6 +43,28 @@ interface Company {
   status: string;
 }
 
+interface Review {
+  id: number;
+  rating: number;
+  title?: string;
+  text?: string;
+  pros?: string;
+  cons?: string;
+  is_anonymous: boolean;
+  is_verified: boolean;
+  helpful_count: number;
+  company_response?: string;
+  company_response_at?: string;
+  created_at: string;
+  author: {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+  } | null;
+  user_marked_helpful?: boolean;
+}
+
 interface Opportunity {
   id: number;
   title: string;
@@ -51,6 +76,12 @@ interface Opportunity {
   published_at?: string;
 }
 
+interface RatingStats {
+  average_rating: number;
+  total_reviews: number;
+  rating_distribution: Record<string, number>;
+}
+
 const CompaniesPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -60,8 +91,14 @@ const CompaniesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companyOpportunities, setCompanyOpportunities] = useState<Opportunity[]>([]);
+  const [companyReviews, setCompanyReviews] = useState<Review[]>([]);
+  const [ratingStats, setRatingStats] = useState<RatingStats | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsSort, setReviewsSort] = useState<'created_at' | 'rating_high' | 'rating_low' | 'helpful'>('created_at');
   const [favoriteCompanies, setFavoriteCompanies] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -77,7 +114,7 @@ const CompaniesPage = () => {
     const token = localStorage.getItem('access_token');
     try {
       const response = await fetch('/companies?limit=50', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (response.ok) {
         const data = await response.json();
@@ -93,6 +130,7 @@ const CompaniesPage = () => {
 
   const fetchFavoriteCompanies = async () => {
     const token = localStorage.getItem('access_token');
+    if (!token) return;
     try {
       const response = await fetch('/api/favorites/companies', {
         headers: { Authorization: `Bearer ${token}` },
@@ -111,9 +149,7 @@ const CompaniesPage = () => {
     const isFavorite = favoriteCompanies.has(companyId);
     
     try {
-      const url = isFavorite 
-        ? `/api/favorites/company/${companyId}`
-        : `/api/favorites/company/${companyId}`;
+      const url = `/api/favorites/company/${companyId}`;
       const method = isFavorite ? 'DELETE' : 'POST';
       
       const response = await fetch(url, {
@@ -157,7 +193,7 @@ const CompaniesPage = () => {
     const token = localStorage.getItem('access_token');
     try {
       const response = await fetch(`/api/opportunities?company_id=${companyId}&per_page=10`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (response.ok) {
         const data = await response.json();
@@ -170,10 +206,116 @@ const CompaniesPage = () => {
     }
   };
 
+  const fetchCompanyReviews = async (companyId: number, page: number = 1, sort: string = reviewsSort) => {
+    setReviewsLoading(true);
+    const token = localStorage.getItem('access_token');
+    try {
+      const response = await fetch(
+        `/api/reviews/companies/${companyId}?page=${page}&per_page=5&sort_by=${sort}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCompanyReviews(data.items || []);
+        setReviewsTotal(data.total);
+      }
+    } catch (error) {
+      console.error('Error fetching company reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const fetchCompanyRatingStats = async (companyId: number) => {
+    const token = localStorage.getItem('access_token');
+    try {
+      const response = await fetch(`/api/reviews/companies/${companyId}/stats`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRatingStats(data);
+      }
+    } catch (error) {
+      console.error('Error fetching rating stats:', error);
+    }
+  };
+
+  const handleMarkHelpful = async (reviewId: number, isHelpful: boolean) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert('Войдите в аккаунт, чтобы оценивать отзывы');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/reviews/${reviewId}/helpful?is_helpful=${isHelpful}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Обновляем отзыв в списке
+        setCompanyReviews(prev => 
+          prev.map(review => 
+            review.id === reviewId 
+              ? { 
+                  ...review, 
+                  helpful_count: data.helpful_count,
+                  user_marked_helpful: isHelpful
+                }
+              : review
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error marking review helpful:', error);
+    }
+  };
+
   const handleCompanyClick = async (company: Company) => {
     setSelectedCompany(company);
-    await fetchCompanyOpportunities(company.id);
+    setReviewsPage(1);
+    setReviewsSort('created_at');
+    await Promise.all([
+      fetchCompanyOpportunities(company.id),
+      fetchCompanyReviews(company.id, 1, 'created_at'),
+      fetchCompanyRatingStats(company.id)
+    ]);
     setModalOpen(true);
+  };
+
+  const handleSortChange = async (sort: 'created_at' | 'rating_high' | 'rating_low' | 'helpful') => {
+    setReviewsSort(sort);
+    setReviewsPage(1);
+    if (selectedCompany) {
+      await fetchCompanyReviews(selectedCompany.id, 1, sort);
+    }
+  };
+
+  const loadMoreReviews = async () => {
+    const nextPage = reviewsPage + 1;
+    if (selectedCompany && nextPage * 5 <= reviewsTotal) {
+      setReviewsPage(nextPage);
+      const token = localStorage.getItem('access_token');
+      try {
+        const response = await fetch(
+          `/api/reviews/companies/${selectedCompany.id}?page=${nextPage}&per_page=5&sort_by=${reviewsSort}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setCompanyReviews(prev => [...prev, ...(data.items || [])]);
+        }
+      } catch (error) {
+        console.error('Error loading more reviews:', error);
+      }
+    }
   };
 
   const getTypeLabel = (type: string) => {
@@ -211,6 +353,29 @@ const CompaniesPage = () => {
     if (days === 1) return 'вчера';
     if (days < 7) return `${days} дн. назад`;
     return `${Math.floor(days / 7)} нед. назад`;
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="company-modal__stars">
+        {[1, 2, 3, 4, 5].map(star => (
+          <Star
+            key={star}
+            size={14}
+            fill={star <= rating ? '#ffcc33' : 'none'}
+            stroke="#ffcc33"
+          />
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
@@ -432,6 +597,191 @@ const CompaniesPage = () => {
                 </div>
               )}
 
+              {/* Отзывы компании */}
+              <div className="company-modal__reviews">
+                <div className="company-modal__reviews-header">
+                  <h3>
+                    <MessageSquare size={18} />
+                    Отзывы ({reviewsTotal})
+                  </h3>
+                  <div className="company-modal__reviews-sort">
+                    <select 
+                      value={reviewsSort} 
+                      onChange={(e) => handleSortChange(e.target.value as any)}
+                    >
+                      <option value="created_at">Сначала новые</option>
+                      <option value="rating_high">Сначала высокие</option>
+                      <option value="rating_low">Сначала низкие</option>
+                      <option value="helpful">Самые полезные</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Статистика рейтинга */}
+                {ratingStats && ratingStats.total_reviews > 0 && (
+                  <div className="company-modal__rating-stats">
+                    <div className="company-modal__rating-stats-average">
+                      <div className="company-modal__rating-stats-number">
+                        {ratingStats.average_rating.toFixed(1)}
+                      </div>
+                      <div className="company-modal__rating-stats-stars">
+                        {renderStars(Math.round(ratingStats.average_rating))}
+                      </div>
+                      <div className="company-modal__rating-stats-count">
+                        {ratingStats.total_reviews} отзывов
+                      </div>
+                    </div>
+                    <div className="company-modal__rating-stats-distribution">
+                      {[5, 4, 3, 2, 1].map(star => {
+                        const count = ratingStats.rating_distribution[star] || 0;
+                        const percentage = ratingStats.total_reviews > 0 
+                          ? (count / ratingStats.total_reviews) * 100 
+                          : 0;
+                        return (
+                          <div key={star} className="company-modal__rating-stats-bar">
+                            <span className="company-modal__rating-stats-bar-label">{star} ★</span>
+                            <div className="company-modal__rating-stats-bar-track">
+                              <div 
+                                className="company-modal__rating-stats-bar-fill"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <span className="company-modal__rating-stats-bar-count">{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {reviewsLoading && reviewsPage === 1 ? (
+                  <div className="company-modal__reviews-loading">
+                    <div className="spinner-small"></div>
+                    <span>Загрузка отзывов...</span>
+                  </div>
+                ) : companyReviews.length === 0 ? (
+                  <div className="company-modal__reviews-empty">
+                    <AlertCircle size={32} />
+                    <p>Нет отзывов о компании</p>
+                    <button 
+                      className="company-modal__write-review"
+                      onClick={() => {
+                        setModalOpen(false);
+                        navigate(`/student/companies/${selectedCompany.id}/review`);
+                      }}
+                    >
+                      Написать отзыв
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="company-modal__reviews-list">
+                      {companyReviews.map(review => (
+                        <div key={review.id} className="company-modal__review-card">
+                          <div className="company-modal__review-header">
+                            <div className="company-modal__review-author">
+                              <div className="company-modal__review-avatar">
+                                {review.author?.avatar_url ? (
+                                  <img src={review.author.avatar_url} alt="" />
+                                ) : (
+                                  <div className="company-modal__review-avatar-placeholder">
+                                    {review.author?.first_name?.charAt(0) || 'А'}
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <div className="company-modal__review-name">
+                                  {review.is_anonymous 
+                                    ? 'Анонимный пользователь' 
+                                    : `${review.author?.first_name || ''} ${review.author?.last_name || ''}`.trim() || 'Пользователь'}
+                                </div>
+                                <div className="company-modal__review-date">
+                                  <Calendar size={12} />
+                                  {formatDate(review.created_at)}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="company-modal__review-rating">
+                              {renderStars(review.rating)}
+                              <span className="company-modal__review-rating-value">{review.rating}/5</span>
+                            </div>
+                          </div>
+                          
+                          {review.title && (
+                            <h4 className="company-modal__review-title">{review.title}</h4>
+                          )}
+                          
+                          {review.text && (
+                            <p className="company-modal__review-text">{review.text}</p>
+                          )}
+                          
+                          {(review.pros || review.cons) && (
+                            <div className="company-modal__review-pros-cons">
+                              {review.pros && (
+                                <div className="company-modal__review-pros">
+                                  <strong>Плюсы:</strong> {review.pros}
+                                </div>
+                              )}
+                              {review.cons && (
+                                <div className="company-modal__review-cons">
+                                  <strong>Минусы:</strong> {review.cons}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {review.company_response && (
+                            <div className="company-modal__review-response">
+                              <div className="company-modal__review-response-icon">
+                                <Building2 size={14} />
+                              </div>
+                              <div className="company-modal__review-response-content">
+                                <strong>Ответ компании:</strong>
+                                <p>{review.company_response}</p>
+                                {review.company_response_at && (
+                                  <span className="company-modal__review-response-date">
+                                    {formatDate(review.company_response_at)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <button
+                            className={`company-modal__review-helpful ${review.user_marked_helpful ? 'active' : ''}`}
+                            onClick={() => handleMarkHelpful(review.id, !review.user_marked_helpful)}
+                          >
+                            <ThumbsUp size={14} />
+                            <span>Полезно ({review.helpful_count})</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {companyReviews.length < reviewsTotal && (
+                      <button
+                        className="company-modal__load-more"
+                        onClick={loadMoreReviews}
+                        disabled={reviewsLoading}
+                      >
+                        {reviewsLoading ? 'Загрузка...' : 'Показать еще отзывы'}
+                      </button>
+                    )}
+                    
+                    <button 
+                      className="company-modal__write-review"
+                      onClick={() => {
+                        setModalOpen(false);
+                        navigate(`/student/companies/${selectedCompany.id}/review`);
+                      }}
+                    >
+                      Написать отзыв
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Актуальные возможности */}
               <div className="company-modal__opportunities">
                 <h3>Актуальные возможности</h3>
                 {opportunitiesLoading ? (

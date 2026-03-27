@@ -1,15 +1,40 @@
 // frontend/src/components/OpportunityDetailModal.tsx
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Calendar, Clock, Building2, Tag, Eye, Phone, Mail, Globe, Briefcase } from 'lucide-react';
+import { 
+  X, MapPin, Calendar, Clock, Building2, Tag, Eye, 
+  Phone, Mail, Globe, Briefcase, Heart, Send, Users, 
+  Map, Check, Loader2, Star 
+} from 'lucide-react';
+import { useState } from 'react';
 import type { OpportunityResponse } from '../api/types';
 
 interface Props {
   opportunity: OpportunityResponse | null;
   isOpen: boolean;
   onClose: () => void;
+  onShowOnMap?: () => void;
+  onApply?: (opportunityId: number) => Promise<void>;
+  onRecommend?: () => void;
+  onRecommendFriend?: (opportunityId: number) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (e: React.MouseEvent) => void;
+  applying?: boolean;
 }
 
-const OpportunityDetailModal: React.FC<Props> = ({ opportunity, isOpen, onClose }) => {
+const OpportunityDetailModal: React.FC<Props> = ({ 
+  opportunity, 
+  isOpen, 
+  onClose,
+  onShowOnMap,
+  onApply,
+  onRecommend,
+  onRecommendFriend,
+  isFavorite = false,
+  onToggleFavorite,
+  applying = false
+}) => {
+  const [showRecommendMenu, setShowRecommendMenu] = useState(false);
+
   if (!opportunity) return null;
 
   const formatDate = (dateString?: string | null) => {
@@ -48,6 +73,28 @@ const OpportunityDetailModal: React.FC<Props> = ({ opportunity, isOpen, onClose 
     return 'Не указана';
   };
 
+  const handleApply = () => {
+    if (onApply) {
+      onApply(opportunity.id);
+    }
+  };
+
+  const handleRecommendFriend = () => {
+    if (onRecommendFriend) {
+      onRecommendFriend(opportunity.id);
+      setShowRecommendMenu(false);
+      onClose();
+    }
+  };
+
+  const handleRecommend = () => {
+    if (onRecommend) {
+      onRecommend();
+      setShowRecommendMenu(false);
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -78,6 +125,28 @@ const OpportunityDetailModal: React.FC<Props> = ({ opportunity, isOpen, onClose 
                 <span className="opportunity-modal__badge opportunity-modal__badge--format">
                   {getFormatLabel(opportunity.work_format)}
                 </span>
+              </div>
+              <div className="opportunity-modal__actions-header">
+                {onToggleFavorite && (
+                  <button 
+                    className={`opportunity-modal__favorite-btn ${isFavorite ? 'active' : ''}`}
+                    onClick={onToggleFavorite}
+                  >
+                    <Heart size={20} fill={isFavorite ? '#ff3366' : 'none'} />
+                  </button>
+                )}
+                {opportunity.latitude && opportunity.longitude && onShowOnMap && (
+                  <button 
+                    className="opportunity-modal__map-btn"
+                    onClick={() => {
+                      onShowOnMap();
+                      onClose();
+                    }}
+                  >
+                    <Map size={20} />
+                    <span>Показать на карте</span>
+                  </button>
+                )}
               </div>
               <h2 className="opportunity-modal__title">{opportunity.title}</h2>
             </div>
@@ -176,12 +245,46 @@ const OpportunityDetailModal: React.FC<Props> = ({ opportunity, isOpen, onClose 
             )}
 
             <div className="opportunity-modal__actions">
-              <button className="opportunity-modal__apply-btn">
-                Откликнуться
+              <button 
+                className="opportunity-modal__apply-btn" 
+                onClick={handleApply}
+                disabled={applying}
+              >
+                {applying ? (
+                  <>
+                    <Loader2 size={18} className="spinner" />
+                    <span>Отправка...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    <span>Откликнуться</span>
+                  </>
+                )}
               </button>
-              <button className="opportunity-modal__save-btn">
-                Сохранить
-              </button>
+              
+              <div className="opportunity-modal__recommend-group">
+                <button 
+                  className="opportunity-modal__recommend-btn"
+                  onClick={() => setShowRecommendMenu(!showRecommendMenu)}
+                >
+                  <Users size={18} />
+                  <span>Рекомендовать</span>
+                </button>
+                
+                {showRecommendMenu && (
+                  <div className="opportunity-modal__recommend-menu">
+                    <button onClick={handleRecommend}>
+                      <Star size={16} />
+                      <span>Рекомендовать возможность другу</span>
+                    </button>
+                    <button onClick={handleRecommendFriend}>
+                      <Users size={16} />
+                      <span>Рекомендовать друга на эту возможность</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         </motion.div>

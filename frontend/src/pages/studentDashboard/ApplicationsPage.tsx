@@ -1,8 +1,8 @@
 // frontend/src/pages/studentDashboard/ApplicationsPage.tsx
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Briefcase, CheckCircle, XCircle, Clock, Eye, User, MapPin, Calendar, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { Briefcase, CheckCircle, XCircle, Clock, Eye, User, MapPin, Calendar, ChevronDown, ChevronUp, Trash2, Loader2 } from 'lucide-react';
 
 interface Application {
   id: number;
@@ -21,13 +21,22 @@ interface Application {
   };
 }
 
+interface ApplicationsContext {
+  user: any;
+  refreshStats: () => void;
+  refreshUnread: () => void;
+  stats: any;
+}
+
 const ApplicationsPage = () => {
   const navigate = useNavigate();
+  const { refreshStats } = useOutletContext<ApplicationsContext>();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [withdrawingId, setWithdrawingId] = useState<number | null>(null);
+  const [applyingId, setApplyingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchApplications();
@@ -59,10 +68,22 @@ const ApplicationsPage = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`/api/applications/${applicationId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-      if (response.ok) setApplications(prev => prev.filter(app => app.id !== applicationId));
+      const response = await fetch(`/api/applications/${applicationId}`, { 
+        method: 'DELETE', 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      if (response.ok) {
+        setApplications(prev => prev.filter(app => app.id !== applicationId));
+        // Обновляем статистику в лайауте
+        refreshStats();
+        window.dispatchEvent(new Event('applicationsUpdated'));
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Не удалось отозвать отклик');
+      }
     } catch (error) {
       console.error('Error withdrawing application:', error);
+      alert('Ошибка сети');
     } finally {
       setWithdrawingId(null);
     }
@@ -117,7 +138,11 @@ const ApplicationsPage = () => {
       <div className="student-applications__filters">
         <div className="student-applications__status-filter">
           {statusOptions.map(option => (
-            <button key={option.value || 'all'} className={`student-applications__filter-btn ${statusFilter === option.value ? 'active' : ''}`} onClick={() => setStatusFilter(option.value)}>
+            <button 
+              key={option.value || 'all'} 
+              className={`student-applications__filter-btn ${statusFilter === option.value ? 'active' : ''}`} 
+              onClick={() => setStatusFilter(option.value)}
+            >
               {option.label}
             </button>
           ))}
@@ -139,40 +164,86 @@ const ApplicationsPage = () => {
               const statusConfig = getStatusConfig(app.status);
               const StatusIcon = statusConfig.icon;
               const salary = formatSalary(app.opportunity.salary_min, app.opportunity.salary_max);
+              const canWithdraw = app.status === 'pending' || app.status === 'viewed';
 
               return (
-                <motion.div key={app.id} className="student-applications__card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                <motion.div 
+                  key={app.id} 
+                  className="student-applications__card" 
+                  initial={{ opacity: 0, y: 20 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  transition={{ delay: index * 0.05 }}
+                >
                   <div className="student-applications__card-main">
                     <div className="student-applications__card-info">
                       <div className="student-applications__card-header">
-                        <h3 className="student-applications__card-title" onClick={() => navigate(`/opportunities/${app.opportunity_id}`)}>{app.opportunity.title}</h3>
+                        <h3 className="student-applications__card-title" onClick={() => navigate(`/opportunities/${app.opportunity_id}`)}>
+                          {app.opportunity.title}
+                        </h3>
                         <div className="student-applications__card-status" style={{ backgroundColor: `${statusConfig.color}20`, color: statusConfig.color }}>
-                          <StatusIcon size={14} /><span>{statusConfig.label}</span>
+                          <StatusIcon size={14} />
+                          <span>{statusConfig.label}</span>
                         </div>
                       </div>
                       <div className="student-applications__card-company">
-                        {app.opportunity.company_logo ? <img src={app.opportunity.company_logo} alt={app.opportunity.company_name} /> : <div className="student-applications__card-company-placeholder">{app.opportunity.company_name?.[0] || '?'}</div>}
+                        {app.opportunity.company_logo ? (
+                          <img src={app.opportunity.company_logo} alt={app.opportunity.company_name} />
+                        ) : (
+                          <div className="student-applications__card-company-placeholder">
+                            {app.opportunity.company_name?.[0] || '?'}
+                          </div>
+                        )}
                         <span>{app.opportunity.company_name}</span>
                       </div>
                       <div className="student-applications__card-meta">
-                        <div className="student-applications__card-meta-item"><MapPin size={14} /><span>{app.opportunity.city}</span></div>
-                        {salary && <div className="student-applications__card-meta-item student-applications__card-salary">{salary}</div>}
-                        <div className="student-applications__card-meta-item"><Calendar size={14} /><span>{formatDate(app.created_at)}</span></div>
+                        <div className="student-applications__card-meta-item">
+                          <MapPin size={14} />
+                          <span>{app.opportunity.city}</span>
+                        </div>
+                        {salary && (
+                          <div className="student-applications__card-meta-item student-applications__card-salary">
+                            {salary}
+                          </div>
+                        )}
+                        <div className="student-applications__card-meta-item">
+                          <Calendar size={14} />
+                          <span>{formatDate(app.created_at)}</span>
+                        </div>
                       </div>
                       {app.cover_letter && (
-                        <button className="student-applications__toggle-cover" onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}>
-                          {expandedId === app.id ? <><ChevronUp size={16} /><span>Скрыть сопроводительное</span></> : <><ChevronDown size={16} /><span>Показать сопроводительное</span></>}
+                        <button 
+                          className="student-applications__toggle-cover" 
+                          onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
+                        >
+                          {expandedId === app.id ? (
+                            <><ChevronUp size={16} /><span>Скрыть сопроводительное</span></>
+                          ) : (
+                            <><ChevronDown size={16} /><span>Показать сопроводительное</span></>
+                          )}
                         </button>
                       )}
                     </div>
-                    {app.status === 'pending' && (
-                      <button className="student-applications__withdraw-btn" onClick={() => withdrawApplication(app.id)} disabled={withdrawingId === app.id}>
-                        {withdrawingId === app.id ? <div className="spinner-small"></div> : <><Trash2 size={16} /><span>Отозвать</span></>}
+                    {canWithdraw && (
+                      <button 
+                        className="student-applications__withdraw-btn" 
+                        onClick={() => withdrawApplication(app.id)} 
+                        disabled={withdrawingId === app.id}
+                      >
+                        {withdrawingId === app.id ? (
+                          <Loader2 size={16} className="spinner" />
+                        ) : (
+                          <><Trash2 size={16} /><span>Отозвать</span></>
+                        )}
                       </button>
                     )}
                   </div>
                   {expandedId === app.id && app.cover_letter && (
-                    <motion.div className="student-applications__cover-letter" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                    <motion.div 
+                      className="student-applications__cover-letter" 
+                      initial={{ opacity: 0, height: 0 }} 
+                      animate={{ opacity: 1, height: 'auto' }} 
+                      exit={{ opacity: 0, height: 0 }}
+                    >
                       <p>{app.cover_letter}</p>
                     </motion.div>
                   )}

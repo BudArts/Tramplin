@@ -1,3 +1,5 @@
+// frontend/src/components/OpportunityList.tsx
+
 import { useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowRight } from 'lucide-react';
@@ -16,7 +18,7 @@ const CATEGORIES: { value: OpportunityType; label: string; emoji: string }[] = [
   { value: 'event',      label: 'Мероприятия', emoji: '🎪' },
 ];
 
-const PER_CATEGORY = 3; // По 3 карточки на категорию, всего 12 карточек
+const PER_CATEGORY = 3;
 
 interface Props {
   filters: Filters;
@@ -28,15 +30,13 @@ interface Props {
   onShowMore?: () => void;
   isMainPage?: boolean;
   onDataUpdate?: (opportunities: OpportunityResponse[]) => void;
+  onOpportunityClick?: (opportunity: OpportunityResponse) => void;
 }
 
 export interface OpportunityListRef {
   getDisplayedOpportunities: () => OpportunityResponse[];
 }
 
-/* ────────────────────────────────────────────
-   Компонент
-   ──────────────────────────────────────────── */
 const OpportunityList = forwardRef<OpportunityListRef, Props>(({
   filters,
   onFilterChange,
@@ -44,8 +44,8 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
   onShowMore,
   isMainPage = false,
   onDataUpdate,
+  onOpportunityClick,
 }, ref) => {
-  // Данные по каждой категории
   const [dataByCategory, setDataByCategory] = useState<
     Record<OpportunityType, OpportunityResponse[]>
   >({
@@ -58,10 +58,8 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(filters.search);
 
-  // Текущий выбранный фильтр категории (null = все вперемешку)
   const activeCategory = filters.type || null;
 
-  /* ── Debounce поиска ── */
   useEffect(() => {
     const timer = setTimeout(() => {
       onFilterChange({ search: searchInput });
@@ -69,7 +67,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
     return () => clearTimeout(timer);
   }, [searchInput, onFilterChange]);
 
-  /* ── Загрузка: по 3 штуки на каждую категорию (всего 12 карточек) ── */
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
@@ -86,7 +83,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
       if (filters.salaryMin) params.salary_min = filters.salaryMin;
       if (filters.salaryMax) params.salary_max = filters.salaryMax;
 
-      // Параллельно запрашиваем все 4 категории
       const results = await Promise.all(
         CATEGORIES.map(cat =>
           api.opportunities
@@ -126,10 +122,8 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
     filters.salaryMax,
   ]);
 
-  /* ── Собираем итоговый список ТОЛЬКО для отображения (те самые 12-48 карточек) ── */
   const displayedOpportunities = useMemo(() => {
     if (activeCategory) {
-      // Показать только выбранную категорию (до 3 карточек)
       return [...dataByCategory[activeCategory]].sort(
         (a, b) =>
           new Date(b.published_at ?? b.created_at).getTime() -
@@ -137,7 +131,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
       );
     }
 
-    // Все категории вперемешку (всего до 12 карточек: 4 категории × 3 карточки)
     const all = Object.values(dataByCategory).flat();
     return all.sort(
       (a, b) =>
@@ -146,19 +139,16 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
     );
   }, [dataByCategory, activeCategory]);
 
-  // Передаём на карту ТОЛЬКО отображаемые карточки
   useEffect(() => {
     if (onDataUpdate) {
       onDataUpdate(displayedOpportunities);
     }
   }, [displayedOpportunities, onDataUpdate]);
 
-  // Экспортируем метод для получения отображаемых возможностей
   useImperativeHandle(ref, () => ({
     getDisplayedOpportunities: () => displayedOpportunities,
   }));
 
-  /* ── Подсчёт по категориям (для бейджей) ── */
   const countByCategory = useMemo(() => {
     const counts: Record<string, number> = {};
     CATEGORIES.forEach(cat => {
@@ -168,7 +158,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
     return counts;
   }, [dataByCategory]);
 
-  /* ── Сброс ── */
   const resetFilters = useCallback(() => {
     onFilterChange({
       search: '',
@@ -189,26 +178,36 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
     filters.salaryMin ||
     filters.salaryMax;
 
-  /* ── Выбор категории (toggle) ── */
   const handleCategoryClick = (type: OpportunityType) => {
     if (filters.type === type) {
-      onFilterChange({ type: undefined }); // снять фильтр
+      onFilterChange({ type: undefined });
     } else {
       onFilterChange({ type });
     }
   };
 
-  /* ────────────────────────────────────────────
-     РЕНДЕР
-     ──────────────────────────────────────────── */
+  const handleOpportunityClick = async (opportunity: OpportunityResponse) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      await fetch(`/api/opportunities/${opportunity.id}/view`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
+    }
+    
+    if (onOpportunityClick) {
+      onOpportunityClick(opportunity);
+    }
+  };
+
   return (
     <section className="opportunity-section" id="opportunities-section">
 
-      {/* ═══ Панель фильтров ═══ */}
       <div className="filter-bar">
         <div className="filter-bar__inner">
 
-          {/* Поиск */}
           <div className="filter-bar__search">
             <Search size={18} />
             <input
@@ -227,7 +226,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
             )}
           </div>
 
-          {/* Категории-табы */}
           <div className="filter-bar__categories">
             <button
               className={`filter-bar__cat-btn ${
@@ -260,7 +258,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
             ))}
           </div>
 
-          {/* Кнопка сброса */}
           {hasActiveFilters && (
             <button className="filter-bar__btn-reset" onClick={resetFilters}>
               <X size={14} />
@@ -270,7 +267,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
         </div>
       </div>
 
-      {/* ═══ Заголовок ═══ */}
       <motion.div
         className="opportunity-section__header"
         initial={{ opacity: 0, y: 20 }}
@@ -290,7 +286,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
         </div>
       </motion.div>
 
-      {/* ═══ Контент ═══ */}
       {loading ? (
         <div className="opportunity-grid">
           {Array.from({ length: PER_CATEGORY * CATEGORIES.length }).map(
@@ -311,6 +306,8 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: -20 }}
                   transition={{ duration: 0.35, delay: i * 0.05 }}
+                  onClick={() => handleOpportunityClick(opp)}
+                  style={{ cursor: 'pointer' }}
                 >
                   <OpportunityCard opportunity={opp} index={i} />
                 </motion.div>
@@ -318,7 +315,6 @@ const OpportunityList = forwardRef<OpportunityListRef, Props>(({
             </AnimatePresence>
           </div>
 
-          {/* Кнопка "Показать все" на главной */}
           {isMainPage && onShowMore && (
             <div className="show-more-wrapper">
               <motion.button

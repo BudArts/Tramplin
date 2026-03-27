@@ -1,4 +1,5 @@
 // frontend/src/pages/studentDashboard/ProfilePage.tsx
+
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -15,6 +16,11 @@ import {
   Save,
   X,
   Upload,
+  Linkedin,
+  Send,
+  Briefcase,
+  MapPin,
+  Star,
 } from 'lucide-react';
 import type { UserResponse } from '../../api/types';
 
@@ -63,8 +69,8 @@ const ProfilePage = () => {
 
     setUploadingAvatar(true);
     const token = localStorage.getItem('access_token');
-    const formData = new FormData();
-    formData.append('file', avatarFile);
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', avatarFile);
 
     try {
       const response = await fetch('/api/uploads/image', {
@@ -72,12 +78,11 @@ const ProfilePage = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
-        body: formData,
+        body: formDataUpload,
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Avatar uploaded:', data.url);
         return data.url;
       }
       return null;
@@ -143,25 +148,33 @@ const ProfilePage = () => {
       const responseData = await response.json();
 
       if (response.ok) {
-        // Обновляем локальное состояние
         setFormData(responseData);
         setMessage({ type: 'success', text: 'Профиль успешно обновлен' });
         setIsEditing(false);
         setAvatarFile(null);
         
-        // Сохраняем URL аватара из ответа или из того, что отправили
         const newAvatarUrl = responseData.avatar_url || avatarUrl;
         if (newAvatarUrl) {
           setAvatarPreview(newAvatarUrl);
-          // Обновляем user в контексте через refreshStats
           refreshStats();
         }
         
-        // Обновляем localStorage
         const storedUserStr = localStorage.getItem('user');
         if (storedUserStr) {
           const storedUser = JSON.parse(storedUserStr);
           storedUser.avatar_url = newAvatarUrl;
+          storedUser.first_name = responseData.first_name;
+          storedUser.last_name = responseData.last_name;
+          storedUser.patronymic = responseData.patronymic;
+          storedUser.phone = responseData.phone;
+          storedUser.university = responseData.university;
+          storedUser.faculty = responseData.faculty;
+          storedUser.course = responseData.course;
+          storedUser.graduation_year = responseData.graduation_year;
+          storedUser.bio = responseData.bio;
+          storedUser.github_url = responseData.github_url;
+          storedUser.portfolio_url = responseData.portfolio_url;
+          storedUser.telegram = responseData.telegram;
           localStorage.setItem('user', JSON.stringify(storedUser));
         }
       } else {
@@ -230,7 +243,7 @@ const ProfilePage = () => {
               />
             ) : (
               <div className="student-profile__avatar-placeholder">
-                {`${formData.first_name?.[0]}${formData.last_name?.[0]}`.toUpperCase()}
+                {`${formData.first_name?.[0] || ''}${formData.last_name?.[0] || ''}`.toUpperCase()}
               </div>
             )}
             {isEditing && (
@@ -263,7 +276,7 @@ const ProfilePage = () => {
               <div className="student-profile__field">
                 <label>Имя</label>
                 {isEditing ? (
-                  <input type="text" name="first_name" value={formData.first_name} onChange={handleInputChange} placeholder="Имя" required />
+                  <input type="text" name="first_name" value={formData.first_name || ''} onChange={handleInputChange} placeholder="Имя" required />
                 ) : (
                   <p>{formData.first_name || '—'}</p>
                 )}
@@ -271,7 +284,7 @@ const ProfilePage = () => {
               <div className="student-profile__field">
                 <label>Фамилия</label>
                 {isEditing ? (
-                  <input type="text" name="last_name" value={formData.last_name} onChange={handleInputChange} placeholder="Фамилия" required />
+                  <input type="text" name="last_name" value={formData.last_name || ''} onChange={handleInputChange} placeholder="Фамилия" required />
                 ) : (
                   <p>{formData.last_name || '—'}</p>
                 )}
@@ -302,7 +315,99 @@ const ProfilePage = () => {
             </div>
           </motion.div>
 
-          {/* Остальные секции без изменений... */}
+          {/* Образование */}
+          <motion.div className="student-profile__section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <div className="student-profile__section-header">
+              <GraduationCap size={20} />
+              <h2>Образование</h2>
+            </div>
+            <div className="student-profile__fields">
+              <div className="student-profile__field">
+                <label>Университет</label>
+                {isEditing ? (
+                  <input type="text" name="university" value={formData.university || ''} onChange={handleInputChange} placeholder="Название университета" />
+                ) : (
+                  <p>{formData.university || '—'}</p>
+                )}
+              </div>
+              <div className="student-profile__field">
+                <label>Факультет</label>
+                {isEditing ? (
+                  <input type="text" name="faculty" value={formData.faculty || ''} onChange={handleInputChange} placeholder="Факультет" />
+                ) : (
+                  <p>{formData.faculty || '—'}</p>
+                )}
+              </div>
+              <div className="student-profile__field">
+                <label>Курс</label>
+                {isEditing ? (
+                  <input type="number" name="course" value={formData.course || ''} onChange={handleInputChange} placeholder="1-6" min="1" max="6" />
+                ) : (
+                  <p>{formData.course ? `${formData.course} курс` : '—'}</p>
+                )}
+              </div>
+              <div className="student-profile__field">
+                <label>Год окончания</label>
+                {isEditing ? (
+                  <input type="number" name="graduation_year" value={formData.graduation_year || ''} onChange={handleInputChange} placeholder="2025" min="2020" max="2030" />
+                ) : (
+                  <p>{formData.graduation_year || '—'}</p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* О себе */}
+          <motion.div className="student-profile__section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <div className="student-profile__section-header">
+              <BookOpen size={20} />
+              <h2>О себе</h2>
+            </div>
+            <div className="student-profile__fields">
+              <div className="student-profile__field">
+                <label>Биография</label>
+                {isEditing ? (
+                  <textarea name="bio" value={formData.bio || ''} onChange={handleInputChange} placeholder="Расскажите о себе, своих навыках и целях" rows={4} />
+                ) : (
+                  <p className="student-profile__bio">{formData.bio || '—'}</p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Социальные сети и ссылки */}
+          <motion.div className="student-profile__section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <div className="student-profile__section-header">
+              <Globe size={20} />
+              <h2>Ссылки и контакты</h2>
+            </div>
+            <div className="student-profile__fields">
+              <div className="student-profile__field">
+                <label>GitHub</label>
+                {isEditing ? (
+                  <input type="url" name="github_url" value={formData.github_url || ''} onChange={handleInputChange} placeholder="https://github.com/username" />
+                ) : (
+                  <p>{formData.github_url ? <a href={formData.github_url} target="_blank" rel="noopener noreferrer" className="student-profile__link">{formData.github_url}</a> : '—'}</p>
+                )}
+              </div>
+              <div className="student-profile__field">
+                <label>Портфолио / Личный сайт</label>
+                {isEditing ? (
+                  <input type="url" name="portfolio_url" value={formData.portfolio_url || ''} onChange={handleInputChange} placeholder="https://portfolio.example.com" />
+                ) : (
+                  <p>{formData.portfolio_url ? <a href={formData.portfolio_url} target="_blank" rel="noopener noreferrer" className="student-profile__link">{formData.portfolio_url}</a> : '—'}</p>
+                )}
+              </div>
+              <div className="student-profile__field">
+                <label>Telegram</label>
+                {isEditing ? (
+                  <input type="text" name="telegram" value={formData.telegram || ''} onChange={handleInputChange} placeholder="@username" />
+                ) : (
+                  <p>{formData.telegram || '—'}</p>
+                )}
+              </div>
+            </div>
+          </motion.div>
         </div>
 
         {isEditing && (
@@ -312,7 +417,7 @@ const ProfilePage = () => {
               <span>Отмена</span>
             </button>
             <button type="submit" className="student-profile__save-btn" disabled={loading || uploadingAvatar}>
-              {loading || uploadingAvatar ? <div className="spinner"></div> : <><Save size={18} /><span>Сохранить изменения</span></>}
+              {loading || uploadingAvatar ? <div className="spinner-small"></div> : <><Save size={18} /><span>Сохранить изменения</span></>}
             </button>
           </motion.div>
         )}

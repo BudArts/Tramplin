@@ -1,21 +1,17 @@
+# contacts.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, and_
-from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.dependencies import get_current_user, require_role
 from app.models.user import User, UserRole
-from app.models.contact import Contact, ContactStatus, Recommendation
-from app.models.opportunity import Opportunity
-from app.models.notification import Notification, NotificationType
+from app.services.contact_service import ContactService
 from app.schemas.contact import (
     ContactResponse,
     ContactListResponse,
     RecommendationCreate,
     RecommendationResponse,
 )
-from app.schemas.user import UserShort
 from app.schemas.common import MessageResponse
 
 router = APIRouter(prefix="/api/contacts", tags=["Контакты"])
@@ -27,55 +23,13 @@ router = APIRouter(prefix="/api/contacts", tags=["Контакты"])
     summary="Мои контакты",
 )
 async def list_contacts(
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено: STUDENT вместо APPLICANT
     db: AsyncSession = Depends(get_db),
 ):
     """Список принятых контактов (друзей) текущего соискателя."""
-    result = await db.execute(
-        select(Contact)
-        .options(
-            selectinload(Contact.user),
-            selectinload(Contact.contact),
-        )
-        .where(
-            Contact.status == ContactStatus.ACCEPTED,
-            or_(
-                Contact.user_id == user.id,
-                Contact.contact_id == user.id,
-            ),
-        )
-        .order_by(Contact.created_at.desc())
-    )
-    contacts = result.scalars().unique().all()
-
-    # Формируем ответ — показываем "другого" пользователя
-    items = []
-    for c in contacts:
-        # Определяем кто "друг" — тот, кто не текущий пользователь
-        if c.user_id == user.id:
-            friend = c.contact
-        else:
-            friend = c.user
-
-        items.append(ContactResponse(
-            id=c.id,
-            user=UserShort(
-                id=user.id,
-                display_name=user.display_name,
-                role=user.role,
-                avatar_url=user.avatar_url,
-            ),
-            contact=UserShort(
-                id=friend.id,
-                display_name=friend.display_name,
-                role=friend.role,
-                avatar_url=friend.avatar_url,
-            ),
-            status=c.status,
-            created_at=c.created_at,
-        ))
-
-    return ContactListResponse(items=items, total=len(items))
+    service = ContactService(db, user)
+    items, total = await service.get_contacts()
+    return ContactListResponse(items=items, total=total)
 
 
 @router.get(
@@ -84,45 +38,13 @@ async def list_contacts(
     summary="Входящие запросы в контакты",
 )
 async def incoming_requests(
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """Входящие запросы на добавление в контакты."""
-    result = await db.execute(
-        select(Contact)
-        .options(
-            selectinload(Contact.user),
-            selectinload(Contact.contact),
-        )
-        .where(
-            Contact.contact_id == user.id,
-            Contact.status == ContactStatus.PENDING,
-        )
-        .order_by(Contact.created_at.desc())
-    )
-    contacts = result.scalars().unique().all()
-
-    items = []
-    for c in contacts:
-        items.append(ContactResponse(
-            id=c.id,
-            user=UserShort(
-                id=c.user.id,
-                display_name=c.user.display_name,
-                role=c.user.role,
-                avatar_url=c.user.avatar_url,
-            ),
-            contact=UserShort(
-                id=user.id,
-                display_name=user.display_name,
-                role=user.role,
-                avatar_url=user.avatar_url,
-            ),
-            status=c.status,
-            created_at=c.created_at,
-        ))
-
-    return ContactListResponse(items=items, total=len(items))
+    service = ContactService(db, user)
+    items, total = await service.get_incoming_requests()
+    return ContactListResponse(items=items, total=total)
 
 
 @router.get(
@@ -131,45 +53,13 @@ async def incoming_requests(
     summary="Исходящие запросы",
 )
 async def outgoing_requests(
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """Исходящие запросы на добавление в контакты."""
-    result = await db.execute(
-        select(Contact)
-        .options(
-            selectinload(Contact.user),
-            selectinload(Contact.contact),
-        )
-        .where(
-            Contact.user_id == user.id,
-            Contact.status == ContactStatus.PENDING,
-        )
-        .order_by(Contact.created_at.desc())
-    )
-    contacts = result.scalars().unique().all()
-
-    items = []
-    for c in contacts:
-        items.append(ContactResponse(
-            id=c.id,
-            user=UserShort(
-                id=user.id,
-                display_name=user.display_name,
-                role=user.role,
-                avatar_url=user.avatar_url,
-            ),
-            contact=UserShort(
-                id=c.contact.id,
-                display_name=c.contact.display_name,
-                role=c.contact.role,
-                avatar_url=c.contact.avatar_url,
-            ),
-            status=c.status,
-            created_at=c.created_at,
-        ))
-
-    return ContactListResponse(items=items, total=len(items))
+    service = ContactService(db, user)
+    items, total = await service.get_outgoing_requests()
+    return ContactListResponse(items=items, total=total)
 
 
 @router.post(
@@ -180,84 +70,13 @@ async def outgoing_requests(
 )
 async def send_contact_request(
     target_user_id: int,
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """Отправить запрос на добавление в контакты другому соискателю."""
-    # Нельзя добавить себя
-    if target_user_id == user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Нельзя добавить себя в контакты",
-        )
-
-    # Проверяем что целевой пользователь существует и является соискателем
-    target_result = await db.execute(
-        select(User).where(
-            User.id == target_user_id,
-            User.is_active == True,
-            User.role == UserRole.APPLICANT,
-        )
-    )
-    target = target_result.scalar_one_or_none()
-
-    if not target:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден или не является соискателем",
-        )
-
-    # Проверяем что запрос ещё не отправлен (в обе стороны)
-    existing = await db.execute(
-        select(Contact).where(
-            or_(
-                and_(Contact.user_id == user.id, Contact.contact_id == target_user_id),
-                and_(Contact.user_id == target_user_id, Contact.contact_id == user.id),
-            )
-        )
-    )
-    existing_contact = existing.scalar_one_or_none()
-
-    if existing_contact:
-        if existing_contact.status == ContactStatus.ACCEPTED:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Вы уже в контактах",
-            )
-        elif existing_contact.status == ContactStatus.PENDING:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Запрос уже отправлен",
-            )
-        elif existing_contact.status == ContactStatus.REJECTED:
-            # Разрешаем повторный запрос — обновляем статус
-            existing_contact.status = ContactStatus.PENDING
-            existing_contact.user_id = user.id
-            existing_contact.contact_id = target_user_id
-            await db.commit()
-            return MessageResponse(message="Запрос отправлен повторно")
-
-    # Создаём запрос
-    contact = Contact(
-        user_id=user.id,
-        contact_id=target_user_id,
-        status=ContactStatus.PENDING,
-    )
-    db.add(contact)
-
-    # Уведомление
-    notification = Notification(
-        user_id=target_user_id,
-        type=NotificationType.CONTACT_REQUEST,
-        title="Запрос в контакты",
-        message=f"{user.display_name} хочет добавить вас в контакты",
-        link="/applicant/contacts",
-    )
-    db.add(notification)
-
-    await db.commit()
-
-    return MessageResponse(message="Запрос отправлен")
+    service = ContactService(db, user)
+    message = await service.send_contact_request(target_user_id)
+    return MessageResponse(message=message)
 
 
 @router.post(
@@ -267,42 +86,13 @@ async def send_contact_request(
 )
 async def accept_contact_request(
     contact_id: int,
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """Принять входящий запрос в контакты."""
-    result = await db.execute(
-        select(Contact)
-        .options(selectinload(Contact.user))
-        .where(
-            Contact.id == contact_id,
-            Contact.contact_id == user.id,
-            Contact.status == ContactStatus.PENDING,
-        )
-    )
-    contact = result.scalar_one_or_none()
-
-    if not contact:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Запрос не найден или уже обработан",
-        )
-
-    contact.status = ContactStatus.ACCEPTED
-
-    # Уведомление отправителю
-    notification = Notification(
-        user_id=contact.user_id,
-        type=NotificationType.CONTACT_ACCEPTED,
-        title="Запрос принят",
-        message=f"{user.display_name} принял ваш запрос в контакты",
-        link="/applicant/contacts",
-    )
-    db.add(notification)
-
-    await db.commit()
-
-    return MessageResponse(message="Контакт добавлен")
+    service = ContactService(db, user)
+    message = await service.accept_contact_request(contact_id)
+    return MessageResponse(message=message)
 
 
 @router.post(
@@ -312,29 +102,13 @@ async def accept_contact_request(
 )
 async def reject_contact_request(
     contact_id: int,
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """Отклонить входящий запрос в контакты."""
-    result = await db.execute(
-        select(Contact).where(
-            Contact.id == contact_id,
-            Contact.contact_id == user.id,
-            Contact.status == ContactStatus.PENDING,
-        )
-    )
-    contact = result.scalar_one_or_none()
-
-    if not contact:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Запрос не найден или уже обработан",
-        )
-
-    contact.status = ContactStatus.REJECTED
-    await db.commit()
-
-    return MessageResponse(message="Запрос отклонён")
+    service = ContactService(db, user)
+    message = await service.reject_contact_request(contact_id)
+    return MessageResponse(message=message)
 
 
 @router.delete(
@@ -344,31 +118,13 @@ async def reject_contact_request(
 )
 async def remove_contact(
     contact_id: int,
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """Удалить пользователя из контактов."""
-    result = await db.execute(
-        select(Contact).where(
-            Contact.id == contact_id,
-            or_(
-                Contact.user_id == user.id,
-                Contact.contact_id == user.id,
-            ),
-        )
-    )
-    contact = result.scalar_one_or_none()
-
-    if not contact:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Контакт не найден",
-        )
-
-    await db.delete(contact)
-    await db.commit()
-
-    return MessageResponse(message="Контакт удалён")
+    service = ContactService(db, user)
+    message = await service.remove_contact(contact_id)
+    return MessageResponse(message=message)
 
 
 # === Рекомендации ===
@@ -381,84 +137,20 @@ async def remove_contact(
 )
 async def recommend_contact(
     data: RecommendationCreate,
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """
     Рекомендовать контакт (друга) на возможность.
     Можно рекомендовать только принятых контактов.
     """
-    # Нельзя рекомендовать себя
-    if data.to_user_id == user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Нельзя рекомендовать себя",
-        )
-
-    # Проверяем что это принятый контакт
-    contact_check = await db.execute(
-        select(Contact).where(
-            Contact.status == ContactStatus.ACCEPTED,
-            or_(
-                and_(Contact.user_id == user.id, Contact.contact_id == data.to_user_id),
-                and_(Contact.user_id == data.to_user_id, Contact.contact_id == user.id),
-            ),
-        )
-    )
-    if not contact_check.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Можно рекомендовать только контактам (друзьям)",
-        )
-
-    # Проверяем что возможность существует
-    opp_result = await db.execute(
-        select(Opportunity).where(Opportunity.id == data.opportunity_id)
-    )
-    opportunity = opp_result.scalar_one_or_none()
-
-    if not opportunity:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Возможность не найдена",
-        )
-
-    # Проверяем дубликат
-    existing = await db.execute(
-        select(Recommendation).where(
-            Recommendation.from_user_id == user.id,
-            Recommendation.to_user_id == data.to_user_id,
-            Recommendation.opportunity_id == data.opportunity_id,
-        )
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Вы уже рекомендовали этого пользователя на эту возможность",
-        )
-
-    # Создаём рекомендацию
-    recommendation = Recommendation(
-        from_user_id=user.id,
+    service = ContactService(db, user)
+    message = await service.recommend_contact(
         to_user_id=data.to_user_id,
         opportunity_id=data.opportunity_id,
         message=data.message,
     )
-    db.add(recommendation)
-
-    # Уведомление другу
-    notification = Notification(
-        user_id=data.to_user_id,
-        type=NotificationType.RECOMMENDATION,
-        title="Рекомендация от друга",
-        message=f"{user.display_name} рекомендует вам вакансию «{opportunity.title}»",
-        link=f"/opportunities/{opportunity.id}",
-    )
-    db.add(notification)
-
-    await db.commit()
-
-    return MessageResponse(message="Рекомендация отправлена")
+    return MessageResponse(message=message)
 
 
 @router.get(
@@ -467,32 +159,32 @@ async def recommend_contact(
     summary="Рекомендации мне",
 )
 async def my_recommendations(
-    user: User = Depends(require_role(UserRole.APPLICANT)),
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
     db: AsyncSession = Depends(get_db),
 ):
     """Список рекомендаций, полученных от контактов."""
-    result = await db.execute(
-        select(Recommendation)
-        .options(selectinload(Recommendation.from_user))
-        .where(Recommendation.to_user_id == user.id)
-        .order_by(Recommendation.created_at.desc())
-    )
-    recommendations = result.scalars().unique().all()
+    service = ContactService(db, user)
+    return await service.get_my_recommendations()
 
-    items = []
-    for rec in recommendations:
-        items.append(RecommendationResponse(
-            id=rec.id,
-            from_user=UserShort(
-                id=rec.from_user.id,
-                display_name=rec.from_user.display_name,
-                role=rec.from_user.role,
-                avatar_url=rec.from_user.avatar_url,
-            ),
-            opportunity_id=rec.opportunity_id,
-            message=rec.message,
-            is_read=rec.is_read,
-            created_at=rec.created_at,
-        ))
 
-    return items
+@router.post(
+    "/recommendations/{recommendation_id}/read",
+    response_model=MessageResponse,
+    summary="Отметить рекомендацию как прочитанную",
+)
+async def mark_recommendation_read(
+    recommendation_id: int,
+    user: User = Depends(require_role(UserRole.STUDENT)),  # Исправлено
+    db: AsyncSession = Depends(get_db),
+):
+    """Отметить рекомендацию как прочитанную."""
+    service = ContactService(db, user)
+    success = await service.mark_recommendation_as_read(recommendation_id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Рекомендация не найдена",
+        )
+    
+    return MessageResponse(message="Рекомендация отмечена как прочитанная")
