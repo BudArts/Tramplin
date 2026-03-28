@@ -161,6 +161,11 @@ class CompanyUpdate(BaseModel):
     industry: Optional[str] = Field(None, max_length=255)
     size: Optional[CompanySize] = None
     founded_year: Optional[int] = Field(None, ge=1800, le=2030)
+    city: Optional[str] = Field(None, max_length=100)  # Добавляем город
+    employee_count: Optional[int] = None  # Добавляем количество сотрудников
+    social_links: Optional[List[str]] = None  # Добавляем социальные ссылки
+    logo_url: Optional[str] = Field(None, max_length=500)  # ← ДОБАВЛЯЕМ
+    cover_url: Optional[str] = Field(None, max_length=500)  # ← ДОБАВЛЯЕМ
 
 
 # === Ответы ===

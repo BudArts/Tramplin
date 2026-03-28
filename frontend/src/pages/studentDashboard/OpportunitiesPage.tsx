@@ -226,16 +226,16 @@ const OpportunitiesPage = () => {
   };
 
   const handleRecommend = (opportunityId: number) => {
-    setModalOpen(false);
-    // Рекомендовать вакансию другу (выбор друга)
-    navigate(`/student/recommend-friend?opportunityId=${opportunityId}`);
-  };
+  setModalOpen(false);
+  // Рекомендовать вакансию другу (выбор друга)
+  navigate(`/student/recommend?opportunityId=${opportunityId}&mode=to-friend`);
+};
 
   const handleRecommendFriend = (opportunityId: number) => {
-    setModalOpen(false);
-    // Рекомендовать друга на вакансию (выбор друга)
-    navigate(`/student/recommend/${opportunityId}`);
-  };
+  setModalOpen(false);
+  // Рекомендовать друга на вакансию (выбор друга для рекомендации)
+  navigate(`/student/recommend?opportunityId=${opportunityId}&mode=to-opportunity`);
+};
 
   const clearFilters = () => {
     setSearchQuery('');

@@ -4460,8 +4460,8 @@
                 "tags": [
                     "Куратор / Модерация"
                 ],
-                "summary": "Статистика платформы",
-                "description": "Общая статистика платформы для дашборда куратора.",
+                "summary": "Platform Stats",
+                "description": "Получение статистики платформы для куратора",
                 "operationId": "platform_stats_api_curator_stats_get",
                 "responses": {
                     "200": {
@@ -4677,6 +4677,93 @@
                 ]
             }
         },
+        "/api/curator/opportunities": {
+            "get": {
+                "tags": [
+                    "Куратор / Модерация"
+                ],
+                "summary": "Все возможности с фильтрацией",
+                "description": "Получение возможностей с фильтрацией по статусу модерации.",
+                "operationId": "get_opportunities_api_curator_opportunities_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "moderation_status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Moderation Status"
+                        }
+                    },
+                    {
+                        "name": "company_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Company Id"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 200,
+                            "minimum": 1,
+                            "default": 100,
+                            "title": "Per Page"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/OpportunityResponse"
+                                    },
+                                    "title": "Response Get Opportunities Api Curator Opportunities Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/curator/opportunities/{opportunity_id}/approve": {
             "patch": {
                 "tags": [
@@ -4789,7 +4876,7 @@
                     "Куратор / Модерация"
                 ],
                 "summary": "Запросить изменения",
-                "description": "Запросить изменения в возможности — работодатель должен исправить и отправить повторно.",
+                "description": "Запросить изменения в возможности.",
                 "operationId": "request_changes_api_curator_opportunities__opportunity_id__request_changes_patch",
                 "security": [
                     {
@@ -5441,6 +5528,66 @@
                 }
             }
         },
+        "/api/curator/companies/{company_id}/request-info": {
+            "post": {
+                "tags": [
+                    "Куратор / Модерация"
+                ],
+                "summary": "Запросить дополнительную информацию",
+                "description": "Куратор запрашивает дополнительную информацию у компании.",
+                "operationId": "request_additional_info_api_curator_companies__company_id__request_info_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "company_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Company Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "title": "Data"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/app__schemas__common__MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/": {
             "get": {
                 "tags": [
@@ -5486,6 +5633,26 @@
                 ],
                 "summary": "Health Check",
                 "operationId": "health_check_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/debug/routes": {
+            "get": {
+                "tags": [
+                    "Debug"
+                ],
+                "summary": "List Routes",
+                "description": "Список всех загруженных маршрутов (для отладки)",
+                "operationId": "list_routes_debug_routes_get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -6242,9 +6409,13 @@
                                 "$ref": "#/components/schemas/VerificationStatus-Output"
                             },
                             {
+                                "type": "string"
+                            },
+                            {
                                 "type": "null"
                             }
-                        ]
+                        ],
+                        "title": "Verification Status"
                     },
                     "is_email_verified": {
                         "type": "boolean",
@@ -9234,7 +9405,8 @@
                 "enum": [
                     "pending",
                     "verified",
-                    "rejected"
+                    "rejected",
+                    "pending_email"
                 ],
                 "title": "VerificationStatus"
             },

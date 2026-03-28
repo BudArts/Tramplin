@@ -30,6 +30,7 @@ const RecommendationPage = () => {
   const { userId } = useParams<{ userId: string }>();
   const [searchParams] = useSearchParams();
   const opportunityIdFromUrl = searchParams.get('opportunityId');
+  const modeFromUrl = searchParams.get('mode');
   
   const { user: currentUser } = useAuth();
   const [contact, setContact] = useState<Contact | null>(null);
@@ -47,8 +48,16 @@ const RecommendationPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [mode, setMode] = useState<'to-friend' | 'to-opportunity'>(
-    userId ? 'to-opportunity' : 'to-friend'
+    modeFromUrl === 'to-opportunity' ? 'to-opportunity' : 'to-friend'
   );
+
+  useEffect(() => {
+    if (modeFromUrl === 'to-opportunity') {
+      setMode('to-opportunity');
+    } else {
+      setMode('to-friend');
+    }
+  }, [modeFromUrl]);
 
   useEffect(() => {
     if (userId) {
@@ -83,7 +92,6 @@ const RecommendationPage = () => {
     if (!token) return;
     
     try {
-      // Отмечаем все рекомендации как прочитанные
       const unreadRecs = recommendations.filter(r => !r.is_read);
       if (unreadRecs.length > 0) {
         await fetch('/api/contacts/recommendations/read', {
@@ -95,13 +103,11 @@ const RecommendationPage = () => {
           body: JSON.stringify({ recommendation_ids: unreadRecs.map(r => r.id) }),
         });
         
-        // Обновляем localStorage
         const viewed = localStorage.getItem('viewed_recommendations');
         const viewedIds = viewed ? new Set(JSON.parse(viewed)) : new Set();
         unreadRecs.forEach(rec => viewedIds.add(rec.id));
         localStorage.setItem('viewed_recommendations', JSON.stringify(Array.from(viewedIds)));
         
-        // Диспатчим событие обновления
         window.dispatchEvent(new Event('viewedRecommendationsUpdated'));
         window.dispatchEvent(new Event('recommendationsUpdated'));
       }
@@ -201,13 +207,31 @@ const RecommendationPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (mode === 'to-friend' && !selectedContact) {
-      alert('Пожалуйста, выберите друга');
-      return;
-    }
-    if (!selectedOpportunity) {
-      alert('Пожалуйста, выберите вакансию');
-      return;
+    let toUserId: number | null = null;
+    let opportunityIdToSend: number | null = null;
+    
+    if (mode === 'to-friend') {
+      if (!selectedContact) {
+        alert('Пожалуйста, выберите друга');
+        return;
+      }
+      if (!selectedOpportunity) {
+        alert('Пожалуйста, выберите вакансию');
+        return;
+      }
+      toUserId = selectedContact;
+      opportunityIdToSend = selectedOpportunity;
+    } else {
+      if (!selectedContact) {
+        alert('Пожалуйста, выберите друга');
+        return;
+      }
+      if (!selectedOpportunity) {
+        alert('Пожалуйста, выберите вакансию');
+        return;
+      }
+      toUserId = selectedContact;
+      opportunityIdToSend = selectedOpportunity;
     }
     
     setSubmitting(true);
@@ -215,8 +239,8 @@ const RecommendationPage = () => {
     
     try {
       const payload = {
-        to_user_id: selectedContact,
-        opportunity_id: selectedOpportunity,
+        to_user_id: toUserId,
+        opportunity_id: opportunityIdToSend,
         message: message || null
       };
       
@@ -264,7 +288,6 @@ const RecommendationPage = () => {
     return opp.company_name || opp.company?.name || 'Компания';
   };
 
-  // Отмечаем рекомендации как прочитанные при загрузке страницы
   useEffect(() => {
     if (recommendations.length > 0) {
       markAllRecommendationsAsRead();
@@ -309,49 +332,47 @@ const RecommendationPage = () => {
       ) : (
         <motion.form className="student-recommendation__form" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} onSubmit={handleSubmit}>
           
-          {mode === 'to-friend' && (
-            <div className="student-recommendation__field">
-              <label><Users size={18} /><span>Выберите друга</span></label>
-              <div className="student-recommendation__contacts">
-                {contacts.map(contact => {
-                  const contactUser = getContactUser(contact);
-                  const isSelected = selectedContact === contactUser.id;
-                  return (
-                    <button
-                      key={contact.id}
-                      type="button"
-                      className={`student-recommendation__contact ${isSelected ? 'selected' : ''}`}
-                      onClick={() => setSelectedContact(contactUser.id)}
-                    >
-                      <div className="student-recommendation__contact-avatar">
-                        {contactUser.avatar_url ? (
-                          <img src={contactUser.avatar_url} alt={getUserDisplayName(contactUser)} />
-                        ) : (
-                          <div className="student-recommendation__contact-avatar-placeholder">
-                            {contactUser.first_name?.[0]}{contactUser.last_name?.[0]}
-                          </div>
-                        )}
-                      </div>
-                      <div className="student-recommendation__contact-info">
-                        <h4>{getUserDisplayName(contactUser)}</h4>
-                        <p>{contactUser.university || 'Студент'}</p>
-                      </div>
-                      {isSelected && (
-                        <div className="student-recommendation__contact-check">
-                          <Check size={16} />
+          <div className="student-recommendation__field">
+            <label><Users size={18} /><span>Выберите друга</span></label>
+            <div className="student-recommendation__contacts">
+              {contacts.map(contact => {
+                const contactUser = getContactUser(contact);
+                const isSelected = selectedContact === contactUser.id;
+                return (
+                  <button
+                    key={contact.id}
+                    type="button"
+                    className={`student-recommendation__contact ${isSelected ? 'selected' : ''}`}
+                    onClick={() => setSelectedContact(contactUser.id)}
+                  >
+                    <div className="student-recommendation__contact-avatar">
+                      {contactUser.avatar_url ? (
+                        <img src={contactUser.avatar_url} alt={getUserDisplayName(contactUser)} />
+                      ) : (
+                        <div className="student-recommendation__contact-avatar-placeholder">
+                          {contactUser.first_name?.[0]}{contactUser.last_name?.[0]}
                         </div>
                       )}
-                    </button>
-                  );
-                })}
-                {contacts.length === 0 && (
-                  <p className="student-recommendation__no-contacts">
-                    У вас пока нет контактов. Добавьте друзей, чтобы рекомендовать им возможности.
-                  </p>
-                )}
-              </div>
+                    </div>
+                    <div className="student-recommendation__contact-info">
+                      <h4>{getUserDisplayName(contactUser)}</h4>
+                      <p>{contactUser.university || 'Студент'}</p>
+                    </div>
+                    {isSelected && (
+                      <div className="student-recommendation__contact-check">
+                        <Check size={16} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+              {contacts.length === 0 && (
+                <p className="student-recommendation__no-contacts">
+                  У вас пока нет контактов. Добавьте друзей, чтобы рекомендовать им возможности.
+                </p>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="student-recommendation__field">
             <label><Briefcase size={18} /><span>Выберите вакансию или стажировку</span></label>
@@ -365,8 +386,10 @@ const RecommendationPage = () => {
                     className={`student-recommendation__opportunity ${isSelected ? 'selected' : ''}`}
                     onClick={() => setSelectedOpportunity(opp.id)}
                   >
-                    <div className="student-recommendation__opportunity-title">{getOpportunityTitle(opp)}</div>
-                    <div className="student-recommendation__opportunity-company">{getOpportunityCompany(opp)}</div>
+                    <div>
+                      <div className="student-recommendation__opportunity-title">{getOpportunityTitle(opp)}</div>
+                      <div className="student-recommendation__opportunity-company">{getOpportunityCompany(opp)}</div>
+                    </div>
                     {isSelected && (
                       <div className="student-recommendation__opportunity-check">
                         <Check size={14} />
@@ -399,7 +422,7 @@ const RecommendationPage = () => {
               type="submit" 
               className="student-recommendation__submit" 
               disabled={
-                (mode === 'to-friend' && !selectedContact) || 
+                !selectedContact || 
                 !selectedOpportunity || 
                 submitting
               }

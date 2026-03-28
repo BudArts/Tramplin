@@ -22,6 +22,7 @@ export interface UserResponse {
     github_url: string | null;
     portfolio_url: string | null;
     telegram: string | null;
+    company_id: number | null; // Добавляем поле company_id
     profile_privacy?: 'public' | 'contacts_only' | 'private';
     resume_privacy?: 'public' | 'contacts_only' | 'private';
     created_at: string;

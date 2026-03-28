@@ -18,7 +18,7 @@ import CompaniesPage from './pages/studentDashboard/CompaniesPage';
 import ChatPage from './pages/studentDashboard/ChatPage';
 import UserProfilePage from './pages/studentDashboard/UserProfilePage';
 import OpportunityDetailPage from './pages/studentDashboard/OpportunityDetailPage';
-
+import './styles/companyDashboard.css';
 // Curator imports
 import CuratorLayout from './pages/curatorDashboard/CuratorLayout';
 import CuratorDashboardHomePage from './pages/curatorDashboard/DashboardHomePage';
@@ -29,20 +29,28 @@ import CuratorTagsPage from './pages/curatorDashboard/TagsPage';
 import CuratorReviewsPage from './pages/curatorDashboard/ReviewsPage';
 import CuratorSettingsPage from './pages/curatorDashboard/SettingsPage';
 
+import CompanyLayout from './pages/companyDashboard/CompanyLayout';
+import CompanyDashboardHomePage from './pages/companyDashboard/DashboardHomePage';
+import CompanyProfilePage from './pages/companyDashboard/ProfilePage';
+import CompanyOpportunitiesPage from './pages/companyDashboard/OpportunitiesPage';
+import CompanyApplicationsPage from './pages/companyDashboard/ApplicationsPage';
+import CompanyFavoritesPage from './pages/companyDashboard/FavoritesPage';
+import CompanySettingsPage from './pages/companyDashboard/SettingsPage';
+
 import './styles/landing.css';
 import './styles/studentDashboard.css';
 import './styles/curatorDashboard.css';
 
 // Protected Route Component - выносим внутрь AuthProvider
-const ProtectedRoute = ({ 
-  children, 
-  allowedRoles 
-}: { 
-  children: React.ReactNode; 
+const ProtectedRoute = ({
+  children,
+  allowedRoles
+}: {
+  children: React.ReactNode;
   allowedRoles: string[];
 }) => {
   const { user, isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -50,13 +58,12 @@ const ProtectedRoute = ({
       </div>
     );
   }
-  
+
   if (!isAuthenticated || !user) {
     return <Navigate to="/" replace />;
   }
-  
+
   if (!allowedRoles.includes(user.role)) {
-    // Перенаправляем на правильный дашборд в зависимости от роли
     if (user.role === 'student') {
       return <Navigate to="/student" replace />;
     }
@@ -68,14 +75,14 @@ const ProtectedRoute = ({
     }
     return <Navigate to="/" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 // Role-based redirect component
 const RoleRedirect = () => {
   const { user, isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -83,11 +90,11 @@ const RoleRedirect = () => {
       </div>
     );
   }
-  
+
   if (!isAuthenticated || !user) {
     return <Navigate to="/" replace />;
   }
-  
+
   if (user.role === 'student') {
     return <Navigate to="/student" replace />;
   }
@@ -97,7 +104,7 @@ const RoleRedirect = () => {
   if (user.role === 'curator' || user.role === 'admin') {
     return <Navigate to="/curator" replace />;
   }
-  
+
   return <Navigate to="/" replace />;
 };
 
@@ -108,10 +115,10 @@ const AppRoutes = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/verify-email" element={<EmailVerification />} />
       <Route path="/verify-email-pending" element={<EmailVerificationPending />} />
-      
+
       {/* Student Routes */}
-      <Route 
-        path="/student" 
+      <Route
+        path="/student"
         element={
           <ProtectedRoute allowedRoles={['student']}>
             <StudentLayout />
@@ -130,11 +137,34 @@ const AppRoutes = () => {
         <Route path="chat/:userId" element={<ChatPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="user/:userId" element={<UserProfilePage />} />
+        <Route path="recommend" element={<RecommendationPage />} />
+        <Route path="recommend/:userId" element={<RecommendationPage />} />
       </Route>
-      
+
+      {/* Company Routes */}
+      <Route
+        path="/company"
+        element={
+          <ProtectedRoute allowedRoles={['company']}>
+            <CompanyLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<CompanyDashboardHomePage />} />
+        <Route path="profile" element={<CompanyProfilePage />} />
+        <Route path="opportunities" element={<CompanyOpportunitiesPage />} />
+        <Route path="opportunities/:opportunityId" element={<CompanyOpportunitiesPage />} />
+        <Route path="applications" element={<CompanyApplicationsPage />} />
+        <Route path="favorites" element={<CompanyFavoritesPage />} />
+        <Route path="settings" element={<CompanySettingsPage />} />
+        <Route path="chat" element={<ChatPage />} />
+        <Route path="chat/:userId" element={<ChatPage />} />
+        <Route path="student/user/:userId" element={<UserProfilePage />} />
+      </Route>
+
       {/* Curator Routes */}
-      <Route 
-        path="/curator" 
+      <Route
+        path="/curator"
         element={
           <ProtectedRoute allowedRoles={['curator', 'admin']}>
             <CuratorLayout />
@@ -152,10 +182,10 @@ const AppRoutes = () => {
         <Route path="reviews" element={<CuratorReviewsPage />} />
         <Route path="settings" element={<CuratorSettingsPage />} />
       </Route>
-      
+
       {/* Role-based redirect for dashboard */}
       <Route path="/dashboard" element={<RoleRedirect />} />
-      
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

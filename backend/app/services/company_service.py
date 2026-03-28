@@ -1,4 +1,4 @@
-# app/services/company_service.py
+# backend/app/services/company_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional, Tuple, List
@@ -82,21 +82,7 @@ class CompanyService:
         if existing_company_email:
             raise ValueError("Компания с таким email уже зарегистрирована")
         
-        # Создаем пользователя-владельца компании
-        user = User(
-            email=data.user_email,
-            hashed_password=get_password_hash(data.user_password),
-            first_name=data.user_first_name,
-            last_name=data.user_last_name,
-            patronymic=data.user_patronymic,
-            role=UserRole.COMPANY,
-            status=UserStatus.ACTIVE,
-            is_email_verified=True
-        )
-        db.add(user)
-        await db.flush()
-        
-        # Создаем компанию
+        # Сначала создаем компанию, чтобы получить ее ID
         company = Company(
             name=data.company_name,
             full_name=data.company_name,
@@ -107,18 +93,35 @@ class CompanyService:
             description=None,
             city=None,
             industry=None,
-            owner_id=user.id,
             status=CompanyStatus.ACTIVE,
             is_email_verified=True,
             verification_status=VerificationStatus.PENDING
         )
         db.add(company)
+        await db.flush()  # Получаем company.id
+        
+        # Создаем пользователя-владельца компании с company_id
+        user = User(
+            email=data.user_email,
+            hashed_password=get_password_hash(data.user_password),
+            first_name=data.user_first_name,
+            last_name=data.user_last_name,
+            patronymic=data.user_patronymic,
+            role=UserRole.COMPANY,
+            status=UserStatus.ACTIVE,
+            is_email_verified=True,
+            company_id=company.id  # ← ВАЖНО: связываем пользователя с компанией
+        )
+        db.add(user)
+        
+        # Обновляем company.owner_id
+        company.owner_id = user.id
         
         await db.commit()
         await db.refresh(user)
         await db.refresh(company)
         
-        # Отправка email для подтверждения
+        # Отправка email для подтверждения (опционально)
         email_sent = False
         try:
             from app.services.email_service import email_service
@@ -131,6 +134,32 @@ class CompanyService:
             pass
         
         return company, user, email_sent
+    
+    async def update_company(
+        self,
+        db: AsyncSession,
+        company_id: int,
+        update_data: CompanyUpdate
+    ) -> Company:
+        """Обновление данных компании"""
+        company = await self.get_company_by_id(db, company_id)
+        
+        if not company:
+            raise ValueError(f"Компания с ID {company_id} не найдена")
+        
+        # Применяем обновления
+        update_dict = update_data.model_dump(exclude_unset=True)
+        
+        for field, value in update_dict.items():
+            if hasattr(company, field) and value is not None:
+                setattr(company, field, value)
+        
+        company.updated_at = datetime.now(timezone.utc)
+        
+        await db.commit()
+        await db.refresh(company)
+        
+        return company
     
     async def verify_company_email(
         self, 

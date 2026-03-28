@@ -1,3 +1,4 @@
+# backend/app/routers/applications.py
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -20,6 +21,7 @@ from app.schemas.application import (
     ApplicationListResponse,
 )
 from app.schemas.common import MessageResponse
+from app.schemas.user import UserShort
 
 router = APIRouter(prefix="/api/applications", tags=["Отклики"])
 
@@ -89,9 +91,9 @@ async def create_application(
     # Уведомление работодателю
     notification = Notification(
         user_id=opportunity.company.owner_id,
-        type=NotificationType.APPLICATION_RECEIVED.value,  # 👈 добавьте .value
+        type=NotificationType.APPLICATION_RECEIVED,
         title="Новый отклик",
-        message=f"{user.display_name or 'Пользователь'} откликнулся на «{opportunity.title}»",
+        message=f"{user.display_name or f'{user.first_name} {user.last_name}' or 'Пользователь'} откликнулся на «{opportunity.title}»",
         data={"opportunity_id": opportunity.id},
     )
     db.add(notification)
@@ -276,7 +278,6 @@ async def get_opportunity_applications(
     # Получаем отклики
     query = (
         select(Application)
-        .options(joinedload(Application.applicant))
         .where(Application.opportunity_id == opportunity_id)
     )
 
@@ -287,19 +288,36 @@ async def get_opportunity_applications(
     query = query.order_by(Application.created_at.desc())
 
     result = await db.execute(query)
-    applications = result.unique().scalars().all()
+    applications = result.scalars().all()
 
-    # Собираем ответ
+    # Собираем ответ с полными данными о соискателе
     items = []
     for app_item in applications:
-        from app.schemas.user import UserShort
-        applicant_short = None
-        if app_item.applicant:
+        # Получаем полные данные пользователя
+        user_result = await db.execute(
+            select(User).where(User.id == app_item.applicant_id)
+        )
+        applicant = user_result.scalar_one_or_none()
+        
+        if applicant:
+            # Создаем объект UserShort с полными данными
             applicant_short = UserShort(
-                id=app_item.applicant.id,
-                display_name=app_item.applicant.display_name,
-                role=app_item.applicant.role,
-                avatar_url=app_item.applicant.avatar_url,
+                id=applicant.id,
+                first_name=applicant.first_name,
+                last_name=applicant.last_name,
+                display_name=applicant.display_name,
+                avatar_url=applicant.avatar_url,
+                role=applicant.role,
+            )
+        else:
+            # Fallback если пользователь не найден
+            applicant_short = UserShort(
+                id=app_item.applicant_id,
+                first_name=None,
+                last_name=None,
+                display_name=None,
+                avatar_url=None,
+                role=None,
             )
 
         items.append(ApplicationWithApplicant(
@@ -387,12 +405,13 @@ async def update_application_status(
         ApplicationStatus.RESERVE: "добавлен в резерв",
     }
 
+    # Создаем уведомление (без поля link, используем data)
     notification = Notification(
         user_id=application.applicant_id,
-        type=NotificationType.APPLICATION_STATUS,
+        type=NotificationType.APPLICATION_STATUS.value,  # ← добавляем .value
         title="Статус отклика изменён",
         message=f"Ваш отклик на «{application.opportunity.title}» {status_messages.get(data.status, 'обновлён')}",
-        link=f"/applicant/applications",
+        data={"link": f"/applicant/applications"}
     )
     db.add(notification)
 

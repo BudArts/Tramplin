@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 from app.database import get_db
 from app.models.user import User
-from app.schemas.company import CompanyRegisterRequest, CompanyEmailVerificationRequest, CompanyRegisterStep2
+from app.schemas.company import CompanyRegisterRequest, CompanyEmailVerificationRequest
 from app.schemas.auth import MessageResponse
 
 router = APIRouter(prefix="/companies/auth", tags=["Company Registration"]) 
@@ -76,39 +76,25 @@ async def register_company(
             )
         logger.info("✅ Корпоративный email прошел проверку")
 
-        # Подготовка данных для регистрации
-        logger.info("🔍 Подготовка данных для регистрации...")
-        step2_data = CompanyRegisterStep2(
-            inn=data.inn,
-            ogrn=None,
-            kpp=None,
-            company_name=data.company_name,
-            email=data.email,
-            phone=data.phone,
-            website=None,
-            description=None,
-            employees_count=None,
-            user_first_name=data.user_first_name,
-            user_last_name=data.user_last_name,
-            user_patronymic=data.user_patronymic,
-            user_email=data.user_email,
-            user_password=data.user_password,
-            user_password_confirm=data.user_password_confirm
-        )
+        # Проверка паролей
+        if data.user_password != data.user_password_confirm:
+            logger.error("❌ Пароли не совпадают")
+            raise ValueError("Пароли не совпадают")
 
-        # Регистрация компании
+        # Регистрация компании (передаем CompanyRegisterRequest напрямую)
         logger.info("🚀 Вызов company_service.register_company...")
-        company, user, email_sent = await company_service.register_company(db, step2_data)
+        company, user, email_sent = await company_service.register_company(db, data)
         
         logger.info("=" * 50)
         logger.info(f"✅ КОМПАНИЯ УСПЕШНО ЗАРЕГИСТРИРОВАНА!")
         logger.info(f"   ID компании: {company.id}")
         logger.info(f"   ID пользователя: {user.id}")
+        logger.info(f"   company_id пользователя: {user.company_id}")
         logger.info(f"   Email отправлен: {email_sent}")
         logger.info("=" * 50)
 
         return MessageResponse(
-            message="Заявка на регистрацию принята! Проверьте корпоративную почту для подтверждения.",
+            message="Заявка на регистрация принята! Проверьте корпоративную почту для подтверждения.",
             success=True,
             data={
                 "company_id": company.id,

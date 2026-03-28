@@ -118,6 +118,7 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     github_url: Optional[str] = None
     portfolio_url: Optional[str] = None
+    company_id: Optional[int] = None
     created_at: Optional[datetime] = None
     
     class Config:

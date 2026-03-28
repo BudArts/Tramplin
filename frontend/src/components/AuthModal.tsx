@@ -59,12 +59,14 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setMode(defaultMode);
       setErrors({});
       setSuccessMessage('');
+      setLoginSuccess(false);
       setLoginData({ email: '', password: '' });
       setRegisterData({
         email: '',
@@ -84,28 +86,35 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
 
   // Обновленная логика перенаправления после входа
   useEffect(() => {
-    if (isAuthenticated && user && isOpen) {
+    if (loginSuccess && isAuthenticated && user) {
+      console.log('Redirecting to dashboard based on role:', user.role);
+      
+      // Сначала закрываем модальное окно
+      onClose();
+      
+      // Небольшая задержка перед редиректом
       setTimeout(() => {
-        onClose();
-        
         // Перенаправление в зависимости от роли пользователя
         switch (user.role) {
           case 'student':
-            navigate('/student');
+            navigate('/student', { replace: true });
             break;
           case 'company':
-            navigate('/company');
+            navigate('/company', { replace: true });
             break;
           case 'curator':
           case 'admin':
-            navigate('/curator');
+            navigate('/curator', { replace: true });
             break;
           default:
-            navigate('/');
+            navigate('/', { replace: true });
         }
-      }, 500);
+      }, 100);
+      
+      // Сбрасываем флаг
+      setLoginSuccess(false);
     }
-  }, [isAuthenticated, user, isOpen, onClose, navigate]);
+  }, [loginSuccess, isAuthenticated, user, onClose, navigate]);
 
   useEffect(() => {
     setErrors({});
@@ -188,7 +197,11 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
         setErrors({ form: result.error });
       } else {
         setSuccessMessage('Вход выполнен успешно!');
-        // Редирект произойдет в useEffect, который следит за isAuthenticated и user
+        // Устанавливаем флаг успешного входа
+        // Даем время на загрузку данных пользователя
+        setTimeout(() => {
+          setLoginSuccess(true);
+        }, 500);
       }
     } catch (error: any) {
       setErrors({ form: error.message || 'Ошибка входа' });
@@ -281,6 +294,7 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
     });
     setErrors({});
     setSuccessMessage('');
+    setLoginSuccess(false);
   };
 
   const switchMode = (newMode: FormMode) => {

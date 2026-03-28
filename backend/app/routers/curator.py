@@ -238,62 +238,6 @@ async def verify_company(
     )
 
 # === Модерация возможностей ===
-
-@router.get(
-    "/opportunities/pending",
-    response_model=list[OpportunityResponse],
-    summary="Очередь модерации",
-)
-async def pending_moderations(
-    user: User = Depends(require_role(*CURATOR_ROLES)),
-    db: AsyncSession = Depends(get_db),
-):
-    """Возможности, ожидающие модерации."""
-    result = await db.execute(
-        select(Opportunity)
-        .options(
-            selectinload(Opportunity.tags),
-            selectinload(Opportunity.company),
-        )
-        .where(Opportunity.moderation_status == ModerationStatus.PENDING)
-        .order_by(Opportunity.created_at.asc())
-    )
-    opportunities = result.scalars().unique().all()
-    return opportunities
-@router.get(
-    "/opportunities",
-    response_model=list[OpportunityResponse],
-    summary="Все возможности с фильтрацией",
-)
-async def get_opportunities(
-    moderation_status: Optional[str] = Query(None),
-    company_id: Optional[int] = Query(None),
-    per_page: int = Query(100, ge=1, le=200),
-    user: User = Depends(require_role(*CURATOR_ROLES)),
-    db: AsyncSession = Depends(get_db),
-):
-    """Получение возможностей с фильтрацией по статусу модерации."""
-    query = select(Opportunity).options(
-        selectinload(Opportunity.tags),
-        selectinload(Opportunity.company),
-    )
-    
-    if moderation_status:
-        try:
-            status = ModerationStatus(moderation_status)
-            query = query.where(Opportunity.moderation_status == status)
-        except ValueError:
-            pass
-    
-    if company_id:
-        query = query.where(Opportunity.company_id == company_id)
-    
-    query = query.order_by(Opportunity.created_at.desc()).limit(per_page)
-    
-    result = await db.execute(query)
-    opportunities = result.scalars().unique().all()
-    return opportunities
-
 @router.patch(
     "/opportunities/{opportunity_id}/approve",
     response_model=MessageResponse,
@@ -335,10 +279,10 @@ async def approve_opportunity(
     if opportunity.company and opportunity.company.owner_id:
         notification = Notification(
             user_id=opportunity.company.owner_id,
-            type=NotificationType.MODERATION_UPDATE,
+            type=NotificationType.CARD_APPROVED.value,
             title="Возможность одобрена",
             message=f"Ваша возможность «{opportunity.title}» одобрена и опубликована ✅",
-            link="/company/opportunities",
+            data={"opportunity_id": opportunity.id, "link": "/company/opportunities"},
         )
         db.add(notification)
 
@@ -380,11 +324,11 @@ async def reject_opportunity(
     if opportunity.company and opportunity.company.owner_id:
         notification = Notification(
             user_id=opportunity.company.owner_id,
-            type=NotificationType.MODERATION_UPDATE,
+            type=NotificationType.CARD_REJECTED.value,
             title="Возможность отклонена",
             message=f"Ваша возможность «{opportunity.title}» отклонена ❌."
                     + (f" Причина: {data.comment}" if data.comment else ""),
-            link="/company/opportunities",
+            data={"opportunity_id": opportunity.id, "link": "/company/opportunities"},
         )
         db.add(notification)
 
@@ -426,11 +370,11 @@ async def request_changes(
     if opportunity.company and opportunity.company.owner_id:
         notification = Notification(
             user_id=opportunity.company.owner_id,
-            type=NotificationType.MODERATION_UPDATE,
+            type=NotificationType.SYSTEM.value,
             title="Требуются изменения",
             message=f"В возможности «{opportunity.title}» требуются изменения."
                     + (f" Комментарий: {data.comment}" if data.comment else ""),
-            link="/company/opportunities",
+            data={"opportunity_id": opportunity.id, "link": "/company/opportunities"},
         )
         db.add(notification)
 

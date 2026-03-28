@@ -44,6 +44,7 @@ class NotificationType(enum.Enum):  # ← УБРАЛИ str
     APPLICATION_STATUS_CHANGED = "application_status_changed"
     APPLICATION_ACCEPTED = "application_accepted"
     APPLICATION_REJECTED = "application_rejected"
+    APPLICATION_STATUS = "application_status"
     
     # Отзывы
     NEW_REVIEW = "new_review"

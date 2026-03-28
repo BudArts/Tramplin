@@ -4,7 +4,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
-from app.routers import reviews
 import os
 import sys
 
@@ -93,89 +92,40 @@ if HAS_ERROR_HANDLERS:
     app.add_exception_handler(Exception, general_exception_handler)
 
 
-# === Функция безопасной загрузки роутера ===
-def load_router(module_path: str, router_attr: str = "router"):
-    """Загружает роутер, возвращает None если ошибка"""
-    try:
-        print(f"  🔍 Пытаюсь загрузить: {module_path}")
-        module = __import__(module_path, fromlist=[router_attr])
-        router = getattr(module, router_attr)
-        print(f"  ✅ Успешно загружен: {module_path}")
-        return router
-    except Exception as e:
-        print(f"  ❌ Ошибка загрузки {module_path}: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
-
-
 # === Роутеры ===
-
-# Основные (обязательные)
-print("\n📡 Загрузка основных роутеров:")
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.company_registration import router as company_registration_router
 from app.routers.companies import router as companies_router
+from app.routers.reviews import router as reviews_router
+from app.routers.tags import router as tags_router
+from app.routers.opportunities import router as opportunities_router
+from app.routers.applications import router as applications_router
+from app.routers.favorites import router as favorites_router
+from app.routers.notifications import router as notifications_router
+from app.routers.contacts import router as contacts_router
+from app.routers.chat import router as chat_router
+from app.routers.uploads import router as uploads_router
+from app.routers.support import router as support_router
+from app.routers.curator import router as curator_router
 
 app.include_router(auth_router)
-print("  ✅ auth_router загружен")
 app.include_router(users_router)
-print("  ✅ users_router загружен")
 app.include_router(company_registration_router)
-print("  ✅ company_registration_router загружен")
 app.include_router(companies_router)
-print("  ✅ companies_router загружен")
-app.include_router(reviews.router)
-print("  ✅ reviews_router загружен")
+app.include_router(reviews_router)
+app.include_router(tags_router)
+app.include_router(opportunities_router)
+app.include_router(applications_router)
+app.include_router(favorites_router)
+app.include_router(notifications_router)
+app.include_router(contacts_router)
+app.include_router(chat_router)
+app.include_router(uploads_router)
+app.include_router(support_router)
+app.include_router(curator_router)
 
-# Опциональные роутеры
-print("\n📡 Загрузка опциональных роутеров:")
-routers_to_load = [
-    "app.routers.tags",
-    "app.routers.opportunities",
-    "app.routers.applications",
-    "app.routers.favorites",
-    "app.routers.notifications",
-    "app.routers.contacts",
-    "app.routers.chat",
-    "app.routers.uploads",
-    "app.routers.support",
-    "app.routers.curator",  # Кураторский роутер
-]
-
-for module_path in routers_to_load:
-    router = load_router(module_path)
-    if router:
-        app.include_router(router)
-        print(f"  ✅ Включен в приложение: {module_path}")
-    else:
-        print(f"  ⚠️ Пропущен: {module_path}")
-
-# Принудительная загрузка curator роутера, если он не загрузился
-print("\n📡 Проверка принудительной загрузки curator:")
-try:
-    from app.routers.curator import router as curator_router
-    # Проверяем, не загружен ли уже
-    already_loaded = False
-    for route in app.routes:
-        if hasattr(route, 'path') and route.path.startswith('/api/curator'):
-            already_loaded = True
-            break
-    
-    if not already_loaded:
-        app.include_router(curator_router)
-        print("  ✅ Принудительно загружен: app.routers.curator")
-    else:
-        print("  ℹ️ Curator роутер уже загружен")
-except Exception as e:
-    print(f"  ❌ Ошибка принудительной загрузки curator: {e}")
-    import traceback
-    traceback.print_exc()
-
-print("\n" + "=" * 60)
-print("✅ Все роутеры загружены")
-print("=" * 60)
+print("\n✅ Все роутеры загружены")
 
 # === Static files ===
 os.makedirs("uploads", exist_ok=True)
@@ -206,7 +156,6 @@ async def debug_cors():
 async def health_check():
     return {"status": "healthy"}
 
-# Добавим эндпоинт для проверки загруженных роутеров
 @app.get("/debug/routes", tags=["Debug"])
 async def list_routes():
     """Список всех загруженных маршрутов (для отладки)"""

@@ -113,7 +113,7 @@ const CompaniesPage = () => {
   const fetchCompanies = async () => {
     const token = localStorage.getItem('access_token');
     try {
-      const response = await fetch('/companies?limit=50', {
+      const response = await fetch('/companies/', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (response.ok) {
