@@ -8,6 +8,7 @@ import InteractiveMap from '../components/InteractiveMap';
 import OpportunityList, { OpportunityListRef } from '../components/OpportunityList';
 import CompanyRatingSection from '../components/CompanyRatingSection';
 import AuthModal from '../components/AuthModal';
+import PasswordResetModal from '../components/PasswordResetModal';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 import type { OpportunityResponse, OpportunityType } from '../api/types';
@@ -31,6 +32,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuthModal }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [passwordResetModalOpen, setPasswordResetModalOpen] = useState(false);
   const [displayedOpportunities, setDisplayedOpportunities] = useState<OpportunityResponse[]>([]);
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -61,6 +63,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuthModal }) => {
 
   const handleCloseAuthModal = () => {
     setIsAuthModalOpen(false);
+  };
+
+  const handleOpenPasswordReset = () => {
+    setIsAuthModalOpen(false);
+    setPasswordResetModalOpen(true);
   };
 
   const handleFilterChange = useCallback((partial: Partial<Filters>) => {
@@ -138,6 +145,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuthModal }) => {
         isOpen={isAuthModalOpen}
         onClose={handleCloseAuthModal}
         defaultMode={authModalMode}
+        onForgotPassword={handleOpenPasswordReset}
+      />
+
+      <PasswordResetModal
+        isOpen={passwordResetModalOpen}
+        onClose={() => setPasswordResetModalOpen(false)}
+        mode="request"
       />
     </div>
   );

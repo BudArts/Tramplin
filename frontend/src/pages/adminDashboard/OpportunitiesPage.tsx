@@ -1,4 +1,4 @@
-// frontend/src/pages/curatorDashboard/OpportunitiesPage.tsx
+// frontend/src/pages/adminDashboard/OpportunitiesPage.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
@@ -18,6 +18,7 @@ import {
   Clock,
   MessageCircle,
   Filter,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -49,7 +50,7 @@ interface Opportunity {
   event_date?: string;
 }
 
-interface CuratorContext {
+interface AdminContext {
   user: any;
   refreshStats: () => void;
   stats: any;
@@ -58,7 +59,7 @@ interface CuratorContext {
 const OpportunitiesPage = () => {
   const navigate = useNavigate();
   const { opportunityId } = useParams();
-  const { refreshStats } = useOutletContext<CuratorContext>();
+  const { refreshStats } = useOutletContext<AdminContext>();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ const OpportunitiesPage = () => {
 
   useEffect(() => {
     fetchOpportunities();
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
     if (opportunityId && !modalOpen && opportunities.length > 0) {
@@ -87,7 +88,7 @@ const OpportunitiesPage = () => {
 
   useEffect(() => {
     filterOpportunities();
-  }, [opportunities, searchQuery, typeFilter]);
+  }, [opportunities, searchQuery, typeFilter, statusFilter]);
 
   const fetchOpportunities = async () => {
     const token = localStorage.getItem('access_token');
@@ -95,35 +96,32 @@ const OpportunitiesPage = () => {
 
     setLoading(true);
     try {
-      // Используем единый эндпоинт с query-параметрами
-      let url = '/api/curator/opportunities?per_page=200';
-      
-      // Добавляем фильтр по статусу модерации
-      if (statusFilter === 'pending') {
-        url += '&moderation_status=pending';
-      } else if (statusFilter === 'approved') {
-        url += '&moderation_status=approved';
-      } else if (statusFilter === 'rejected') {
-        url += '&moderation_status=rejected';
-      } else if (statusFilter === 'changes_requested') {
-        url += '&moderation_status=changes_requested';
-      }
-      // Для 'all' не добавляем фильтр
-      
+      // Используем эндпоинт /api/curator/opportunities для получения всех возможностей
+      // (этот эндпоинт должен быть доступен для кураторов и админов)
+      const url = '/api/curator/opportunities?per_page=200';
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
       if (response.ok) {
         const data = await response.json();
-        // Обрабатываем пагинированный ответ
-        const items = data.items || data;
+        // Обрабатываем как массив или как объект с items
+        const items = Array.isArray(data) ? data : (data.items || []);
         setOpportunities(items);
         setFilteredOpportunities(items);
       } else {
         console.error('Failed to fetch opportunities:', response.status);
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error details:', errorData);
+        // Fallback: пробуем получить через обычный эндпоинт с расширенными правами
+        const fallbackResponse = await fetch('/api/opportunities?per_page=200', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (fallbackResponse.ok) {
+          const data = await fallbackResponse.json();
+          const items = data.items || [];
+          // Фильтруем, чтобы получить все возможности (не только активные)
+          setOpportunities(items);
+          setFilteredOpportunities(items);
+        }
       }
     } catch (error) {
       console.error('Error fetching opportunities:', error);
@@ -135,6 +133,18 @@ const OpportunitiesPage = () => {
   const filterOpportunities = () => {
     let filtered = [...opportunities];
     
+    // Фильтр по статусу модерации
+    if (statusFilter === 'pending') {
+      filtered = filtered.filter(opp => opp.moderation_status === 'pending');
+    } else if (statusFilter === 'approved') {
+      filtered = filtered.filter(opp => opp.moderation_status === 'approved');
+    } else if (statusFilter === 'rejected') {
+      filtered = filtered.filter(opp => opp.moderation_status === 'rejected');
+    } else if (statusFilter === 'changes_requested') {
+      filtered = filtered.filter(opp => opp.moderation_status === 'changes_requested');
+    }
+    
+    // Поиск
     if (searchQuery) {
       filtered = filtered.filter(opp =>
         opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -142,6 +152,7 @@ const OpportunitiesPage = () => {
       );
     }
     
+    // Фильтр по типу
     if (typeFilter) {
       filtered = filtered.filter(opp => opp.type === typeFilter);
     }
@@ -152,7 +163,7 @@ const OpportunitiesPage = () => {
   const handleOpportunityClick = async (opportunity: Opportunity) => {
     setSelectedOpportunity(opportunity);
     setModalOpen(true);
-    navigate(`/curator/opportunities/${opportunity.id}`, { replace: true });
+    navigate(`/admin/opportunities/${opportunity.id}`, { replace: true });
   };
 
   const approveOpportunity = async (opportunityId: number) => {
@@ -161,11 +172,9 @@ const OpportunitiesPage = () => {
     if (!token) return;
 
     try {
-      // Используем правильный эндпоинт из спецификации
       const response = await fetch(`/api/curator/opportunities/${opportunityId}/approve`, {
-        method: 'PATCH', // Согласно спецификации PATCH
+        method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       });
@@ -174,7 +183,7 @@ const OpportunitiesPage = () => {
         await fetchOpportunities();
         refreshStats();
         setModalOpen(false);
-        navigate('/curator/opportunities');
+        navigate('/admin/opportunities');
         alert('Возможность успешно одобрена');
       } else {
         const error = await response.json();
@@ -194,14 +203,12 @@ const OpportunitiesPage = () => {
     if (!token) return;
 
     try {
-      // Используем правильный эндпоинт из спецификации
       const response = await fetch(`/api/curator/opportunities/${opportunityId}/reject`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        // Отправляем comment в теле запроса, как указано в спецификации
         body: JSON.stringify({ comment }),
       });
 
@@ -210,7 +217,7 @@ const OpportunitiesPage = () => {
         refreshStats();
         setModalOpen(false);
         setShowRejectModal(false);
-        navigate('/curator/opportunities');
+        navigate('/admin/opportunities');
         alert('Возможность отклонена');
       } else {
         const error = await response.json();
@@ -230,7 +237,6 @@ const OpportunitiesPage = () => {
     if (!token) return;
 
     try {
-      // Используем правильный эндпоинт из спецификации
       const response = await fetch(`/api/curator/opportunities/${opportunityId}/request-changes`, {
         method: 'PATCH',
         headers: {
@@ -245,7 +251,7 @@ const OpportunitiesPage = () => {
         refreshStats();
         setModalOpen(false);
         setShowRejectModal(false);
-        navigate('/curator/opportunities');
+        navigate('/admin/opportunities');
         alert('Запрос на изменения отправлен');
       } else {
         const error = await response.json();
@@ -258,6 +264,41 @@ const OpportunitiesPage = () => {
       setActionLoading(false);
     }
   };
+
+  const deleteOpportunity = async (opportunityId: number) => {
+  if (!confirm('Вы уверены, что хотите удалить эту возможность? Все данные о ней (отклики, просмотры, избранное) будут безвозвратно удалены. Это действие нельзя отменить.')) return;
+  
+  setActionLoading(true);
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+
+  try {
+    // Используем правильный эндпоинт из спецификации: DELETE /api/opportunities/{opportunity_id}
+    const response = await fetch(`/api/opportunities/${opportunityId}`, {
+      method: 'DELETE',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (response.ok) {
+      await fetchOpportunities();
+      refreshStats();
+      setModalOpen(false);
+      navigate('/admin/opportunities');
+      alert('Возможность успешно удалена');
+    } else {
+      const error = await response.json().catch(() => null);
+      alert(error?.detail || 'Ошибка при удалении возможности');
+    }
+  } catch (error) {
+    console.error('Error deleting opportunity:', error);
+    alert('Ошибка сети. Проверьте подключение.');
+  } finally {
+    setActionLoading(false);
+  }
+};  
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -310,7 +351,6 @@ const OpportunitiesPage = () => {
     { value: 'changes_requested', label: 'Требуют изменений' },
     { value: 'approved', label: 'Одобренные' },
     { value: 'rejected', label: 'Отклоненные' },
-    { value: 'all', label: 'Все' },
   ];
 
   const typeOptions = [
@@ -321,9 +361,13 @@ const OpportunitiesPage = () => {
     { value: 'event', label: 'Мероприятия' },
   ];
 
+  const getStatusCount = (status: string) => {
+    return opportunities.filter(o => o.moderation_status === status).length;
+  };
+
   if (loading) {
     return (
-      <div className="curator-opportunities__loading">
+      <div className="admin-opportunities__loading">
         <div className="spinner"></div>
         <p>Загрузка возможностей...</p>
       </div>
@@ -331,9 +375,9 @@ const OpportunitiesPage = () => {
   }
 
   return (
-    <div className="curator-opportunities">
+    <div className="admin-opportunities">
       <motion.div
-        className="curator-opportunities__header"
+        className="admin-opportunities__header"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -341,25 +385,23 @@ const OpportunitiesPage = () => {
         <p>Проверка и одобрение вакансий, стажировок, мероприятий и менторских программ</p>
       </motion.div>
 
-      <div className="curator-opportunities__status-tabs">
+      <div className="admin-opportunities__status-tabs">
         {statusOptions.map(option => (
           <button
             key={option.value}
-            className={`curator-opportunities__status-tab ${statusFilter === option.value ? 'active' : ''}`}
+            className={`admin-opportunities__status-tab ${statusFilter === option.value ? 'active' : ''}`}
             onClick={() => setStatusFilter(option.value)}
           >
             {option.label}
-            {option.value === 'pending' && opportunities.filter(o => o.moderation_status === 'pending').length > 0 && (
-              <span className="curator-opportunities__tab-count">
-                {opportunities.filter(o => o.moderation_status === 'pending').length}
-              </span>
+            {getStatusCount(option.value) > 0 && (
+              <span className="admin-opportunities__tab-count">{getStatusCount(option.value)}</span>
             )}
           </button>
         ))}
       </div>
 
-      <div className="curator-opportunities__toolbar">
-        <div className="curator-opportunities__search">
+      <div className="admin-opportunities__toolbar">
+        <div className="admin-opportunities__search">
           <Search size={20} />
           <input
             type="text"
@@ -374,7 +416,7 @@ const OpportunitiesPage = () => {
           )}
         </div>
         <button 
-          className={`curator-opportunities__filter-toggle ${showFilters ? 'active' : ''}`}
+          className={`admin-opportunities__filter-toggle ${showFilters ? 'active' : ''}`}
           onClick={() => setShowFilters(!showFilters)}
         >
           <Filter size={20} />
@@ -384,11 +426,11 @@ const OpportunitiesPage = () => {
 
       {showFilters && (
         <motion.div 
-          className="curator-opportunities__filters"
+          className="admin-opportunities__filters"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="curator-opportunities__filter-group">
+          <div className="admin-opportunities__filter-group">
             <label>Тип возможности</label>
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
               {typeOptions.map(opt => (
@@ -399,10 +441,10 @@ const OpportunitiesPage = () => {
         </motion.div>
       )}
 
-      <div className="curator-opportunities__list">
+      <div className="admin-opportunities__list">
         {filteredOpportunities.length === 0 ? (
-          <div className="curator-opportunities__empty">
-            <div className="curator-opportunities__empty-icon"><Briefcase size={48} /></div>
+          <div className="admin-opportunities__empty">
+            <div className="admin-opportunities__empty-icon"><Briefcase size={48} /></div>
             <h3>Нет возможностей</h3>
             <p>Возможности не найдены</p>
           </div>
@@ -412,57 +454,57 @@ const OpportunitiesPage = () => {
             return (
               <motion.div
                 key={opp.id}
-                className="curator-opportunities__card"
+                className="admin-opportunities__card"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
                 onClick={() => handleOpportunityClick(opp)}
               >
-                <div className="curator-opportunities__card-badges">
-                  <span className={`curator-opportunities__type-badge curator-opportunities__type-badge--${opp.type}`}>
+                <div className="admin-opportunities__card-badges">
+                  <span className={`admin-opportunities__type-badge admin-opportunities__type-badge--${opp.type}`}>
                     {getTypeLabel(opp.type)}
                   </span>
-                  <span className="curator-opportunities__format-badge">
+                  <span className="admin-opportunities__format-badge">
                     {getFormatLabel(opp.work_format)}
                   </span>
-                  <span className="curator-opportunities__status-badge" style={{ backgroundColor: `${statusConfig.color}20`, color: statusConfig.color }}>
+                  <span className="admin-opportunities__status-badge" style={{ backgroundColor: `${statusConfig.color}20`, color: statusConfig.color }}>
                     {statusConfig.label}
                   </span>
                 </div>
-                <h3 className="curator-opportunities__card-title">{opp.title}</h3>
-                <div className="curator-opportunities__card-company">
+                <h3 className="admin-opportunities__card-title">{opp.title}</h3>
+                <div className="admin-opportunities__card-company">
                   {opp.company?.logo_url ? (
                     <img src={opp.company.logo_url} alt={opp.company.name} />
                   ) : (
-                    <div className="curator-opportunities__card-company-placeholder">
+                    <div className="admin-opportunities__card-company-placeholder">
                       {opp.company?.name?.[0] || '?'}
                     </div>
                   )}
                   <span>{opp.company?.display_name || opp.company?.name}</span>
                 </div>
-                <div className="curator-opportunities__card-meta">
-                  <div className="curator-opportunities__card-meta-item">
+                <div className="admin-opportunities__card-meta">
+                  <div className="admin-opportunities__card-meta-item">
                     <MapPin size={14} />
                     <span>{opp.city}</span>
                   </div>
                   {formatSalary(opp.salary_min, opp.salary_max) && (
-                    <div className="curator-opportunities__card-meta-item curator-opportunities__card-salary">
+                    <div className="admin-opportunities__card-meta-item admin-opportunities__card-salary">
                       {formatSalary(opp.salary_min, opp.salary_max)}
                     </div>
                   )}
-                  <div className="curator-opportunities__card-meta-item">
+                  <div className="admin-opportunities__card-meta-item">
                     <Calendar size={14} />
                     <span>{formatDate(opp.created_at)}</span>
                   </div>
                 </div>
                 {opp.tags && opp.tags.length > 0 && (
-                  <div className="curator-opportunities__card-tags">
+                  <div className="admin-opportunities__card-tags">
                     {opp.tags.slice(0, 3).map(tag => (
-                      <span key={tag.id} className="curator-opportunities__card-tag">{tag.name}</span>
+                      <span key={tag.id} className="admin-opportunities__card-tag">{tag.name}</span>
                     ))}
                   </div>
                 )}
-                <button className="curator-opportunities__card-btn">
+                <button className="admin-opportunities__card-btn">
                   Проверить <ChevronRight size={16} />
                 </button>
               </motion.div>
@@ -475,40 +517,40 @@ const OpportunitiesPage = () => {
       <AnimatePresence>
         {modalOpen && selectedOpportunity && (
           <motion.div
-            className="curator-modal__backdrop"
+            className="admin-modal__backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => {
               setModalOpen(false);
-              navigate('/curator/opportunities');
+              navigate('/admin/opportunities');
             }}
           >
             <motion.div
-              className="curator-modal__content curator-modal__content--large"
+              className="admin-modal__content admin-modal__content--large"
               initial={{ scale: 0.9, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 30 }}
               onClick={e => e.stopPropagation()}
             >
-              <button className="curator-modal__close" onClick={() => {
+              <button className="admin-modal__close" onClick={() => {
                 setModalOpen(false);
-                navigate('/curator/opportunities');
+                navigate('/admin/opportunities');
               }}>
                 <X size={20} />
               </button>
 
-              <div className="curator-modal__header">
-                <div className="curator-modal__info">
+              <div className="admin-modal__header">
+                <div className="admin-modal__info">
                   <h2>{selectedOpportunity.title}</h2>
-                  <div className="curator-modal__badges">
-                    <span className={`curator-modal__type-badge curator-modal__type-badge--${selectedOpportunity.type}`}>
+                  <div className="admin-modal__badges">
+                    <span className={`admin-modal__type-badge admin-modal__type-badge--${selectedOpportunity.type}`}>
                       {getTypeLabel(selectedOpportunity.type)}
                     </span>
-                    <span className="curator-modal__format-badge">
+                    <span className="admin-modal__format-badge">
                       {getFormatLabel(selectedOpportunity.work_format)}
                     </span>
-                    <span className="curator-modal__status-badge" style={{
+                    <span className="admin-modal__status-badge" style={{
                       backgroundColor: getModerationStatusLabel(selectedOpportunity.moderation_status).color + '20',
                       color: getModerationStatusLabel(selectedOpportunity.moderation_status).color
                     }}>
@@ -518,11 +560,11 @@ const OpportunitiesPage = () => {
                 </div>
               </div>
 
-              <div className="curator-modal__company">
+              <div className="admin-modal__company">
                 {selectedOpportunity.company?.logo_url ? (
                   <img src={selectedOpportunity.company.logo_url} alt={selectedOpportunity.company.name} />
                 ) : (
-                  <div className="curator-modal__company-placeholder">
+                  <div className="admin-modal__company-placeholder">
                     {selectedOpportunity.company?.name?.[0] || '?'}
                   </div>
                 )}
@@ -531,71 +573,71 @@ const OpportunitiesPage = () => {
                 </div>
               </div>
 
-              <div className="curator-modal__info-grid">
-                <div className="curator-modal__info-item">
+              <div className="admin-modal__info-grid">
+                <div className="admin-modal__info-item">
                   <MapPin size={16} />
                   <span>{selectedOpportunity.city}</span>
                 </div>
                 {selectedOpportunity.address && (
-                  <div className="curator-modal__info-item">
+                  <div className="admin-modal__info-item">
                     <Building2 size={16} />
                     <span>{selectedOpportunity.address}</span>
                   </div>
                 )}
-                <div className="curator-modal__info-item">
+                <div className="admin-modal__info-item">
                   <Briefcase size={16} />
                   <span>{formatSalary(selectedOpportunity.salary_min, selectedOpportunity.salary_max) || 'Зарплата не указана'}</span>
                 </div>
                 {selectedOpportunity.event_date && (
-                  <div className="curator-modal__info-item">
+                  <div className="admin-modal__info-item">
                     <Calendar size={16} />
                     <span>Дата мероприятия: {formatDate(selectedOpportunity.event_date)}</span>
                   </div>
                 )}
                 {selectedOpportunity.expires_at && (
-                  <div className="curator-modal__info-item">
+                  <div className="admin-modal__info-item">
                     <Clock size={16} />
                     <span>Действует до: {formatDate(selectedOpportunity.expires_at)}</span>
                   </div>
                 )}
-                <div className="curator-modal__info-item">
+                <div className="admin-modal__info-item">
                   <Eye size={16} />
                   <span>{selectedOpportunity.views_count} просмотров</span>
                 </div>
-                <div className="curator-modal__info-item">
+                <div className="admin-modal__info-item">
                   <MessageCircle size={16} />
                   <span>{selectedOpportunity.applications_count} откликов</span>
                 </div>
               </div>
 
-              <div className="curator-modal__description">
+              <div className="admin-modal__description">
                 <h4>Описание</h4>
                 <p>{selectedOpportunity.description}</p>
               </div>
 
               {selectedOpportunity.tags && selectedOpportunity.tags.length > 0 && (
-                <div className="curator-modal__tags">
+                <div className="admin-modal__tags">
                   <h4>Навыки и технологии</h4>
-                  <div className="curator-modal__tags-list">
+                  <div className="admin-modal__tags-list">
                     {selectedOpportunity.tags.map(tag => (
-                      <span key={tag.id} className="curator-modal__tag">{tag.name}</span>
+                      <span key={tag.id} className="admin-modal__tag">{tag.name}</span>
                     ))}
                   </div>
                 </div>
               )}
 
               {selectedOpportunity.moderation_comment && (
-                <div className="curator-modal__comment">
+                <div className="admin-modal__comment">
                   <h4>Комментарий модератора</h4>
                   <p>{selectedOpportunity.moderation_comment}</p>
                 </div>
               )}
 
-              <div className="curator-modal__actions">
+              <div className="admin-modal__actions">
                 {selectedOpportunity.moderation_status === 'pending' && (
                   <>
                     <button
-                      className="curator-modal__action-btn curator-modal__action-btn--approve"
+                      className="admin-modal__action-btn admin-modal__action-btn--approve"
                       onClick={() => approveOpportunity(selectedOpportunity.id)}
                       disabled={actionLoading}
                     >
@@ -603,7 +645,7 @@ const OpportunitiesPage = () => {
                       <span>Одобрить</span>
                     </button>
                     <button
-                      className="curator-modal__action-btn curator-modal__action-btn--changes"
+                      className="admin-modal__action-btn admin-modal__action-btn--changes"
                       onClick={() => setShowRejectModal(true)}
                       disabled={actionLoading}
                     >
@@ -611,7 +653,7 @@ const OpportunitiesPage = () => {
                       <span>Запросить изменения</span>
                     </button>
                     <button
-                      className="curator-modal__action-btn curator-modal__action-btn--reject"
+                      className="admin-modal__action-btn admin-modal__action-btn--reject"
                       onClick={() => rejectOpportunity(selectedOpportunity.id)}
                       disabled={actionLoading}
                     >
@@ -620,8 +662,19 @@ const OpportunitiesPage = () => {
                     </button>
                   </>
                 )}
+                
+                {/* Кнопка удаления - всегда доступна для админа */}
+                <button
+                  className="admin-modal__action-btn admin-modal__action-btn--delete"
+                  onClick={() => deleteOpportunity(selectedOpportunity.id)}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? <Loader2 size={18} className="spinner" /> : <Trash2 size={18} />}
+                  <span>Удалить</span>
+                </button>
+                
                 {selectedOpportunity.moderation_status === 'changes_requested' && (
-                  <div className="curator-modal__info-message">
+                  <div className="admin-modal__info-message">
                     <AlertCircle size={18} />
                     <span>Запрошены изменения. Ожидается ответ от компании.</span>
                   </div>
@@ -636,14 +689,14 @@ const OpportunitiesPage = () => {
       <AnimatePresence>
         {showRejectModal && selectedOpportunity && (
           <motion.div
-            className="curator-modal__backdrop"
+            className="admin-modal__backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowRejectModal(false)}
           >
             <motion.div
-              className="curator-modal__content curator-modal__content--small"
+              className="admin-modal__content admin-modal__content--small"
               initial={{ scale: 0.9, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 30 }}
@@ -656,15 +709,15 @@ const OpportunitiesPage = () => {
                 placeholder="Укажите, что нужно исправить в возможности..."
                 rows={4}
               />
-              <div className="curator-modal__actions">
+              <div className="admin-modal__actions">
                 <button
-                  className="curator-modal__action-btn curator-modal__action-btn--cancel"
+                  className="admin-modal__action-btn admin-modal__action-btn--cancel"
                   onClick={() => setShowRejectModal(false)}
                 >
                   Отмена
                 </button>
                 <button
-                  className="curator-modal__action-btn curator-modal__action-btn--changes"
+                  className="admin-modal__action-btn admin-modal__action-btn--changes"
                   onClick={() => requestChanges(selectedOpportunity.id, rejectReason)}
                   disabled={actionLoading || !rejectReason.trim()}
                 >

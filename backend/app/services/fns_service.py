@@ -1,5 +1,5 @@
-# backend/app/services/fns_service.py
-# backend/app/services/fns_service.py
+
+
 import httpx
 from typing import Optional, Dict, Any
 from app.config import settings
@@ -15,21 +15,21 @@ class FNSService:
     def __init__(self):
         self.api_url = settings.FNS_API_URL
         self.api_key = settings.FNS_API_KEY
-        self.dadata_key = settings.DADATA_API_KEY  # Отдельный ключ для DaData
+        self.dadata_key = settings.DADATA_API_KEY  
     
     async def get_company_by_inn(self, inn: str) -> Optional[CompanyFNSData]:
         """
         Получить данные компании по ИНН из ФНС API
         """
-        # Проверка валидности ИНН
+        
         if not self.validate_inn(inn):
             logger.error(f"Invalid INN format: {inn}")
             return None
         
-        # Пробуем сначала основной API
+        
         result = await self._get_company_from_fns(inn)
         
-        # Если основной API не работает, пробуем DaData
+        
         if result is None and self.dadata_key:
             logger.info(f"Trying DaData for INN: {inn}")
             result = await self.get_company_by_inn_dadata(inn)
@@ -42,7 +42,7 @@ class FNSService:
         """
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # Проверяем, что URL и ключ не пустые
+                
                 if not self.api_url or not self.api_key:
                     logger.warning("FNS API URL or KEY not configured")
                     return None
@@ -55,7 +55,7 @@ class FNSService:
                     }
                 )
                 
-                # Логируем статус и ответ для отладки
+                
                 logger.info(f"FNS API response status: {response.status_code}")
                 
                 if response.status_code != 200:
@@ -63,7 +63,7 @@ class FNSService:
                     logger.error(f"Response content: {response.text[:500]}")
                     return None
                 
-                # Проверяем, не пустой ли ответ
+                
                 if not response.text:
                     logger.error("Empty response from FNS API")
                     return None
@@ -75,14 +75,14 @@ class FNSService:
                     logger.error(f"Response text: {response.text[:500]}")
                     return None
                 
-                # Парсинг ответа
+                
                 if "items" not in data or len(data["items"]) == 0:
                     logger.warning(f"Company not found for INN: {inn}")
                     return None
                 
                 item = data["items"][0]
                 
-                # Извлекаем данные
+                
                 fns_data = CompanyFNSData(
                     inn=inn,
                     ogrn=item.get("ОГРН") or item.get("ogrn"),
@@ -110,12 +110,12 @@ class FNSService:
         """
         Альтернативный метод через DaData API
         """
-        # Проверяем, что токен установлен
+        
         if not self.dadata_key:
             logger.error("DaData API key is not configured")
             return None
         
-        # Очищаем токен от лишних пробелов
+        
         dadata_token = self.dadata_key.strip()
         
         try:
@@ -140,7 +140,7 @@ class FNSService:
                     logger.error(f"Response: {response.text[:500]}")
                     return None
                 
-                # Проверяем, не пустой ли ответ
+                
                 if not response.text:
                     logger.error("Empty response from DaData API")
                     return None
@@ -181,7 +181,7 @@ class FNSService:
             logger.error(f"DaData API error for INN {inn}: {e}")
             return None
     
-    # ... остальные методы остаются без изменений
+    
                 
         except httpx.TimeoutException:
             logger.error(f"FNS API timeout for INN: {inn}")
@@ -195,7 +195,7 @@ class FNSService:
         Альтернативный метод через DaData API
         (более надёжный, но платный)
         """
-        dadata_token = settings.FNS_API_KEY  # Или отдельный токен для DaData
+        dadata_token = settings.FNS_API_KEY  
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -243,7 +243,7 @@ class FNSService:
     
     def _extract_name(self, item: Dict[str, Any]) -> str:
         """Извлечение названия компании"""
-        # Пробуем разные варианты ключей
+        
         name_keys = ["НаsimПолworking", "name", "full_name", "Наименование"]
         for key in name_keys:
             if key in item and item[key]:
@@ -311,13 +311,13 @@ class FNSService:
             return False
         
         if len(inn) == 10:
-            # ИНН юридического лица
+            
             coefficients = [2, 4, 10, 3, 5, 9, 4, 6, 8]
             checksum = sum(int(inn[i]) * coefficients[i] for i in range(9)) % 11 % 10
             return checksum == int(inn[9])
         
         elif len(inn) == 12:
-            # ИНН физического лица / ИП
+            
             coef1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
             coef2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
             
@@ -329,5 +329,5 @@ class FNSService:
         return False
 
 
-# Singleton
+
 fns_service = FNSService()

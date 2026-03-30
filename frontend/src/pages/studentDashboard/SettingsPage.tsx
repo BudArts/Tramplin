@@ -2,8 +2,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useOutletContext } from 'react-router-dom';
-import { Settings, Eye, EyeOff, Globe, Lock, Shield, Save, Users } from 'lucide-react';
+import { 
+  Settings, Eye, EyeOff, Globe, Lock, Shield, Save, Users, 
+  HelpCircle, Trash2, Key, Mail, Bell, MessageSquare, AlertTriangle
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import SupportModal from '../../components/SupportModal';
+import DeleteAccountModal from '../../components/DeleteAccountModal';
+import PasswordResetModal from '../../components/PasswordResetModal';
 
 interface UserData {
   id: number;
@@ -31,6 +37,11 @@ const SettingsPage = () => {
   const [resumePrivacy, setResumePrivacy] = useState<'public' | 'contacts_only' | 'private'>(
     user.resume_privacy || 'public'
   );
+  
+  // Модальные окна
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [passwordResetModalOpen, setPasswordResetModalOpen] = useState(false);
 
   const privacyOptions = [
     { value: 'public', label: 'Все авторизованные пользователи', icon: Globe, description: 'Ваш профиль виден всем зарегистрированным пользователям' },
@@ -78,9 +89,9 @@ const SettingsPage = () => {
       <motion.div className="student-settings__header" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="student-settings__title-wrapper">
           <Settings size={28} />
-          <h1>Настройки приватности</h1>
+          <h1>Настройки</h1>
         </div>
-        <p>Управляйте тем, кто может видеть ваш профиль и резюме</p>
+        <p>Управляйте приватностью, безопасностью и другими параметрами</p>
       </motion.div>
 
       {message && (
@@ -105,6 +116,7 @@ const SettingsPage = () => {
       )}
 
       <div className="student-settings__grid">
+        {/* Приватность профиля */}
         <motion.div
           className="student-settings__section"
           initial={{ opacity: 0, y: 20 }}
@@ -148,6 +160,7 @@ const SettingsPage = () => {
           </div>
         </motion.div>
 
+        {/* Приватность резюме */}
         <motion.div
           className="student-settings__section"
           initial={{ opacity: 0, y: 20 }}
@@ -190,13 +203,91 @@ const SettingsPage = () => {
             })}
           </div>
         </motion.div>
+
+        {/* Безопасность */}
+        <motion.div
+          className="student-settings__section"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <div className="student-settings__section-header">
+            <Shield size={20} />
+            <h2>Безопасность</h2>
+          </div>
+          <div className="student-settings__actions-list">
+            <button
+              className="student-settings__action-btn"
+              onClick={() => setPasswordResetModalOpen(true)}
+            >
+              <Key size={18} />
+              <div className="student-settings__action-content">
+                <span className="student-settings__action-title">Сменить пароль</span>
+                <span className="student-settings__action-desc">
+                  Обновите пароль для входа в аккаунт
+                </span>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+            <button
+              className="student-settings__action-btn"
+              onClick={() => setSupportModalOpen(true)}
+            >
+              <HelpCircle size={18} />
+              <div className="student-settings__action-content">
+                <span className="student-settings__action-title">Служба поддержки</span>
+                <span className="student-settings__action-desc">
+                  Задать вопрос или сообщить о проблеме
+                </span>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Опасная зона */}
+        <motion.div
+          className="student-settings__section student-settings__section--danger"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="student-settings__section-header">
+            <AlertTriangle size={20} />
+            <h2>Опасная зона</h2>
+          </div>
+          <p className="student-settings__section-desc">
+            Действия, которые нельзя отменить
+          </p>
+          <div className="student-settings__actions-list">
+            <button
+              className="student-settings__action-btn student-settings__action-btn--danger"
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              <Trash2 size={18} />
+              <div className="student-settings__action-content">
+                <span className="student-settings__action-title">Удалить аккаунт</span>
+                <span className="student-settings__action-desc">
+                  Безвозвратное удаление всех данных
+                </span>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </motion.div>
       </div>
 
       <motion.div
         className="student-settings__actions"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.35 }}
       >
         <button className="student-settings__save-btn" onClick={handleSave} disabled={loading}>
           {loading ? (
@@ -225,6 +316,11 @@ const SettingsPage = () => {
           Для просмотра вакансий и откликов настройки приватности не влияют.
         </p>
       </motion.div>
+
+      {/* Модальные окна */}
+      <SupportModal isOpen={supportModalOpen} onClose={() => setSupportModalOpen(false)} />
+      <DeleteAccountModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} />
+      <PasswordResetModal isOpen={passwordResetModalOpen} onClose={() => setPasswordResetModalOpen(false)} mode="request" />
     </div>
   );
 };

@@ -238,6 +238,56 @@ async def verify_company(
     )
 
 # === Модерация возможностей ===
+@router.get(
+    "/opportunities",
+    response_model=list[OpportunityResponse],
+    summary="Список всех возможностей для модерации",
+)
+async def get_all_opportunities(
+    moderation_status: Optional[str] = None,
+    search: Optional[str] = None,
+    type: Optional[str] = None,
+    user: User = Depends(require_role(*CURATOR_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Получение списка всех возможностей для модерации.
+    Доступно только кураторам и администраторам.
+    """
+    query = select(Opportunity).options(
+        selectinload(Opportunity.tags),
+        selectinload(Opportunity.company)
+    )
+    
+    # Фильтр по статусу модерации
+    if moderation_status:
+        try:
+            status = ModerationStatus(moderation_status)
+            query = query.where(Opportunity.moderation_status == status)
+        except ValueError:
+            pass
+    
+    # Фильтр по типу
+    if type:
+        query = query.where(Opportunity.type == type)
+    
+    # Поиск по названию или компании
+    if search:
+        query = query.where(
+            or_(
+                Opportunity.title.ilike(f"%{search}%"),
+                Opportunity.company.has(Company.full_name.ilike(f"%{search}%")),
+                Opportunity.company.has(Company.brand_name.ilike(f"%{search}%"))
+            )
+        )
+    
+    query = query.order_by(Opportunity.created_at.desc())
+    
+    result = await db.execute(query)
+    opportunities = result.scalars().all()
+    
+    return opportunities
+
 @router.patch(
     "/opportunities/{opportunity_id}/approve",
     response_model=MessageResponse,

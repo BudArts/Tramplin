@@ -98,11 +98,20 @@ async def get_map_points(
     db: AsyncSession = Depends(get_db)
 ):
     """Лёгкий эндпоинт для карты — возвращает только координаты, тип, название."""
-    query = select(Opportunity).where(
-        Opportunity.status == OpportunityStatus.ACTIVE,
-        Opportunity.moderation_status == ModerationStatus.APPROVED,
-        Opportunity.latitude.isnot(None),
-        Opportunity.longitude.isnot(None)
+    
+    # ✅ ИСПРАВЛЕНО: Добавляем selectinload
+    query = (
+        select(Opportunity)
+        .options(
+            selectinload(Opportunity.tags),      # ✅
+            selectinload(Opportunity.company),   # ✅
+        )
+        .where(
+            Opportunity.status == OpportunityStatus.ACTIVE,
+            Opportunity.moderation_status == ModerationStatus.APPROVED,
+            Opportunity.latitude.isnot(None),
+            Opportunity.longitude.isnot(None)
+        )
     )
     
     if type:
@@ -117,7 +126,7 @@ async def get_map_points(
         query = query.where(Opportunity.salary_min <= salary_max)
     
     result = await db.execute(query)
-    opportunities = result.scalars().all()
+    opportunities = result.scalars().unique().all()  # ✅ unique()
     
     # Фильтрация по тегам
     if tags:
@@ -163,16 +172,24 @@ async def get_map_points(
     summary="Мои возможности"
 )
 async def get_my_opportunities(
-    status: Optional[str] = None,
+    opportunity_status: Optional[str] = None,
     current_user: User = Depends(require_role(UserRole.EMPLOYER)),
     db: AsyncSession = Depends(get_db)
 ):
     """Список возможностей текущего работодателя."""
+    
     # Получаем компанию пользователя
     result = await db.execute(
         select(Company).where(Company.owner_id == current_user.id)
     )
     company = result.scalar_one_or_none()
+    
+    # ✅ ДОБАВЛЕНО: Если нет компании по owner_id, проверяем company_id пользователя
+    if not company and current_user.company_id:
+        result = await db.execute(
+            select(Company).where(Company.id == current_user.company_id)
+        )
+        company = result.scalar_one_or_none()
     
     if not company:
         raise HTTPException(
@@ -180,26 +197,25 @@ async def get_my_opportunities(
             detail="Компания не найдена"
         )
     
-    # Получаем возможности компании с загрузкой тегов и компании
+    # ✅ ИСПРАВЛЕНО: Добавляем selectinload для tags и company
     query = (
         select(Opportunity)
         .options(
-            selectinload(Opportunity.tags),  # ← теперь selectinload импортирован
-            selectinload(Opportunity.company)
+            selectinload(Opportunity.tags),      # ✅ Подгружаем теги
+            selectinload(Opportunity.company),   # ✅ Подгружаем компанию
         )
         .where(Opportunity.company_id == company.id)
     )
     
-    if status:
-        query = query.where(Opportunity.status == status)
+    if opportunity_status:
+        query = query.where(Opportunity.status == opportunity_status)
     
     query = query.order_by(Opportunity.created_at.desc())
     
     result = await db.execute(query)
-    opportunities = result.scalars().all()
+    opportunities = result.scalars().unique().all()  # ✅ unique() для избежания дублей
     
     return opportunities
-
 
 @router.get(
     "/{opportunity_id}",
@@ -249,9 +265,16 @@ async def create_opportunity(
 ):
     """Создание новой вакансии/стажировки/мероприятия/менторской программы."""
     
-    # Получаем компанию пользователя
+    # СПОСОБ 1: Получаем компанию через company_id пользователя
+    if not current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Компания не найдена. Ваш аккаунт не привязан к компании."
+        )
+    
+    # Получаем компанию по ID из профиля пользователя
     result = await db.execute(
-        select(Company).where(Company.owner_id == current_user.id)
+        select(Company).where(Company.id == current_user.company_id)
     )
     company = result.scalar_one_or_none()
     
@@ -278,7 +301,6 @@ async def create_opportunity(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-
 
 @router.put(
     "/{opportunity_id}",

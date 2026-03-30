@@ -91,7 +91,7 @@ async def create_application(
     # Уведомление работодателю
     notification = Notification(
         user_id=opportunity.company.owner_id,
-        type=NotificationType.APPLICATION_RECEIVED,
+        type=NotificationType.APPLICATION_RECEIVED.value,
         title="Новый отклик",
         message=f"{user.display_name or f'{user.first_name} {user.last_name}' or 'Пользователь'} откликнулся на «{opportunity.title}»",
         data={"opportunity_id": opportunity.id},

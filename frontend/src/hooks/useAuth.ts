@@ -22,7 +22,7 @@ export interface UserResponse {
     github_url: string | null;
     portfolio_url: string | null;
     telegram: string | null;
-    company_id: number | null; // Добавляем поле company_id
+    company_id: number | null;
     profile_privacy?: 'public' | 'contacts_only' | 'private';
     resume_privacy?: 'public' | 'contacts_only' | 'private';
     created_at: string;
@@ -297,12 +297,12 @@ export const useAuth = () => {
         return user?.role === 'company';
     }, [user]);
 
-    // Проверка, является ли пользователь куратором
+    // 🔧 ИСПРАВЛЕНО: Проверка, является ли пользователь куратором (ТОЛЬКО curator)
     const isCurator = useCallback(() => {
-        return user?.role === 'curator' || user?.role === 'admin';
+        return user?.role === 'curator';
     }, [user]);
 
-    // Проверка, является ли пользователь администратором
+    // 🔧 ИСПРАВЛЕНО: Проверка, является ли пользователь администратором
     const isAdmin = useCallback(() => {
         return user?.role === 'admin';
     }, [user]);
@@ -319,7 +319,7 @@ export const useAuth = () => {
         return user.display_name || `${user.first_name} ${user.last_name}`;
     }, [user]);
 
-    // Получение дашборда по роли
+    // 🔧 ИСПРАВЛЕНО: Получение дашборда по роли
     const getDashboardPath = useCallback(() => {
         if (!user) return '/';
         switch (user.role) {
@@ -328,8 +328,9 @@ export const useAuth = () => {
             case 'company':
                 return '/company';
             case 'curator':
-            case 'admin':
                 return '/curator';
+            case 'admin':
+                return '/admin';
             default:
                 return '/';
         }
@@ -349,7 +350,11 @@ export const useAuth = () => {
         }
         // Маршруты куратора
         if (path.startsWith('/curator')) {
-            return user.role === 'curator' || user.role === 'admin';
+            return user.role === 'curator';
+        }
+        // Маршруты администратора
+        if (path.startsWith('/admin')) {
+            return user.role === 'admin';
         }
         return true;
     }, [user]);

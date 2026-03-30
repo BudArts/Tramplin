@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional, Tuple, List
 from datetime import datetime, timezone
-
+import logging
+logger = logging.getLogger(__name__)
 from app.models.company import Company, CompanyStatus, VerificationStatus
 from app.models.user import User, UserRole, UserStatus
 from app.schemas.company import CompanyRegisterRequest, CompanyUpdate
@@ -62,14 +63,14 @@ class CompanyService:
         db: AsyncSession, 
         data: CompanyRegisterRequest
     ) -> Tuple[Company, User, bool]:
-        """Зарегистрировать компанию"""
+        """Зарегистрировать компанию и создать пользователя-владельца"""
+     
         
-        # Проверяем, существует ли компания с таким ИНН
+        # Проверки
         existing_company = await self.get_company_by_inn(db, data.inn)
         if existing_company:
             raise ValueError("Компания с таким ИНН уже зарегистрирована")
         
-        # Проверяем, существует ли пользователь с таким email
         result = await db.execute(
             select(User).where(User.email == data.user_email)
         )
@@ -77,30 +78,30 @@ class CompanyService:
         if existing_user:
             raise ValueError("Пользователь с таким email уже зарегистрирован")
         
-        # Проверяем, существует ли компания с таким email
         existing_company_email = await self.get_company_by_email(db, data.email)
         if existing_company_email:
             raise ValueError("Компания с таким email уже зарегистрирована")
         
-        # Сначала создаем компанию, чтобы получить ее ID
+        # Генерируем токен
+        import secrets
+        verification_token = secrets.token_urlsafe(32)
+        
+        # Создаем компанию
         company = Company(
             name=data.company_name,
             full_name=data.company_name,
             inn=data.inn,
             email=data.email,
             phone=data.phone,
-            website=None,
-            description=None,
-            city=None,
-            industry=None,
-            status=CompanyStatus.ACTIVE,
-            is_email_verified=True,
-            verification_status=VerificationStatus.PENDING
+            status=CompanyStatus.PENDING_EMAIL,
+            is_email_verified=False,
+            verification_status=VerificationStatus.PENDING,
+            email_verification_token=verification_token
         )
         db.add(company)
-        await db.flush()  # Получаем company.id
+        await db.flush()
         
-        # Создаем пользователя-владельца компании с company_id
+        # Создаем пользователя
         user = User(
             email=data.user_email,
             hashed_password=get_password_hash(data.user_password),
@@ -109,26 +110,27 @@ class CompanyService:
             patronymic=data.user_patronymic,
             role=UserRole.COMPANY,
             status=UserStatus.ACTIVE,
-            is_email_verified=True,
-            company_id=company.id  # ← ВАЖНО: связываем пользователя с компанией
+            is_email_verified=True,  # Пользователь сразу активен
+            company_id=company.id  # Связь с компанией
         )
         db.add(user)
+        await db.flush()
         
-        # Обновляем company.owner_id
+        # Связываем компанию с пользователем
         company.owner_id = user.id
         
         await db.commit()
-        await db.refresh(user)
         await db.refresh(company)
+        await db.refresh(user)
         
-        # Отправка email для подтверждения (опционально)
+        # Отправляем email
         email_sent = False
         try:
             from app.services.email_service import email_service
             email_sent = await email_service.send_company_verification_email(
-                email_to=company.email,
-                company_name=company.full_name,
-                verification_token="test_token"
+                email_to=data.email,
+                company_name=data.company_name,
+                verification_token=verification_token
             )
         except Exception as e:
             pass
@@ -166,19 +168,86 @@ class CompanyService:
         db: AsyncSession, 
         token: str
     ) -> Company:
-        """Подтвердить email компании по токену"""
+        """Подтвердить email компании по токену."""
+        from app.models.company import CompanyStatus, VerificationStatus
+        from datetime import datetime, timezone
+        
+        logger.info("=" * 60)
+        logger.info(f"🔍 ВЕРИФИКАЦИЯ EMAIL")
+        logger.info(f"   Токен: {token[:30]}..." if len(token) > 30 else f"   Токен: {token}")
+        
+        # Ищем компанию по токену
         result = await db.execute(
-            select(Company).where(
-                Company.verification_status == VerificationStatus.PENDING
-            ).limit(1)
+            select(Company).where(Company.email_verification_token == token)
         )
         company = result.scalar_one_or_none()
         
-        if company:
-            company.verification_status = VerificationStatus.VERIFIED
-            company.verified_at = datetime.now(timezone.utc)
+        if not company:
+            # Проверим, есть ли вообще компании с токенами
+            all_tokens = await db.execute(
+                select(Company.id, Company.email_verification_token)
+                .where(Company.email_verification_token.isnot(None))
+            )
+            tokens_list = all_tokens.all()
+            logger.error(f"❌ Компания с токеном не найдена")
+            logger.error(f"   Всего компаний с токенами: {len(tokens_list)}")
+            for t in tokens_list[:5]:  # Показать первые 5
+                logger.error(f"   - Company {t[0]}: {t[1][:30]}...")
+            raise ValueError("Неверный или просроченный токен")
+        
+        logger.info(f"✅ Найдена компания:")
+        logger.info(f"   ID: {company.id}")
+        logger.info(f"   Название: {company.full_name}")
+        logger.info(f"   Email: {company.email}")
+        logger.info(f"   ДО ИЗМЕНЕНИЙ:")
+        logger.info(f"     status: {company.status} (type: {type(company.status)})")
+        logger.info(f"     is_email_verified: {company.is_email_verified}")
+        logger.info(f"     verification_status: {company.verification_status}")
+        logger.info(f"     email_verification_token: {company.email_verification_token[:20] if company.email_verification_token else None}...")
+        
+        # Проверяем, не подтверждён ли уже email
+        if company.is_email_verified:
+            logger.warning(f"⚠️ Email уже подтверждён для компании {company.id}")
+            return company
+        
+        # ✅ ОБНОВЛЯЕМ ПОЛЯ
+        logger.info("📝 Обновляем поля...")
+        
+        company.is_email_verified = True
+        logger.info(f"   is_email_verified = True")
+        
+        company.status = CompanyStatus.PENDING_REVIEW
+        logger.info(f"   status = {CompanyStatus.PENDING_REVIEW} (value: {CompanyStatus.PENDING_REVIEW.value})")
+        
+        company.verification_status = VerificationStatus.PENDING
+        logger.info(f"   verification_status = {VerificationStatus.PENDING}")
+        
+        company.email_verification_token = None
+        logger.info(f"   email_verification_token = None")
+        
+        company.email_verified_at = datetime.now(timezone.utc)
+        logger.info(f"   email_verified_at = {company.email_verified_at}")
+        
+        # ✅ КОММИТ
+        logger.info("💾 Выполняем commit...")
+        try:
             await db.commit()
-            await db.refresh(company)
+            logger.info("✅ Commit успешен")
+        except Exception as e:
+            logger.error(f"❌ Ошибка при commit: {str(e)}")
+            await db.rollback()
+            raise
+        
+        # ✅ REFRESH
+        logger.info("🔄 Выполняем refresh...")
+        await db.refresh(company)
+        
+        logger.info(f"✅ ПОСЛЕ ИЗМЕНЕНИЙ:")
+        logger.info(f"   status: {company.status} (value: {company.status.value if hasattr(company.status, 'value') else company.status})")
+        logger.info(f"   is_email_verified: {company.is_email_verified}")
+        logger.info(f"   verification_status: {company.verification_status}")
+        logger.info(f"   email_verification_token: {company.email_verification_token}")
+        logger.info("=" * 60)
         
         return company
     
@@ -266,8 +335,12 @@ class CompanyService:
         db: AsyncSession, 
         company_id: int
     ) -> None:
-        """Удалить компанию и связанного пользователя"""
+        """Удалить компанию и все связанные данные"""
         from app.models.user import User
+        from app.models.opportunity import Opportunity
+        from app.models.recommendation import Recommendation
+        from app.models.review import Review
+        from app.models.favorite import Favorite, FavoriteCompany
         
         # Получаем компанию
         company = await self.get_company_by_id(db, company_id)
@@ -278,19 +351,72 @@ class CompanyService:
         company_name = company.full_name
         owner_id = company.owner_id
         
-        # Удаляем компанию
-        await db.delete(company)
-        
-        # Удаляем пользователя-владельца, если он есть
-        if owner_id:
-            user_result = await db.execute(
-                select(User).where(User.id == owner_id)
+        try:
+            # 1. Сначала получаем все ID вакансий этой компании
+            opportunities_result = await db.execute(
+                select(Opportunity.id).where(Opportunity.company_id == company_id)
             )
-            user = user_result.scalar_one_or_none()
-            if user:
-                await db.delete(user)
-        
-        await db.commit()
+            opportunity_ids = [row[0] for row in opportunities_result.fetchall()]
+            
+            # 2. Удаляем рекомендации для этих вакансий
+            if opportunity_ids:
+                await db.execute(
+                    Recommendation.__table__.delete().where(
+                        Recommendation.opportunity_id.in_(opportunity_ids)
+                    )
+                )
+            
+            # 3. Удаляем избранные вакансии (Favorites) для вакансий этой компании
+            if opportunity_ids:
+                await db.execute(
+                    Favorite.__table__.delete().where(
+                        Favorite.opportunity_id.in_(opportunity_ids)
+                    )
+                )
+            
+            # 4. Удаляем избранные компании (FavoriteCompany)
+            await db.execute(
+                FavoriteCompany.__table__.delete().where(
+                    FavoriteCompany.company_id == company_id
+                )
+            )
+            
+            # 5. Удаляем все вакансии компании
+            await db.execute(
+                Opportunity.__table__.delete().where(Opportunity.company_id == company_id)
+            )
+            
+            # 6. Удаляем отзывы о компании
+            await db.execute(
+                Review.__table__.delete().where(Review.company_id == company_id)
+            )
+            
+            # 7. Обновляем пользователей, привязанных к этой компании
+            await db.execute(
+                User.__table__.update().where(
+                    User.company_id == company_id
+                ).values(company_id=None)
+            )
+            
+            # 8. Удаляем компанию
+            await db.execute(
+                Company.__table__.delete().where(Company.id == company_id)
+            )
+            
+            # 9. Удаляем пользователя-владельца, если он есть
+            if owner_id:
+                await db.execute(
+                    User.__table__.delete().where(User.id == owner_id)
+                )
+            
+            await db.commit()
+            
+            logger.info(f"Компания '{company_name}' (ID: {company_id}) успешно удалена со всеми связанными данными")
+            
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"Ошибка при удалении компании {company_id}: {str(e)}")
+            raise ValueError(f"Ошибка при удалении компании: {str(e)}")
 
 
 # Создаем экземпляр сервиса

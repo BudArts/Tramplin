@@ -10,6 +10,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   defaultMode?: 'login' | 'register';
+  onForgotPassword?: () => void;
 }
 
 type FormMode = 'login' | 'register';
@@ -34,7 +35,7 @@ interface RegisterFormData {
   company_email: string;
 }
 
-const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) => {
+const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login', onForgotPassword }) => {
   const navigate = useNavigate();
   const { login, register, loadUser, isAuthenticated, user } = useAuth();
   const [mode, setMode] = useState<FormMode>(defaultMode);
@@ -302,6 +303,13 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
     setMode(newMode);
   };
 
+  const handleForgotPasswordClick = () => {
+    onClose();
+    if (onForgotPassword) {
+      onForgotPassword();
+    }
+  };
+
   const roleOptions = [
     { value: 'applicant', label: 'Соискатель', icon: GraduationCap, description: 'Ищу работу или стажировку' },
     { value: 'employer', label: 'Работодатель', icon: Building2, description: 'Ищу сотрудников' },
@@ -396,6 +404,16 @@ const AuthModal: React.FC<Props> = ({ isOpen, onClose, defaultMode = 'login' }) 
                     </button>
                   </div>
                   {errors.password && <span className="error-message">{errors.password}</span>}
+                </div>
+
+                <div className="auth-modal__forgot-password-wrapper">
+                  <button
+                    type="button"
+                    className="auth-modal__forgot-password"
+                    onClick={handleForgotPasswordClick}
+                  >
+                    Забыли пароль?
+                  </button>
                 </div>
 
                 <motion.button type="submit" className="auth-modal__submit" disabled={isLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

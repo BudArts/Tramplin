@@ -1,5 +1,4 @@
-﻿Tramplin/get_treee.py
-├── .dockerignore
+﻿├── .dockerignore
 ├── .gitignore
 ├── api.json
 ├── backend
@@ -46,7 +45,6 @@
 │   │   │   ├── health.py
 │   │   │   ├── notifications.py
 │   │   │   ├── opportunities.py
-│   │   │   ├── recommendations.py
 │   │   │   ├── reviews.py
 │   │   │   ├── support.py
 │   │   │   ├── tags.py
@@ -63,6 +61,7 @@
 │   │   │   ├── curator.py
 │   │   │   ├── notification.py
 │   │   │   ├── opportunity.py
+│   │   │   ├── recommendation.py
 │   │   │   ├── review.py
 │   │   │   ├── tag.py
 │   │   │   ├── user.py
@@ -83,6 +82,7 @@
 │   │   │   ├── user_service.py
 │   │   │   ├── verification_service.py
 │   │   │   └── __init__.py
+│   │   ├── uploads
 │   │   ├── utils
 │   │   │   ├── add_reviews_and_rating.py
 │   │   │   ├── city_coords.py
@@ -91,11 +91,9 @@
 │   │   │   ├── permissions.py
 │   │   │   ├── sanitize.py
 │   │   │   ├── security.py
-│   │   │   ├── seed_data.py
 │   │   │   ├── validators.py
 │   │   │   └── __init__.py
 │   │   └── __init__.py
-│   ├── ckeck.py
 │   ├── Dockerfile
 │   ├── Dockerfile.local
 │   ├── requirements.txt
@@ -114,6 +112,8 @@
 │   │   ├── carousel-1.png
 │   │   ├── carousel-2.png
 │   │   ├── carousel-3.png
+│   │   ├── codeins.png
+│   │   ├── favicon.png
 │   │   └── logo.png
 │   ├── README.md
 │   ├── src
@@ -128,13 +128,17 @@
 │   │   │   ├── CategoryNav.tsx
 │   │   │   ├── CompanyRatingCard.tsx
 │   │   │   ├── CompanyRatingSection.tsx
+│   │   │   ├── DeleteAccountModal.tsx
 │   │   │   ├── Footer.tsx
 │   │   │   ├── Header.tsx
 │   │   │   ├── HeroSection.tsx
 │   │   │   ├── InteractiveMap.tsx
 │   │   │   ├── OpportunityCard.tsx
+│   │   │   ├── OpportunityDetailModal.tsx
 │   │   │   ├── OpportunityList.tsx
-│   │   │   └── ScrollProgressBar.tsx
+│   │   │   ├── PasswordResetModal.tsx
+│   │   │   ├── ScrollProgressBar.tsx
+│   │   │   └── SupportModal.tsx
 │   │   ├── context
 │   │   │   └── AuthContext.tsx
 │   │   ├── hooks
@@ -143,20 +147,58 @@
 │   │   ├── index.css
 │   │   ├── main.tsx
 │   │   ├── pages
+│   │   │   ├── adminDashboard
+│   │   │   │   ├── AdminLayout.tsx
+│   │   │   │   ├── CompaniesPage.tsx
+│   │   │   │   ├── CreateCuratorPage.tsx
+│   │   │   │   ├── CuratorsPage.tsx
+│   │   │   │   ├── DashboardHomePage.tsx
+│   │   │   │   ├── OpportunitiesPage.tsx
+│   │   │   │   ├── ReviewsPage.tsx
+│   │   │   │   ├── SettingsPage.tsx
+│   │   │   │   ├── TagsPage.tsx
+│   │   │   │   └── UsersPage.tsx
 │   │   │   ├── companyDashboard
+│   │   │   │   ├── ApplicationsPage.tsx
+│   │   │   │   ├── CompanyLayout.tsx
+│   │   │   │   ├── DashboardHomePage.tsx
+│   │   │   │   ├── FavoritesPage.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── OpportunitiesPage.tsx
+│   │   │   │   ├── OpportunityForm.tsx
+│   │   │   │   ├── ProfilePage.tsx
+│   │   │   │   └── SettingsPage.tsx
 │   │   │   ├── curatorDashboard
+│   │   │   │   ├── CompaniesPage.tsx
+│   │   │   │   ├── CuratorLayout.tsx
+│   │   │   │   ├── DashboardHomePage.tsx
+│   │   │   │   ├── OpportunitiesPage.tsx
+│   │   │   │   ├── ReviewsPage.tsx
+│   │   │   │   ├── SettingsPage.tsx
+│   │   │   │   ├── TagsPage.tsx
+│   │   │   │   └── UsersPage.tsx
 │   │   │   ├── EmailVerification.tsx
 │   │   │   ├── EmailVerificationPending.tsx
 │   │   │   ├── LandingPage.tsx
+│   │   │   ├── PasswordResetConfirmPage.tsx
 │   │   │   └── studentDashboard
 │   │   │       ├── ApplicationsPage.tsx
+│   │   │       ├── ChatPage.tsx
+│   │   │       ├── CompaniesPage.tsx
 │   │   │       ├── ContactsPage.tsx
+│   │   │       ├── DashboardHomePage.tsx
 │   │   │       ├── FavoritesPage.tsx
+│   │   │       ├── OpportunitiesPage.tsx
+│   │   │       ├── OpportunityDetailPage.tsx
 │   │   │       ├── ProfilePage.tsx
 │   │   │       ├── RecommendationPage.tsx
 │   │   │       ├── SettingsPage.tsx
-│   │   │       └── StudentLayout.tsx
+│   │   │       ├── StudentLayout.tsx
+│   │   │       └── UserProfilePage.tsx
 │   │   └── styles
+│   │       ├── adminDashboard.css
+│   │       ├── companyDashboard.css
+│   │       ├── curatorDashboard.css
 │   │       ├── landing.css
 │   │       └── studentDashboard.css
 │   └── vite.config.js

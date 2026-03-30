@@ -54,7 +54,7 @@ class EmailService:
         first_name: str,
         verification_token: str
     ) -> bool:
-        """Отправка email для подтверждения адреса"""
+        """Отправка email для подтверждения адреса студента"""
         verification_link = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
         
         subject = f"Подтвердите email для {settings.APP_NAME}"
@@ -69,7 +69,6 @@ class EmailService:
                 .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
                 .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
                 .button {{ display: inline-block; background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-                .button:hover {{ background: #5a6fd6; }}
                 .footer {{ text-align: center; color: #888; font-size: 12px; margin-top: 20px; }}
             </style>
         </head>
@@ -109,9 +108,9 @@ class EmailService:
         verification_token: str
     ) -> bool:
         """Отправка email для подтверждения корпоративной почты компании"""
-        verification_link = f"{settings.FRONTEND_URL}/verify-company?token={verification_token}"
+        verification_link = f"http://localhost:8000/companies/auth/verify-email?token={verification_token}"
         
-        subject = f"Подтвердите регистрацию компании на {settings.APP_NAME}"
+        subject = f"Подтвердите регистрацию компании {company_name} на {settings.APP_NAME}"
         body = f"""
         <!DOCTYPE html>
         <html>
@@ -228,18 +227,38 @@ class EmailService:
         <html>
         <head>
             <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .button {{ display: inline-block; background: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ text-align: center; color: #888; font-size: 12px; margin-top: 20px; }}
+            </style>
         </head>
         <body>
-            <h2>Поздравляем!</h2>
-            <p>Ваша компания <strong>{company_name}</strong> успешно прошла модерацию 
-               и активирована на платформе {settings.APP_NAME}.</p>
-            <p>Теперь вы можете:</p>
-            <ul>
-                <li>Публиковать стажировки и вакансии</li>
-                <li>Просматривать резюме кандидатов</li>
-                <li>Связываться со студентами</li>
-            </ul>
-            <p><a href="{settings.FRONTEND_URL}/company/dashboard">Перейти в личный кабинет</a></p>
+            <div class="container">
+                <div class="header">
+                    <h1>Поздравляем!</h1>
+                </div>
+                <div class="content">
+                    <h2>Ваша компания одобрена</h2>
+                    <p>Компания <strong>{company_name}</strong> успешно прошла модерацию 
+                       и активирована на платформе {settings.APP_NAME}.</p>
+                    <p>Теперь вы можете:</p>
+                    <ul>
+                        <li>Публиковать стажировки и вакансии</li>
+                        <li>Просматривать резюме кандидатов</li>
+                        <li>Связываться со студентами</li>
+                    </ul>
+                    <p style="text-align: center;">
+                        <a href="{settings.FRONTEND_URL}/company/dashboard" class="button">Перейти в личный кабинет</a>
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>© {settings.APP_NAME}. Все права защищены.</p>
+                </div>
+            </div>
         </body>
         </html>
         """
@@ -259,13 +278,30 @@ class EmailService:
         <html>
         <head>
             <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .footer {{ text-align: center; color: #888; font-size: 12px; margin-top: 20px; }}
+            </style>
         </head>
         <body>
-            <h2>Заявка отклонена</h2>
-            <p>К сожалению, заявка на регистрацию компании <strong>{company_name}</strong> 
-               была отклонена.</p>
-            <p><strong>Причина:</strong> {reason}</p>
-            <p>Если вы считаете, что произошла ошибка, пожалуйста, свяжитесь с нашей поддержкой.</p>
+            <div class="container">
+                <div class="header">
+                    <h1>Заявка отклонена</h1>
+                </div>
+                <div class="content">
+                    <h2>К сожалению...</h2>
+                    <p>Заявка на регистрацию компании <strong>{company_name}</strong> 
+                       была отклонена.</p>
+                    <p><strong>Причина:</strong> {reason}</p>
+                    <p>Если вы считаете, что произошла ошибка, пожалуйста, свяжитесь с нашей поддержкой.</p>
+                </div>
+                <div class="footer">
+                    <p>© {settings.APP_NAME}. Все права защищены.</p>
+                </div>
+            </div>
         </body>
         </html>
         """

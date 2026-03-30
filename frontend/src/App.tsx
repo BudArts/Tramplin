@@ -28,7 +28,7 @@ import CuratorUsersPage from './pages/curatorDashboard/UsersPage';
 import CuratorTagsPage from './pages/curatorDashboard/TagsPage';
 import CuratorReviewsPage from './pages/curatorDashboard/ReviewsPage';
 import CuratorSettingsPage from './pages/curatorDashboard/SettingsPage';
-
+import './styles/adminDashboard.css';
 import CompanyLayout from './pages/companyDashboard/CompanyLayout';
 import CompanyDashboardHomePage from './pages/companyDashboard/DashboardHomePage';
 import CompanyProfilePage from './pages/companyDashboard/ProfilePage';
@@ -41,7 +41,18 @@ import './styles/landing.css';
 import './styles/studentDashboard.css';
 import './styles/curatorDashboard.css';
 
-// Protected Route Component - выносим внутрь AuthProvider
+import AdminLayout from './pages/adminDashboard/AdminLayout';
+import AdminDashboardHomePage from './pages/adminDashboard/DashboardHomePage';
+import AdminCompaniesPage from './pages/adminDashboard/CompaniesPage';
+import AdminOpportunitiesPage from './pages/adminDashboard/OpportunitiesPage';
+import AdminUsersPage from './pages/adminDashboard/UsersPage';
+import AdminCuratorsPage from './pages/adminDashboard/CuratorsPage';
+import AdminTagsPage from './pages/adminDashboard/TagsPage';
+import AdminReviewsPage from './pages/adminDashboard/ReviewsPage';
+import AdminSettingsPage from './pages/adminDashboard/SettingsPage';
+import CreateCuratorPage from './pages/adminDashboard/CreateCuratorPage';
+
+// Protected Route Component
 const ProtectedRoute = ({
   children,
   allowedRoles
@@ -64,14 +75,18 @@ const ProtectedRoute = ({
   }
 
   if (!allowedRoles.includes(user.role)) {
+    // Перенаправление в зависимости от роли пользователя
+    if (user.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    if (user.role === 'curator') {
+      return <Navigate to="/curator" replace />;
+    }
     if (user.role === 'student') {
       return <Navigate to="/student" replace />;
     }
     if (user.role === 'company') {
       return <Navigate to="/company" replace />;
-    }
-    if (user.role === 'curator' || user.role === 'admin') {
-      return <Navigate to="/curator" replace />;
     }
     return <Navigate to="/" replace />;
   }
@@ -95,14 +110,17 @@ const RoleRedirect = () => {
     return <Navigate to="/" replace />;
   }
 
+  if (user.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  if (user.role === 'curator') {
+    return <Navigate to="/curator" replace />;
+  }
   if (user.role === 'student') {
     return <Navigate to="/student" replace />;
   }
   if (user.role === 'company') {
     return <Navigate to="/company" replace />;
-  }
-  if (user.role === 'curator' || user.role === 'admin') {
-    return <Navigate to="/curator" replace />;
   }
 
   return <Navigate to="/" replace />;
@@ -112,6 +130,7 @@ const RoleRedirect = () => {
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Публичные маршруты */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/verify-email" element={<EmailVerification />} />
       <Route path="/verify-email-pending" element={<EmailVerificationPending />} />
@@ -162,11 +181,34 @@ const AppRoutes = () => {
         <Route path="student/user/:userId" element={<UserProfilePage />} />
       </Route>
 
-      {/* Curator Routes */}
+      {/* ⚠️ Admin Routes - ДОЛЖНЫ БЫТЬ ПЕРЕД Curator Routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboardHomePage />} />
+        <Route path="companies" element={<AdminCompaniesPage />} />
+        <Route path="companies/:companyId" element={<AdminCompaniesPage />} />
+        <Route path="opportunities" element={<AdminOpportunitiesPage />} />
+        <Route path="opportunities/:opportunityId" element={<AdminOpportunitiesPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="users/:userId" element={<AdminUsersPage />} />
+        <Route path="curators" element={<AdminCuratorsPage />} />
+        <Route path="curators/create" element={<CreateCuratorPage />} />
+        <Route path="tags" element={<AdminTagsPage />} />
+        <Route path="reviews" element={<AdminReviewsPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
+      </Route>
+
+      {/* Curator Routes - ТОЛЬКО ДЛЯ КУРАТОРОВ (НЕ ДЛЯ АДМИНОВ) */}
       <Route
         path="/curator"
         element={
-          <ProtectedRoute allowedRoles={['curator', 'admin']}>
+          <ProtectedRoute allowedRoles={['curator']}>
             <CuratorLayout />
           </ProtectedRoute>
         }
@@ -186,6 +228,7 @@ const AppRoutes = () => {
       {/* Role-based redirect for dashboard */}
       <Route path="/dashboard" element={<RoleRedirect />} />
 
+      {/* Fallback route */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

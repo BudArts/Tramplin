@@ -266,64 +266,103 @@ const OpportunityForm = ({ opportunity, onClose, onSuccess }: OpportunityFormPro
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setLoading(true);
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
+  e.preventDefault();
+  
+  if (!validateForm()) return;
+  
+  setLoading(true);
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    setLoading(false);
+    return;
+  }
 
-    // Подготавливаем данные для отправки - преобразуем пустые значения в null
-    const submitData = {
-      title: formData.title,
-      description: formData.description,
-      type: formData.type,
-      work_format: formData.work_format,
-      salary_min: formData.salary_min && formData.salary_min > 0 ? formData.salary_min : null,
-      salary_max: formData.salary_max && formData.salary_max > 0 ? formData.salary_max : null,
-      city: formData.city,
-      address: formData.address || null,
-      latitude: formData.latitude !== undefined && formData.latitude !== null ? formData.latitude : null,
-      longitude: formData.longitude !== undefined && formData.longitude !== null ? formData.longitude : null,
-      expires_at: formData.expires_at || null,
-      event_date: formData.event_date || null,
-      tag_ids: formData.tag_ids.filter(id => id > 0), // Убираем ID = 0
-      contact_email: formData.contact_email || null,
-      contact_phone: formData.contact_phone || null,
-      external_url: formData.external_url || null,
-    };
-
+  // Получаем текущего пользователя из localStorage
+  const storedUser = localStorage.getItem('user');
+  let companyId = null;
+  
+  if (storedUser) {
     try {
-      const url = isEditing 
-        ? `/api/opportunities/${formData.id}`
-        : '/api/opportunities';
-      const method = isEditing ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(submitData),
-      });
+      const user = JSON.parse(storedUser);
+      companyId = user.company_id;
+      console.log('Company ID from user:', companyId);
+    } catch (e) {
+      console.error('Error parsing user:', e);
+    }
+  }
 
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const error = await response.json();
-        console.error('Validation error:', error);
-        alert(error.detail || 'Ошибка при сохранении');
+  // Если company_id нет в user, пробуем получить через API
+  if (!companyId) {
+    try {
+      const userResponse = await fetch('/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        companyId = userData.company_id;
+        console.log('Company ID from API:', companyId);
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Ошибка сети');
-    } finally {
-      setLoading(false);
+      console.error('Error fetching user data:', error);
     }
+  }
+
+  if (!companyId) {
+    alert('Компания не найдена. Пожалуйста, убедитесь, что ваш аккаунт привязан к компании.');
+    setLoading(false);
+    return;
+  }
+
+  // Подготавливаем данные для отправки
+  const submitData = {
+    title: formData.title,
+    description: formData.description,
+    type: formData.type,
+    work_format: formData.work_format,
+    salary_min: formData.salary_min && formData.salary_min > 0 ? formData.salary_min : null,
+    salary_max: formData.salary_max && formData.salary_max > 0 ? formData.salary_max : null,
+    city: formData.city,
+    address: formData.address || null,
+    latitude: formData.latitude !== undefined && formData.latitude !== null ? formData.latitude : null,
+    longitude: formData.longitude !== undefined && formData.longitude !== null ? formData.longitude : null,
+    expires_at: formData.expires_at || null,
+    event_date: formData.event_date || null,
+    tag_ids: formData.tag_ids.filter(id => id > 0),
+    contact_email: formData.contact_email || null,
+    contact_phone: formData.contact_phone || null,
+    external_url: formData.external_url || null,
+    company_id: companyId, // Добавляем company_id
   };
 
+  try {
+    const url = isEditing 
+      ? `/api/opportunities/${formData.id}`
+      : '/api/opportunities';
+    const method = isEditing ? 'PUT' : 'POST';
+    
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(submitData),
+    });
+
+    if (response.ok) {
+      onSuccess();
+    } else {
+      const error = await response.json();
+      console.error('Validation error:', error);
+      alert(error.detail || 'Ошибка при сохранении');
+    }
+  } catch (error) {
+    console.error('Error submitting form:', error);
+    alert('Ошибка сети');
+  } finally {
+    setLoading(false);
+  }
+};
   const typeOptions = [
     { value: 'vacancy', label: 'Вакансия', description: 'Полная занятость, работа на постоянной основе' },
     { value: 'internship', label: 'Стажировка', description: 'Временная занятость для студентов и выпускников' },

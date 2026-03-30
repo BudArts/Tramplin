@@ -1,4 +1,4 @@
-# backend/alembic/env.py
+
 import asyncio
 from logging.config import fileConfig
 
@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
-# Импортируем настройки и модели
+
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
@@ -16,18 +16,18 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from app.config import settings
 from app.database import Base
 
-# Импортируем все модели чтобы Alembic их увидел
+
 from app.models.user import User
 from app.models.company import Company
 
-# Alembic Config object
+
 config = context.config
 
-# Interpret the config file for Python logging
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Metadata для autogenerate
+
 target_metadata = Base.metadata
 
 

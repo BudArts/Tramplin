@@ -1115,22 +1115,63 @@
             }
         },
         "/companies/auth/verify-email": {
+            "get": {
+                "tags": [
+                    "Company Registration"
+                ],
+                "summary": "Подтверждение email по ссылке из письма",
+                "description": "GET-эндпоинт для подтверждения корпоративной почты.\nПользователь кликает по ссылке из письма → получает HTML-страницу с результатом.",
+                "operationId": "verify_company_email_link_companies_auth_verify_email_get",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Token"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "Company Registration"
                 ],
-                "summary": "Подтверждение корпоративной почты",
-                "description": "Подтверждение корпоративной почты компании.",
-                "operationId": "verify_company_email_companies_auth_verify_email_post",
+                "summary": "Подтверждение корпоративной почты (API)",
+                "description": "POST-эндпоинт для подтверждения email через API.",
+                "operationId": "verify_company_email_post_companies_auth_verify_email_post",
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/CompanyEmailVerificationRequest"
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "responses": {
                     "200": {
@@ -1139,6 +1180,226 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/app__schemas__auth__MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/companies/recommendations": {
+            "get": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Рекомендации для компании",
+                "description": "Получение списка рекомендаций для компании.",
+                "operationId": "get_company_recommendations_companies_recommendations_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "additionalProperties": true,
+                                        "type": "object"
+                                    },
+                                    "type": "array",
+                                    "title": "Response Get Company Recommendations Companies Recommendations Get"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/companies/recommendations/unread-count": {
+            "get": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Количество непрочитанных рекомендаций",
+                "description": "Получение количества непрочитанных рекомендаций для компании.",
+                "operationId": "get_unread_recommendations_count_companies_recommendations_unread_count_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "title": "Response Get Unread Recommendations Count Companies Recommendations Unread Count Get"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/companies/recommendations/{recommendation_id}/read": {
+            "patch": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Отметить рекомендацию как прочитанную",
+                "description": "Отметить рекомендацию как прочитанную.",
+                "operationId": "mark_recommendation_as_read_companies_recommendations__recommendation_id__read_patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "recommendation_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Recommendation Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/app__schemas__auth__MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/companies/moderation/pending": {
+            "get": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Компании на модерации",
+                "description": "Получение списка компаний, ожидающих модерацию.",
+                "operationId": "get_pending_companies_companies_moderation_pending_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "skip",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "Skip"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "title": "Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CompanyResponse"
+                                    },
+                                    "title": "Response Get Pending Companies Companies Moderation Pending Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/companies/top-rated/": {
+            "get": {
+                "tags": [
+                    "Companies"
+                ],
+                "summary": "Топ компаний по рейтингу",
+                "description": "Получение топ-компаний по рейтингу.",
+                "operationId": "get_top_rated_companies_companies_top_rated__get",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 3,
+                            "title": "Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CompanyResponse"
+                                    },
+                                    "title": "Response Get Top Rated Companies Companies Top Rated  Get"
                                 }
                             }
                         }
@@ -1223,116 +1484,7 @@
                 }
             }
         },
-        "/companies/moderation/pending": {
-            "get": {
-                "tags": [
-                    "Companies"
-                ],
-                "summary": "Компании на модерации",
-                "description": "Получение списка компаний, ожидающих модерацию.",
-                "operationId": "get_pending_companies_companies_moderation_pending_get",
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "skip",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 0,
-                            "title": "Skip"
-                        }
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 20,
-                            "title": "Limit"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/CompanyResponse"
-                                    },
-                                    "title": "Response Get Pending Companies Companies Moderation Pending Get"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/companies/{company_id}": {
-            "delete": {
-                "tags": [
-                    "Companies"
-                ],
-                "summary": "Удалить компанию",
-                "description": "Удаление компании (только для администраторов и кураторов).",
-                "operationId": "delete_company_companies__company_id__delete",
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "company_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "title": "Company Id"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/app__schemas__auth__MessageResponse"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
             "get": {
                 "tags": [
                     "Companies"
@@ -1429,16 +1581,14 @@
                         }
                     }
                 }
-            }
-        },
-        "/companies/{company_id}/approve": {
-            "post": {
+            },
+            "delete": {
                 "tags": [
                     "Companies"
                 ],
-                "summary": "Одобрить компанию",
-                "description": "Одобрение компании после модерации.",
-                "operationId": "approve_company_companies__company_id__approve_post",
+                "summary": "Удалить компанию",
+                "description": "Удаление компании (только для администраторов и кураторов).",
+                "operationId": "delete_company_companies__company_id__delete",
                 "security": [
                     {
                         "HTTPBearer": []
@@ -1479,23 +1629,27 @@
                 }
             }
         },
-        "/companies/top-rated/": {
-            "get": {
+        "/companies/{company_id}/approve": {
+            "post": {
                 "tags": [
                     "Companies"
                 ],
-                "summary": "Топ компаний по рейтингу",
-                "description": "Получение топ-компаний по рейтингу.",
-                "operationId": "get_top_rated_companies_companies_top_rated__get",
+                "summary": "Одобрить компанию",
+                "description": "Одобрение компании после модерации.",
+                "operationId": "approve_company_companies__company_id__approve_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
                 "parameters": [
                     {
-                        "name": "limit",
-                        "in": "query",
-                        "required": false,
+                        "name": "company_id",
+                        "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "integer",
-                            "default": 3,
-                            "title": "Limit"
+                            "title": "Company Id"
                         }
                     }
                 ],
@@ -1505,11 +1659,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/CompanyResponse"
-                                    },
-                                    "title": "Response Get Top Rated Companies Companies Top Rated  Get"
+                                    "$ref": "#/components/schemas/app__schemas__auth__MessageResponse"
                                 }
                             }
                         }
@@ -2239,7 +2389,7 @@
                     "Возможности"
                 ],
                 "summary": "Список возможностей",
-                "description": "Список активных возможностей с фильтрацией и пагинацией.\nДоступен без авторизации.",
+                "description": "Список активных возможностей с фильтрацией и пагинацией.",
                 "operationId": "list_opportunities_api_opportunities_get",
                 "security": [
                     {
@@ -2449,7 +2599,7 @@
                     "Возможности"
                 ],
                 "summary": "Создать возможность",
-                "description": "Создание новой вакансии/стажировки/мероприятия/менторской программы.\nДоступно только верифицированным работодателям.",
+                "description": "Создание новой вакансии/стажировки/мероприятия/менторской программы.",
                 "operationId": "create_opportunity_api_opportunities_post",
                 "security": [
                     {
@@ -2496,7 +2646,7 @@
                     "Возможности"
                 ],
                 "summary": "Маркеры для карты",
-                "description": "Лёгкий эндпоинт для карты — возвращает только координаты, тип, название.\nДоступен без авторизации.",
+                "description": "Лёгкий эндпоинт для карты — возвращает только координаты, тип, название.",
                 "operationId": "get_map_points_api_opportunities_map_get",
                 "security": [
                     {
@@ -2644,7 +2794,7 @@
                 ],
                 "parameters": [
                     {
-                        "name": "status",
+                        "name": "opportunity_status",
                         "in": "query",
                         "required": false,
                         "schema": {
@@ -2656,7 +2806,7 @@
                                     "type": "null"
                                 }
                             ],
-                            "title": "Status"
+                            "title": "Opportunity Status"
                         }
                     }
                 ],
@@ -2798,6 +2948,49 @@
                         "HTTPBearer": []
                     }
                 ],
+                "parameters": [
+                    {
+                        "name": "opportunity_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Opportunity Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/app__schemas__common__MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/opportunities/{opportunity_id}/view": {
+            "post": {
+                "tags": [
+                    "Возможности"
+                ],
+                "summary": "Увеличить счетчик просмотров",
+                "description": "Увеличить счетчик просмотров возможности.",
+                "operationId": "increment_view_api_opportunities__opportunity_id__view_post",
                 "parameters": [
                     {
                         "name": "opportunity_id",
@@ -4646,45 +4839,14 @@
                 }
             }
         },
-        "/api/curator/opportunities/pending": {
-            "get": {
-                "tags": [
-                    "Куратор / Модерация"
-                ],
-                "summary": "Очередь модерации",
-                "description": "Возможности, ожидающие модерации.",
-                "operationId": "pending_moderations_api_curator_opportunities_pending_get",
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "items": {
-                                        "$ref": "#/components/schemas/OpportunityResponse"
-                                    },
-                                    "type": "array",
-                                    "title": "Response Pending Moderations Api Curator Opportunities Pending Get"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "HTTPBearer": []
-                    }
-                ]
-            }
-        },
         "/api/curator/opportunities": {
             "get": {
                 "tags": [
                     "Куратор / Модерация"
                 ],
-                "summary": "Все возможности с фильтрацией",
-                "description": "Получение возможностей с фильтрацией по статусу модерации.",
-                "operationId": "get_opportunities_api_curator_opportunities_get",
+                "summary": "Список всех возможностей для модерации",
+                "description": "Получение списка всех возможностей для модерации.\nДоступно только кураторам и администраторам.",
+                "operationId": "get_all_opportunities_api_curator_opportunities_get",
                 "security": [
                     {
                         "HTTPBearer": []
@@ -4708,31 +4870,35 @@
                         }
                     },
                     {
-                        "name": "company_id",
+                        "name": "search",
                         "in": "query",
                         "required": false,
                         "schema": {
                             "anyOf": [
                                 {
-                                    "type": "integer"
+                                    "type": "string"
                                 },
                                 {
                                     "type": "null"
                                 }
                             ],
-                            "title": "Company Id"
+                            "title": "Search"
                         }
                     },
                     {
-                        "name": "per_page",
+                        "name": "type",
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "type": "integer",
-                            "maximum": 200,
-                            "minimum": 1,
-                            "default": 100,
-                            "title": "Per Page"
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Type"
                         }
                     }
                 ],
@@ -4746,7 +4912,7 @@
                                     "items": {
                                         "$ref": "#/components/schemas/OpportunityResponse"
                                     },
-                                    "title": "Response Get Opportunities Api Curator Opportunities Get"
+                                    "title": "Response Get All Opportunities Api Curator Opportunities Get"
                                 }
                             }
                         }
@@ -6773,6 +6939,67 @@
                             }
                         ],
                         "title": "Founded Year"
+                    },
+                    "city": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 100
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "City"
+                    },
+                    "employee_count": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Employee Count"
+                    },
+                    "social_links": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Social Links"
+                    },
+                    "logo_url": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 500
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Logo Url"
+                    },
+                    "cover_url": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 500
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cover Url"
                     }
                 },
                 "type": "object",
@@ -7217,6 +7444,7 @@
                     "application_status_changed",
                     "application_accepted",
                     "application_rejected",
+                    "application_status",
                     "new_review",
                     "review_response",
                     "favorite_card_updated",
@@ -9047,6 +9275,17 @@
                             }
                         ],
                         "title": "Portfolio Url"
+                    },
+                    "company_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Company Id"
                     },
                     "created_at": {
                         "anyOf": [
